@@ -1,84 +1,259 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import {
-  PORTAL_NAME,
-  SERVICE_CONTROL,
-  parseSpeed,
-} from '@hotwheelsid/protocol';
+import { PORTAL_NAME } from '@hotwheelsid/protocol';
 
-// Phase 0 smoke check: importing and exercising the shared protocol package
-// proves the npm-workspace link and Metro transpilation of @hotwheelsid/protocol
-// both work. Real BLE/UI features arrive in later phases.
-const SAMPLE_SPEED = parseSpeed(new Uint8Array([0xb0, 0x1c, 0x14, 0x3e]));
+import { RecentPasses } from '@/components/RecentPasses';
+import { Speedometer } from '@/components/gauge/Speedometer';
+import { StatusPill } from '@/components/StatusPill';
+import { createMockPortal, type MockPortal } from '@/mock/mockPortal';
+import { usePortalStore } from '@/store/portalStore';
+import { colors, fontSize, fontWeight, radius, spacing, speedGauge } from '@/theme/tokens';
 
-export default function HomeScreen() {
+/** How long the needle holds a pass before easing back toward zero. */
+const NEEDLE_HOLD_MS = 1300;
+
+export default function SpeedometerScreen() {
+  const insets = useSafeAreaInsets();
+
+  const connection = usePortalStore((s) => s.connection);
+  const controlStatus = usePortalStore((s) => s.controlStatus);
+  const car = usePortalStore((s) => s.car);
+  const lastSpeed = usePortalStore((s) => s.lastSpeed);
+  const bestMph = usePortalStore((s) => s.bestMph);
+  const passes = usePortalStore((s) => s.passes);
+
+  // The mock portal is the Phase 2a stand-in for the BLE transport. It reuses
+  // the store's own actions so the swap to real BLE (Phase 1) is transparent.
+  const mockRef = useRef<MockPortal | null>(null);
+  if (mockRef.current === null) {
+    const { dispatch, setConnection } = usePortalStore.getState();
+    mockRef.current = createMockPortal({ dispatch, setConnection });
+  }
+
+  // Needle springs to each pass, then eases back to rest; the digital readout
+  // keeps showing the last recorded speed.
+  const [needleValue, setNeedleValue] = useState(0);
+  const [lastPassMph, setLastPassMph] = useState(0);
+  const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!lastSpeed || lastSpeed.scaleMph < 1) return;
+    setLastPassMph(lastSpeed.scaleMph);
+    setNeedleValue(lastSpeed.scaleMph);
+    if (holdTimer.current) clearTimeout(holdTimer.current);
+    holdTimer.current = setTimeout(() => setNeedleValue(0), NEEDLE_HOLD_MS);
+  }, [lastSpeed]);
+
+  useEffect(() => {
+    return () => {
+      if (holdTimer.current) clearTimeout(holdTimer.current);
+      mockRef.current?.stop();
+    };
+  }, []);
+
+  const isConnected = connection === 'connected';
+  const isBusy = connection === 'connecting';
+
+  const toggleConnection = () => {
+    if (isConnected || isBusy) {
+      mockRef.current?.stop();
+      setNeedleValue(0);
+    } else {
+      mockRef.current?.start();
+    }
+  };
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>HotWheelsID</Text>
-      <Text style={styles.subtitle}>Phase 0 — monorepo scaffold</Text>
-
-      <View style={styles.card}>
-        <Text style={styles.cardHeading}>@hotwheelsid/protocol</Text>
-        <Text style={styles.mono}>Portal name: {PORTAL_NAME}</Text>
-        <Text style={styles.mono}>Control service: {SERVICE_CONTROL}</Text>
-        <Text style={styles.mono}>
-          Sample speed: {SAMPLE_SPEED.scaleMph.toFixed(2)} scale mph
-        </Text>
+    <ScrollView
+      style={styles.screen}
+      contentContainerStyle={[
+        styles.content,
+        { paddingTop: insets.top + spacing(3), paddingBottom: insets.bottom + spacing(6) },
+      ]}
+    >
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.title}>HotWheelsID</Text>
+          <Text style={styles.subtitle}>Portal “{PORTAL_NAME}” · demo mode</Text>
+        </View>
+        <StatusPill connection={connection} controlStatus={controlStatus} />
       </View>
 
+      <Speedometer
+        value={needleValue}
+        readoutMph={lastPassMph}
+        max={speedGauge.maxMph}
+        zones={speedGauge.zones}
+        tickStep={speedGauge.tickStep}
+        flameThreshold={speedGauge.flameThreshold}
+        size={300}
+      />
+
+      <View style={styles.statsRow}>
+        <Stat label="Best" value={bestMph > 0 ? Math.round(bestMph).toString() : '—'} unit="mph" />
+        <Stat label="Passes" value={passes.length.toString()} unit="total" />
+        <Stat label="Car" value={car ? shortUid(car.uid) : '—'} unit={car?.serial ?? 'none'} />
+      </View>
+
+      <View style={styles.controls}>
+        <Pressable
+          onPress={toggleConnection}
+          style={({ pressed }) => [
+            styles.button,
+            isConnected || isBusy ? styles.buttonSecondary : styles.buttonPrimary,
+            pressed && styles.buttonPressed,
+          ]}
+        >
+          <Text style={styles.buttonText}>
+            {isConnected ? 'Disconnect' : isBusy ? 'Connecting…' : 'Connect portal'}
+          </Text>
+        </Pressable>
+        <Pressable
+          onPress={() => mockRef.current?.triggerPass()}
+          disabled={!isConnected}
+          style={({ pressed }) => [
+            styles.button,
+            styles.buttonGhost,
+            !isConnected && styles.buttonDisabled,
+            pressed && styles.buttonPressed,
+          ]}
+        >
+          <Text style={styles.buttonText}>Trigger pass</Text>
+        </Pressable>
+      </View>
+
+      <RecentPasses passes={passes} bestMph={bestMph} />
+
       <Text style={styles.note}>
-        BLE and UI features arrive in later phases. This screen only proves the
-        shared protocol package is linked into the app.
+        Phase 2a · UI runs on mocked portal events decoded by @hotwheelsid/protocol.
+        Real Bluetooth arrives in Phase 1 with a custom dev build.
+      </Text>
+    </ScrollView>
+  );
+}
+
+function Stat({ label, value, unit }: { label: string; value: string; unit: string }) {
+  return (
+    <View style={styles.stat}>
+      <Text style={styles.statLabel}>{label}</Text>
+      <Text style={styles.statValue} numberOfLines={1}>
+        {value}
+      </Text>
+      <Text style={styles.statUnit} numberOfLines={1}>
+        {unit}
       </Text>
     </View>
   );
 }
 
+function shortUid(uid: string): string {
+  const parts = uid.split(':');
+  return parts.length > 2 ? parts.slice(-2).join(':') : uid;
+}
+
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
+    backgroundColor: colors.bg,
+  },
+  content: {
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#0b0f1a',
-    paddingHorizontal: 24,
-    gap: 12,
+    paddingHorizontal: spacing(5),
+    gap: spacing(5),
   },
-  title: {
-    color: '#ffffff',
-    fontSize: 32,
-    fontWeight: '800',
-  },
-  subtitle: {
-    color: '#8aa0c6',
-    fontSize: 16,
-  },
-  card: {
-    marginTop: 12,
+  header: {
     width: '100%',
     maxWidth: 420,
-    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing(3),
+  },
+  title: {
+    color: colors.textPrimary,
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.heavy,
+  },
+  subtitle: {
+    color: colors.textSecondary,
+    fontSize: fontSize.sm,
+    marginTop: 2,
+  },
+  statsRow: {
+    width: '100%',
+    maxWidth: 420,
+    flexDirection: 'row',
+    gap: spacing(3),
+  },
+  stat: {
+    flex: 1,
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
     borderWidth: 1,
-    borderColor: '#1e2a44',
-    backgroundColor: '#111827',
-    padding: 16,
-    gap: 6,
+    borderRadius: radius.md,
+    paddingVertical: spacing(3),
+    paddingHorizontal: spacing(3),
+    alignItems: 'center',
+    gap: 2,
   },
-  cardHeading: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 4,
+  statLabel: {
+    color: colors.textMuted,
+    fontSize: fontSize.xs,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
-  mono: {
-    color: '#c7d2fe',
-    fontFamily: 'monospace',
-    fontSize: 13,
+  statValue: {
+    color: colors.textPrimary,
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.bold,
+  },
+  statUnit: {
+    color: colors.textSecondary,
+    fontSize: fontSize.xs,
+  },
+  controls: {
+    width: '100%',
+    maxWidth: 420,
+    flexDirection: 'row',
+    gap: spacing(3),
+  },
+  button: {
+    flex: 1,
+    borderRadius: radius.md,
+    paddingVertical: spacing(3.5),
+    alignItems: 'center',
+    borderWidth: 1,
+  },
+  buttonPrimary: {
+    backgroundColor: colors.accent,
+    borderColor: colors.accent,
+  },
+  buttonSecondary: {
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+  },
+  buttonGhost: {
+    backgroundColor: colors.surfaceAlt,
+    borderColor: colors.border,
+  },
+  buttonDisabled: {
+    opacity: 0.4,
+  },
+  buttonPressed: {
+    opacity: 0.7,
+  },
+  buttonText: {
+    color: colors.textPrimary,
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.bold,
   },
   note: {
-    color: '#6b7a99',
-    fontSize: 13,
+    color: colors.textMuted,
+    fontSize: fontSize.xs,
     textAlign: 'center',
-    marginTop: 8,
     maxWidth: 420,
+    lineHeight: 18,
   },
 });
