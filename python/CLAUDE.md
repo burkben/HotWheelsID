@@ -4,6 +4,12 @@
 
 This is an open-source reverse-engineering project to restore functionality to the Hot Wheels id Race Portal after Mattel discontinued the official app on January 1, 2024. The project uses Python with Bluetooth Low Energy (BLE) to communicate with the portal hardware.
 
+> **Monorepo note:** These Python tools are the **reference implementation** and now live
+> under `python/` in the HotWheelsID monorepo (see `../docs/adr/0007-monorepo-structure-and-python-reference.md`).
+> The canonical protocol spec (`PROTOCOL.md`), decision records (`docs/adr/`), and roadmap
+> stay at the **repo root**. The cross-platform app and shared TS protocol package live in
+> `../apps/` and `../packages/`. Run all commands below from this `python/` directory.
+
 ## Tech Stack
 
 - **Python 3.10+** - Main language
@@ -14,7 +20,7 @@ This is an open-source reverse-engineering project to restore functionality to t
 ## Project Structure
 
 ```
-portal/
+python/                    # this directory (Python reference implementation)
 ├── hwportal/              # Core library
 │   ├── __init__.py        # Package exports
 │   ├── constants.py       # BLE UUIDs and protocol constants
@@ -24,8 +30,12 @@ portal/
 ├── portal_app.py          # Detailed event monitor
 ├── scanner.py             # BLE device scanner
 ├── monitor.py             # Raw event monitor
-├── PROTOCOL.md            # BLE protocol documentation
-└── requirements.txt       # Python dependencies
+├── run.sh                 # Convenience launcher (scanner)
+├── requirements.txt       # Python dependencies
+└── CLAUDE.md              # this file
+
+../PROTOCOL.md             # canonical BLE protocol spec (repo root)
+../docs/                   # ADRs, roadmap, architecture (repo root)
 ```
 
 ## Key Files
@@ -70,11 +80,14 @@ Game mode with states: MENU → NAME_ENTRY → SETUP → COUNTDOWN → RACING �
 - **Speed:** 4-byte little-endian float32 (multiply by 64 for "scale mph")
 - **Serial Number:** ASCII string (e.g., "1102032557")
 
-See PROTOCOL.md for full documentation.
+See ../PROTOCOL.md (repo root) for full documentation.
 
 ## Development Commands
 
 ```bash
+# From the python/ directory (the venv lives here)
+cd python
+
 # Setup
 python3 -m venv venv
 source venv/bin/activate

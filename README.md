@@ -51,10 +51,16 @@ An open-source tool to connect to the Hot Wheels id Race Portal after Mattel dis
 
 ## Quick Start
 
+> **Heads up — this is now a monorepo.** The Python reference tools live in
+> [`python/`](python/), the new React Native + Expo app in
+> [`apps/mobile/`](apps/mobile/), and the shared protocol port in
+> [`packages/protocol/`](packages/protocol/). For the JS/TypeScript side see
+> [Monorepo & app development](#monorepo--app-development) below.
+
 ```bash
 # Clone the repo
 git clone https://github.com/burkben/HotWheelsID.git
-cd HotWheelsID
+cd HotWheelsID/python
 
 # Set up Python environment
 python3 -m venv venv
@@ -73,6 +79,9 @@ python dashboard.py
 - **Hot Wheels id cars** (with NFC chips)
 
 ## Available Tools
+
+> Run these from the [`python/`](python/) directory, with the virtualenv from
+> [Quick Start](#quick-start) activated.
 
 | Command | Description |
 |---------|-------------|
@@ -93,6 +102,8 @@ A competitive game mode where players race to complete laps:
 - **Leaderboard** to compete with friends!
 
 ## Using as a Library
+
+> Run from the [`python/`](python/) directory, where the `hwportal/` package lives.
 
 ```python
 import asyncio
@@ -127,17 +138,61 @@ We've fully reverse-engineered the BLE protocol! See [PROTOCOL.md](PROTOCOL.md) 
 ## Project Structure
 
 ```
-hotwheels-portal/
-├── hwportal/           # Python library
-│   ├── __init__.py
-│   ├── constants.py    # BLE UUIDs
-│   └── portal.py       # HotWheelsPortal class
-├── dashboard.py        # Live terminal dashboard
-├── portal_app.py       # Event monitor app
-├── scanner.py          # BLE scanner
-├── monitor.py          # Raw event monitor
-├── PROTOCOL.md         # Protocol documentation
-└── requirements.txt
+HotWheelsID/
+├── apps/
+│   └── mobile/             # Expo app (React Native, TypeScript, Expo Router) — iOS-first
+├── packages/
+│   └── protocol/           # @hotwheelsid/protocol — shared TS BLE protocol port (+ tests)
+├── python/                 # Original Python reference tools (documented above)
+│   ├── hwportal/           #   Library: constants.py (BLE UUIDs), portal.py (client)
+│   ├── dashboard.py        #   Live terminal dashboard
+│   ├── race_mode.py        #   Lap race game
+│   ├── portal_app.py       #   Event monitor
+│   ├── scanner.py          #   BLE scanner
+│   ├── monitor.py          #   Raw event monitor
+│   └── requirements.txt
+├── docs/                   # Architecture notes, ADRs, and the roadmap
+├── PROTOCOL.md             # Canonical reverse-engineered BLE protocol
+├── package.json            # npm workspaces root
+└── tsconfig.base.json      # Shared TypeScript config
+```
+
+## Monorepo & app development
+
+The TypeScript side uses **npm workspaces** (Node 20+). From the repo root:
+
+```bash
+npm install              # install every workspace (apps/* and packages/*)
+npm run typecheck        # typecheck all workspaces (protocol + mobile)
+npm test                 # run all workspace tests
+npm run test:protocol    # just the @hotwheelsid/protocol unit tests
+```
+
+### Shared protocol package
+
+[`packages/protocol`](packages/protocol/) (`@hotwheelsid/protocol`) is a pure
+TypeScript port of the BLE protocol — UUIDs, typed events, and byte decoders —
+with no React Native or UI dependencies. It is unit-tested against the sample
+vectors in [PROTOCOL.md](PROTOCOL.md).
+
+### Mobile app
+
+[`apps/mobile`](apps/mobile/) is an Expo app. Phase 0 ships only a placeholder
+screen that imports `@hotwheelsid/protocol` to prove the workspace link; BLE and
+UI features arrive in later phases (see [docs/ROADMAP.md](docs/ROADMAP.md)).
+
+```bash
+npm run start --workspace mobile      # start Metro / Expo
+# or: cd apps/mobile && npx expo start
+```
+
+Because the app relies on native modules (`react-native-ble-plx`,
+`expo-dev-client`), Expo Go cannot be used for BLE — build a **custom dev
+client** on a Mac with Xcode:
+
+```bash
+cd apps/mobile
+npx expo run:ios
 ```
 
 ## Roadmap
