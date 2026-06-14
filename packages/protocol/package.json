@@ -1,0 +1,26 @@
+{
+  "name": "@hotwheelsid/protocol",
+  "version": "0.1.0",
+  "description": "Pure TypeScript port of the Hot Wheels id Race Portal BLE protocol: service/characteristic UUIDs, typed PortalEvent models, and byte-level decoders. No React Native, DOM, or UI dependencies.",
+  "license": "MIT",
+  "type": "module",
+  "main": "src/index.ts",
+  "module": "src/index.ts",
+  "types": "src/index.ts",
+  "react-native": "src/index.ts",
+  "source": "src/index.ts",
+  "files": [
+    "src",
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}
