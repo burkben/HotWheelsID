@@ -20,6 +20,7 @@ that **supersedes** the old one (and update the status header) rather than editi
 | [0006](0006-state-management-and-persistence.md) | State management & local persistence       | Accepted |
 | [0007](0007-monorepo-structure-and-python-reference.md) | Monorepo layout; keep Python as reference | Accepted |
 | [0008](0008-ios-distribution-with-eas-and-testflight.md) | iOS distribution via EAS Build + TestFlight | Accepted |
+| [0009](0009-phase-2a-gauge-svg-first.md) | Phase 2a gauge: SVG-first, defer Skia FX to 2b | Accepted |
 
 ## Statuses
 
