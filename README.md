@@ -177,23 +177,29 @@ vectors in [PROTOCOL.md](PROTOCOL.md).
 
 ### Mobile app
 
-[`apps/mobile`](apps/mobile/) is an Expo app. Phase 0 ships only a placeholder
-screen that imports `@hotwheelsid/protocol` to prove the workspace link; BLE and
-UI features arrive in later phases (see [docs/ROADMAP.md](docs/ROADMAP.md)).
+[`apps/mobile`](apps/mobile/) is an Expo (Expo Router) app. It currently ships the
+**hero speedometer** screen driven by mocked portal events that are decoded by the real
+`@hotwheelsid/protocol` pipeline; real BLE arrives in a later phase (see
+[docs/ROADMAP.md](docs/ROADMAP.md)).
+
+**Preview in a browser** (no device or Xcode needed — fastest way to see the UI):
 
 ```bash
-npm run start --workspace mobile      # start Metro / Expo
-# or: cd apps/mobile && npx expo start
+cd apps/mobile && npx expo start --web
 ```
 
-Because the app relies on native modules (`react-native-ble-plx`,
-`expo-dev-client`), Expo Go cannot be used for BLE — build a **custom dev
-client** on a Mac with Xcode:
+**Run on your iPhone.** Expo Go cannot load this app (newer SDK + native BLE module), so you
+need a **development build**. The fastest, no-cost option on a Mac with Xcode is:
 
 ```bash
 cd apps/mobile
-npx expo run:ios
+npx expo run:ios --device     # local dev build, free Apple ID, installs on the phone
 ```
+
+For the EAS cloud-build path, the iOS Simulator profile, signing/account caveats, and
+troubleshooting, see the full runbook:
+**[docs/guides/ios-dev-build.md](docs/guides/ios-dev-build.md)** (EAS profiles live in
+[`apps/mobile/eas.json`](apps/mobile/eas.json)).
 
 ## Roadmap
 
