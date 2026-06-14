@@ -1,12 +1,25 @@
-# Hot Wheels Portal 🏎️
+# HotWheelsID 🏎️
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey.svg)](https://github.com/mtxmiller/hotwheels-portal)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey.svg)](https://github.com/burkben/HotWheelsID)
 
 **Bring your Hot Wheels id Race Portal back to life!**
 
 An open-source tool to connect to the Hot Wheels id Race Portal after Mattel discontinued the official app on January 1, 2024. We reverse-engineered the Bluetooth protocol so you can track speeds, lap times, and build your car collection again.
+
+> **HotWheelsID** is a fork of [`mtxmiller/hotwheels-portal`](https://github.com/mtxmiller/hotwheels-portal)
+> evolving the project toward a **polished, cross-platform app that is installable on iOS**
+> (React Native + Expo), while keeping the original Python tools as a reference implementation.
+>
+> 📐 **Planning the new app?** Start here:
+> [Architecture Overview](docs/architecture/README.md) ·
+> [Decision Records (ADRs)](docs/adr/) ·
+> [Roadmap](docs/ROADMAP.md) ·
+> [BLE & Protocol port](docs/architecture/ble-and-protocol.md)
+>
+> The sections below document the **current Python tools** (the reference implementation).
+> The reverse-engineered BLE protocol is in [PROTOCOL.md](PROTOCOL.md).
 
 ## What It Does
 
@@ -40,8 +53,8 @@ An open-source tool to connect to the Hot Wheels id Race Portal after Mattel dis
 
 ```bash
 # Clone the repo
-git clone https://github.com/mtxmiller/hotwheels-portal.git
-cd hotwheels-portal
+git clone https://github.com/burkben/HotWheelsID.git
+cd HotWheelsID
 
 # Set up Python environment
 python3 -m venv venv
@@ -129,6 +142,9 @@ hotwheels-portal/
 
 ## Roadmap
 
+The full, phased plan toward the attractive UI and the installable iOS app lives in
+**[docs/ROADMAP.md](docs/ROADMAP.md)**. Status of the original Python tooling:
+
 - [x] BLE connection and event monitoring
 - [x] Car detection (NFC UID, serial)
 - [x] Speed tracking
@@ -138,6 +154,9 @@ hotwheels-portal/
 - [ ] Car collection/garage view
 - [ ] Achievement system
 - [ ] Car name lookup from Mattel ID
+
+The next chapter (cross-platform app, polished UI, iOS via TestFlight) is tracked in the
+[Roadmap](docs/ROADMAP.md) and [ADRs](docs/adr/).
 
 ## Contributing
 
