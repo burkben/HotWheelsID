@@ -91,6 +91,15 @@ python dashboard.py
 | `python scanner.py` | Scan for BLE devices |
 | `python monitor.py` | Raw event monitor for debugging |
 | `python diag_portal.py` | Diagnose a portal's GATT table — verdict on whether the **control service** (car/speed) is exposed or **auth-gated** by firmware |
+| `python mpid_monitor.py` | **Modern-firmware portals** (no `…-000c` service): completes the ECDH handshake and streams live decoded car/speed/heartbeat events |
+| `python auth_probe.py` | Low-level Service A probe (dumps the factory token, listens for indications) |
+
+> **Which monitor do I run?** If `diag_portal.py` says the control service is
+> **ABSENT** (and the legacy `monitor.py` shows `…-000c … not found` + no
+> events), your portal runs the **modern MPID protocol** — use
+> **`mpid_monitor.py`**, which performs the key-exchange handshake and decodes the
+> encrypted Protocol-Buffers telemetry stream. See
+> [PROTOCOL_NEW.md](python/PROTOCOL_NEW.md).
 
 ### 🏁 Lap Race Mode
 
@@ -136,6 +145,29 @@ We've fully reverse-engineered the BLE protocol! See [PROTOCOL.md](PROTOCOL.md) 
 - Speed data as IEEE 754 float32
 - Full NDEF records with Mattel car IDs
 
+### Two firmware protocols
+
+There are **two** transports in the wild, and which one your portal speaks
+depends on its firmware:
+
+- **Legacy** (`PROTOCOL.md`, fw ~1.2.5): the `…-000c` "Portal Control" service
+  exposes the car/speed/serial characteristics **openly**, no authentication.
+  The classic tools (`monitor.py`, `dashboard.py`) read these directly.
+- **Modern / MPID** (`PROTOCOL_NEW.md`, e.g. fw 1.0.9): there is **no `…-000c`
+  service**. The same telemetry is delivered as an **encrypted Protocol Buffers
+  stream** after an **ECDH (P-256) key exchange** on the auth service. Crucially,
+  the portal authenticates *itself* to the app but **does not authenticate the
+  client**, so **no Mattel secret is needed** — everything required is in the
+  136-byte factory token the portal hands out. Implemented in
+  [`hwportal/mpid.py`](python/hwportal/mpid.py); run it with `mpid_monitor.py`.
+
+> The modern-protocol reverse-engineering, [`PROTOCOL_NEW.md`](python/PROTOCOL_NEW.md),
+> [`HWiD.proto`](python/HWiD.proto), `hwportal/mpid.py`, and the `tools/` RE scripts
+> are the work of **Mitch Capper ([@mitchcapper](https://github.com/mitchcapper))**
+> ([modern_protocol_support branch](https://github.com/mitchcapper/hotwheels-portal/tree/modern_protocol_support),
+> MIT), vendored here with attribution. Offline correctness is re-verified in this
+> repo via `python/tools/test_mpid.py`.
+
 ## Project Structure
 
 ```
@@ -146,15 +178,20 @@ HotWheelsID/
 │   └── protocol/           # @hotwheelsid/protocol — shared TS BLE protocol port (+ tests)
 ├── python/                 # Original Python reference tools (documented above)
 │   ├── hwportal/           #   Library: constants.py (BLE UUIDs), portal.py (client)
+│   │   └── mpid.py         #   Modern-firmware MPID transport (ECDH + AES-CTR + protobuf)
 │   ├── dashboard.py        #   Live terminal dashboard
 │   ├── race_mode.py        #   Lap race game
 │   ├── portal_app.py       #   Event monitor
 │   ├── scanner.py          #   BLE scanner
-│   ├── monitor.py          #   Raw event monitor
+│   ├── monitor.py          #   Raw event monitor (legacy …-000c firmware)
+│   ├── mpid_monitor.py     #   Live monitor for modern (MPID) firmware
 │   ├── diag_portal.py      #   GATT diagnostic (control-service / auth-gate verdict)
+│   ├── HWiD.proto          #   Protobuf schema for the modern application layer
+│   ├── PROTOCOL_NEW.md     #   Modern (MPID) protocol spec
+│   ├── tools/              #   RE tooling + offline test suite (test_mpid.py)
 │   └── requirements.txt
 ├── docs/                   # Architecture notes, ADRs, and the roadmap
-├── PROTOCOL.md             # Canonical reverse-engineered BLE protocol
+├── PROTOCOL.md             # Canonical reverse-engineered BLE protocol (legacy firmware)
 ├── package.json            # npm workspaces root
 └── tsconfig.base.json      # Shared TypeScript config
 ```
