@@ -290,6 +290,7 @@ export function createBlePortal(options: BlePortalOptions): PortalTransport {
           log("error", `scan error: ${error.message}`);
           scanning = false;
           clearScanHint();
+          setConnection("disconnected");
           phase("error");
           return;
         }
@@ -303,6 +304,7 @@ export function createBlePortal(options: BlePortalOptions): PortalTransport {
     } catch (err) {
       scanning = false;
       clearScanHint();
+      setConnection("disconnected");
       log("error", `could not start scan: ${(err as Error).message}`);
       phase("error");
     }
@@ -419,19 +421,28 @@ export function createBlePortal(options: BlePortalOptions): PortalTransport {
     clearScanHint();
     clearReconnect();
 
+    // Reset connection state + release the active slot *synchronously*, before
+    // any await. A hand-off (claimActiveTransport calls this stop() then the
+    // incoming transport sets 'connecting'/'connected' right after we yield), so
+    // a late 'disconnected' write after the awaits below would clobber it.
     stateSub?.remove();
     stateSub = null;
     disconnectSub?.remove();
     disconnectSub = null;
     removeMonitors();
+    device = null;
+    phase("idle");
+    setConnection("disconnected");
+    releaseActiveTransport(stop);
 
+    // Best-effort native teardown — intentionally after the state reset.
     const manager = getManager();
     try {
       await manager.stopDeviceScan();
     } catch {
       /* nothing scanning */
     }
-    const id = device?.id ?? lastDeviceId;
+    const id = lastDeviceId;
     if (id) {
       try {
         await manager.cancelDeviceConnection(id);
@@ -439,10 +450,6 @@ export function createBlePortal(options: BlePortalOptions): PortalTransport {
         /* already disconnected */
       }
     }
-    device = null;
-    phase("idle");
-    setConnection("disconnected");
-    releaseActiveTransport(stop);
     log("info", "stopped");
   };
 
