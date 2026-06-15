@@ -1,0 +1,146 @@
+// HWiD.proto — Hot Wheels id portal application protocol (Protocol Buffers).
+//
+// Reverse-engineered from the official Mattel app: this is the FileDescriptor
+// embedded in the Unity IL2CPP metadata (global-metadata.dat), recovered with
+// tools/decode_descriptor.py. It is the message layer carried *inside* the
+// encrypted MPID transport (see PROTOCOL_NEW.md and hwportal/mpid.py).
+//
+// Direction summary:
+//   PortalToApp  — what the portal sends us (events, device info, cmd responses)
+//   AppToPortal  — what we send the portal (commands)
+//
+// Notes confirmed against live captures: timestamps are uint32; speed is a
+// float (multiply by 64 for "1:64 scale mph"); tag_uid is 0x04 + 6-byte NFC UID;
+// car_ndef_data is an NDEF URI record "https://www.pid.mattel/<base64 car id>".
+
+syntax = "proto3";
+package MCPP.HWiD;
+
+message AppToPortal {
+  uint32 timestamp_sec = 1;
+  Command command = 2;
+  bytes accessory_message = 3;
+}
+
+message PortalToApp {
+  uint32 timestamp_ms = 1;
+  Event event = 2;
+  DeviceInfo info = 3;
+  CommandResponse cmdRsp = 4;
+  bytes accessory_message = 5;
+}
+
+message PortalToAccessory {
+  uint32 timestamp_ms = 1;
+  Event event = 2;
+  bytes accessory_message = 3;
+}
+
+message AccessoryToPortal {
+  uint32 timestamp_ms = 1;
+  DeviceInfo info = 2;
+  bytes accessory_message = 3;
+}
+
+message Event {
+  enum EventType {
+    UnknownEventType = 0;
+    LowBatteryEvent = 1;
+    CarOnPortalEvent = 2;
+    CarOffPortalEvent = 3;
+    CarDriveByEvent = 4;
+    CarHistory = 5;
+    AccessoryAttachedEvent = 6;
+    AccessoryDetachedEvent = 7;
+    AccessoryIdentifiedEvent = 8;
+    InfraredGateABlocked = 9;
+    InfraredGateBBlocked = 10;
+    InfraredGateAUnblocked = 11;
+    InfraredGateBUnblocked = 12;
+  }
+  EventType type = 1;
+  CarInfo car_info = 2;
+  SpeedMeasurement speed_measurement = 3;
+  repeated SpeedMeasurement measurement_history = 4;   // deprecated
+  repeated OfflineRaceSession offline_race_sessions = 5;
+  uint32 accessory_id = 6;
+}
+
+message CarInfo {
+  bytes tag_uid = 1;            // 0x04 + 6-byte NFC UID
+  bool signature_status = 2;
+  bytes car_ndef_data = 3;      // NDEF URI record (pid.mattel/<base64 id>)
+  bytes signature = 4;
+  bytes publickey = 5;
+}
+
+message SpeedMeasurement {
+  uint32 timestamp_ms = 1;
+  float speed = 2;              // * 64 for "1:64 scale mph"
+  int32 t_ir1_in = 3;          // IR gate 1 beam-break enter/exit timestamps
+  int32 t_ir1_out = 4;
+  int32 t_ir2_in = 5;          // IR gate 2 beam-break enter/exit timestamps
+  int32 t_ir2_out = 6;
+  uint32 estimated_car_count = 7;
+}
+
+message OfflineRaceSession {
+  uint32 time_played = 1;
+  float top_speed = 2;
+  uint32 scan_count = 3;
+}
+
+message DeviceInfo {
+  enum DeviceMode {
+    UnknownMode = 0;
+    FastMode = 1;
+    NormalMode = 2;
+    TestMode = 3;
+  }
+  enum BatteryStatus {
+    UnknownStatus = 0;
+    NotCharging = 1;
+    Charging = 2;
+    Full = 3;
+    Problem = 4;
+  }
+  uint32 firmware_version = 1;          // deprecated; use semantic_firmware_version
+  uint32 hardware_version = 2;
+  float battery_level = 3;
+  DeviceMode mode = 4;
+  uint32 boot_timestamp_sec = 5;
+  string serial_number = 6;
+  BatteryStatus battery_status = 7;
+  uint32 q_value = 8;                   // battery fuel-gauge raw values
+  uint32 i_value = 9;
+  string semantic_firmware_version = 10;
+  bool accessory_attached = 11;
+}
+
+message Command {
+  enum CommandType {
+    CommandTypeUnknown = 0;
+    CommandTypeFastMode = 1;
+    CommandTypeNormalMode = 2;
+    CommandTypeReqeustDeviceInfo = 3;   // [sic] spelling is from the app
+    CommandTypeTestMode = 4;
+    CommandTypeReset = 5;
+    CommandTypeStartOTA = 6;
+    CommandTypeSetLEDColor = 7;
+    CommandTypeResetLEDControl = 8;
+    CommandTypeClearBonding = 9;
+  }
+  CommandType type = 1;
+  bytes ota_signature = 2;
+  bytes ota_publickey = 3;
+  bytes rgb_color = 4;
+}
+
+message CommandResponse {
+  bool failed = 1;
+  string fail_message = 2;
+}
+
+message PortalToAppRepeated {
+  repeated PortalToApp messages = 1;
+}

@@ -9,3 +9,4 @@ export * from "./uuids";
 export * from "./events";
 export * from "./decode";
 export * from "./base64";
+export * from "./mpid";

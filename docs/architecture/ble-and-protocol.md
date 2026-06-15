@@ -112,8 +112,48 @@ export function parseCharacteristicValue(uuid: string, bytes: Uint8Array): Porta
 
 ## 6. Known unknowns (track as issues)
 
-- **Auth handshake** (Service A) is not fully decoded; current tooling works without it for
-  read/monitor. Confirm whether any portal feature requires it.
+- ~~**Auth handshake** (Service A) is not fully decoded~~ — **RESOLVED.** On legacy firmware
+  (≤1.2.5) no auth is needed; on modern firmware the auth service carries the entire encrypted
+  telemetry stream (see §7). Neither path requires a Mattel secret.
 - **Full NDEF / Mattel car-id schema** (mapping `base64` → human car name/art) is partial.
 - **Exact speed units/calibration** — `× 64` yields "scale mph"; treat as relative until
   calibrated against a known-speed reference.
+
+## 7. Modern firmware (MPID) — encrypted protobuf over the auth service
+
+Portals shipping newer firmware (observed: **1.0.9**) expose **no `…-000c` control service**.
+Discovery shows only the auth (`…-000a`) and data (`…-000b`) services. Car/speed telemetry is
+delivered as an **encrypted Protocol-Buffers stream over the auth service** after a P-256 ECDH key
+exchange. The portal authenticates *itself* (anti-counterfeit); the client only sends an ephemeral
+public key, so the handshake is completable **offline** — no Mattel backend. Full rationale +
+decision record: [ADR-0012](../adr/0012-modern-mpid-protocol-and-transport.md). Reference
+implementation: `python/hwportal/mpid.py` + `python/mpid_monitor.py` (vendored from
+[@mitchcapper](https://github.com/mitchcapper), MIT).
+
+### GATT (auth service, `…-0001-000a`)
+
+| MPID role      | UUID          | Props             | Use                                              |
+| -------------- | ------------- | ----------------- | ------------------------------------------------ |
+| `CHAR_TXRX`    | `…-0002-000a` | indicate, write   | encrypted frames in (indications) / out (writes) |
+| `CHAR_FACTORY` | `…-0003-000a` | read              | 136-byte signed token (portal P-256 pubkey+salt) |
+| `CHAR_SESSION` | `…-0004-000a` | indicate, write   | write `our_pubkey(33) ‖ salt(4)` to start session |
+
+### Handshake (mirrored 1:1 by `apps/mobile/src/ble/mpidBle.ts` and `python/mpid_monitor.py`)
+
+1. Subscribe (indicate) to `CHAR_TXRX`; best-effort subscribe to `CHAR_SESSION`.
+2. Read `CHAR_FACTORY` (136 bytes). Portal compressed pubkey = `token[25:58]`, salt = `token[132:136]`.
+3. Ephemeral P-256 keypair + random 4-byte salt → **ECDH** shared X → derive AES-128-CTR key
+   (100-round AES-CTR KDF, iv `00*9 'mattel' 00`).
+4. Write `CHAR_SESSION = compressed_pubkey(33) ‖ local_salt(4)` (with response).
+5. Each `CHAR_TXRX` indication is a `0x7e`-framed, length-prefixed, CRC-8'd, AES-CTR-encrypted
+   **protobuf** `PortalToApp` message → heartbeats (firmware/battery/mode) + events
+   (car on/off, drive-by with speed + IR gate timings).
+
+### TypeScript port (`@hotwheelsid/protocol`, `src/mpid/`)
+
+`MpidSession` (handshake + framing + RX state machine), `parseMessage` (protobuf), and
+`mpidToPortalEvents` (→ the same `carDetected` / `carRemoved` / `speed` union the legacy parser and
+mock emit, so the store + UI are firmware-agnostic). Crypto via `@noble/curves` (P-256) +
+`@noble/ciphers` (AES-CTR); needs `react-native-get-random-values` on RN (lazy-required on the
+native MPID path). 26 vitest KATs cross-validate byte-for-byte against the Python reference and real
+captured packets.
