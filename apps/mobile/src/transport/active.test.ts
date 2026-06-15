@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { claimActiveTransport, releaseActiveTransport } from "./active";
+import {
+  claimActiveTransport,
+  getActiveTransportControls,
+  releaseActiveTransport,
+} from "./active";
 
 describe("active transport guard", () => {
   it("stops the previously-active transport when a new one claims the slot", () => {
@@ -39,5 +43,21 @@ describe("active transport guard", () => {
     expect(stopB).toHaveBeenCalledTimes(1);
 
     releaseActiveTransport(stopC);
+  });
+
+  it("exposes the active transport's controls, replacing them on hand-off", () => {
+    const stopA = vi.fn();
+    const triggerA = vi.fn();
+    claimActiveTransport(stopA, { triggerPass: triggerA });
+    expect(getActiveTransportControls().triggerPass).toBe(triggerA);
+
+    // A different transport with no controls takes over → controls reset.
+    const stopB = vi.fn();
+    claimActiveTransport(stopB);
+    expect(getActiveTransportControls().triggerPass).toBeUndefined();
+
+    // Releasing the owner clears the slot's controls.
+    releaseActiveTransport(stopB);
+    expect(getActiveTransportControls()).toEqual({});
   });
 });

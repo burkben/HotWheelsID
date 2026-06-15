@@ -99,7 +99,7 @@ export function createMockPortal({
   const start: MockPortal["start"] = () => {
     if (running) return;
     running = true;
-    claimActiveTransport(stop);
+    claimActiveTransport(stop, { triggerPass });
 
     setConnection("connecting");
     later(() => {

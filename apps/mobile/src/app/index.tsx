@@ -226,6 +226,18 @@ export default function SpeedometerScreen() {
 
       <RecentPasses passes={passes} bestMph={bestMph} />
 
+      <Link href="/race" asChild>
+        <Pressable
+          style={({ pressed }) => [
+            styles.button,
+            styles.raceLink,
+            pressed && styles.buttonPressed,
+          ]}
+        >
+          <Text style={styles.buttonText}>🏁 Race mode →</Text>
+        </Pressable>
+      </Link>
+
       <Link href="/live" asChild>
         <Pressable
           style={({ pressed }) => [
@@ -360,6 +372,12 @@ const styles = StyleSheet.create({
     maxWidth: 420,
     backgroundColor: colors.surface,
     borderColor: colors.accentBlue,
+  },
+  raceLink: {
+    width: '100%',
+    maxWidth: 420,
+    backgroundColor: colors.surface,
+    borderColor: colors.accent,
   },
   lockedBanner: {
     width: '100%',
