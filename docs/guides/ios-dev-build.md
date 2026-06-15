@@ -35,8 +35,11 @@ signing. No Expo or paid Apple account required.
 ### Prerequisites
 
 - macOS with **Xcode** + Command Line Tools (`xcode-select --install`).
-- A free **Apple ID** (any Apple account).
-- An **iPhone** connected by USB cable for the first build (trust the computer when prompted).
+- **CocoaPods** for the native dependency install: `brew install cocoapods`
+  (one-time; the build's `pod install` step needs it).
+- A free **Apple ID** (any Apple account) — *device only; not needed for the Simulator*.
+- An **iPhone** connected by USB cable for the first build (trust the computer when
+  prompted) — *device only*.
 - Dependencies installed once from the repo root: `npm install`.
 
 ### Build & run
@@ -53,6 +56,32 @@ Metro:
 ```bash
 npx expo start --dev-client    # open the installed HotWheelsID app, not Expo Go
 ```
+
+### Run on the iOS Simulator (no device, no Apple account)
+
+The Simulator is the fastest way to see the UI — **no iPhone, no Apple ID, and no code
+signing**. It's also the cleanest way around the Expo Go "needs latest version" problem,
+because `run:ios` installs a real dev client, not Expo Go.
+
+```bash
+cd apps/mobile
+npm run ios          # alias for `expo run:ios` — builds, boots a Simulator, installs, runs
+```
+
+To target a specific simulator, pass its name or UDID:
+
+```bash
+npx expo run:ios --device "iPhone 17 Pro"
+# list installed simulators with: xcrun simctl list devices available
+```
+
+The first build runs prebuild → `pod install` → an Xcode compile (a few minutes), then boots
+the Simulator, installs the app, and starts Metro. After that, day-to-day you only need
+`npx expo start --dev-client` and press **`i`**. JS/UI edits hot-reload with no rebuild.
+
+> **Simulator limits:** no haptics (no Taptic hardware — `expo-haptics` is a no-op, same as
+> web) and **no Bluetooth radio**, so Phase 1 BLE only works on a physical device. The
+> Simulator is for UI/animation work (Phase 2 gauge, flame FX, reduce-motion).
 
 ### Signing notes
 
@@ -143,8 +172,9 @@ an iOS runtime in **Xcode → Settings → Components** first). Then `npx expo s
 - **Today, on your iPhone, for free:** Path A — `npx expo run:ios --device`.
 - **No Mac toolchain / want TestFlight, have the paid Apple account:** Path B development or
   preview profile.
-- **No device and no Apple account:** Path B `simulator` profile, or just use the web
-  preview (`npx expo start --web`) for UI work.
+- **No device and no Apple account:** Path A on the **iOS Simulator** (`npm run ios`) — fast
+  and free for all UI work. The Path B `simulator` profile (cloud build) or the web preview
+  (`npx expo start --web`) are alternatives.
 
 Bluetooth (Phase 1) only works in a real dev build on a physical device — the Simulator and
 web have no BLE radio.
