@@ -86,124 +86,6 @@ Flip the home screen to **Demo**, or run `npx expo start --web`, to explore the 
 passes. The full runbook — EAS cloud builds, the Simulator profile, and signing notes — is in
 **[docs/guides/ios-dev-build.md](docs/guides/ios-dev-build.md)**.
 
----
-
-## What It Does
-
-> 🖥️ This section and everything below it documents the **Python terminal tools** (the reference
-> implementation). For the iPhone app, jump to [📱 iOS App](#ios-app) above.
-
-- **Detect cars** - Reads NFC UID and serial number when you place a car on the portal
-- **Track speed** - Measures speed as cars pass through (in "scale mph")
-- **Count laps** - Tracks lap times and calculates best/average times
-- **Live dashboard** - Beautiful terminal UI with real-time stats
-- **Multi-car support** - Tracks stats for each car individually
-
-## Live Dashboard
-
-```
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃            🏎️  HOT WHEELS PORTAL DASHBOARD  🏎️                ┃
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-┏━━━━━━━ 🚗 Current Car ━━━━━━━┓┏━━━━━━━ 📊 Recent Passes ━━━━━━┓
-┃ NFC UID:  4A:8F:52:88:5D:81  ┃┃ #    Time     Speed    Lap    ┃
-┃ Serial:   1102032557         ┃┃ 12   12:01:03  94.5 mph  4.2s ┃
-┃ Laps:     5                  ┃┃ 11   12:00:58  50.5 mph  5.1s ┃
-┃                              ┃┃ 10   12:00:52  46.9 mph  4.8s ┃
-┃ ████████████████░░░░ 94.5 mph┃┃ 9    12:00:45  88.2 mph  3.9s ┃
-┃ Best Speed: 94.5 mph         ┃┃ 8    12:00:38  72.1 mph  4.5s ┃
-┃ Best Lap:   3.9s             ┃┃                               ┃
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Status: Pass #12  │  Session: 5m 23s  │  Cars Seen: 3        ┃
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-```
-
-## Quick Start
-
-> **Heads up — this is now a monorepo.** The Python reference tools live in
-> [`python/`](python/), the new React Native + Expo app in
-> [`apps/mobile/`](apps/mobile/), and the shared protocol port in
-> [`packages/protocol/`](packages/protocol/). For the JS/TypeScript side see
-> [Monorepo & app development](#monorepo--app-development) below.
-
-```bash
-# Clone the repo
-git clone https://github.com/burkben/HotWheelsID.git
-cd HotWheelsID/python
-
-# Set up Python environment
-python3 -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-
-# Run the dashboard
-python dashboard.py
-```
-
-## Requirements
-
-- **Python 3.10+**
-- **macOS, Windows, or Linux** with Bluetooth Low Energy support
-- **Hot Wheels id Race Portal** (Model FXB53)
-- **Hot Wheels id cars** (with NFC chips)
-
-## Available Tools
-
-> Run these from the [`python/`](python/) directory, with the virtualenv from
-> [Quick Start](#quick-start) activated.
-
-| Command | Description |
-|---------|-------------|
-| `python dashboard.py` | Live dashboard with speed & lap tracking |
-| `python race_mode.py` | 🏁 **Lap Race Game** - compete for best times! |
-| `python portal_app.py` | Detailed event monitor with car data |
-| `python scanner.py` | Scan for BLE devices |
-| `python monitor.py` | Raw event monitor for debugging |
-| `python diag_portal.py` | Diagnose a portal's GATT table — verdict on whether the **control service** (car/speed) is exposed or **auth-gated** by firmware |
-| `python mpid_monitor.py` | **Modern-firmware portals** (no `…-000c` service): completes the ECDH handshake and streams live decoded car/speed/heartbeat events |
-| `python auth_probe.py` | Low-level Service A probe (dumps the factory token, listens for indications) |
-
-> **Which monitor do I run?** If `diag_portal.py` says the control service is
-> **ABSENT** (and the legacy `monitor.py` shows `…-000c … not found` + no
-> events), your portal runs the **modern MPID protocol** — use
-> **`mpid_monitor.py`**, which performs the key-exchange handshake and decodes the
-> encrypted Protocol-Buffers telemetry stream. See
-> [PROTOCOL_NEW.md](python/PROTOCOL_NEW.md).
-
-### 🏁 Lap Race Mode
-
-A competitive game mode where players race to complete laps:
-
-- Select lap count (5, 10, 15, or 20 laps)
-- 3-2-1 countdown to start
-- Real-time lap tracking with best/worst comparison
-- Results screen with full breakdown
-- **Leaderboard** to compete with friends!
-
-## Using as a Library
-
-> Run from the [`python/`](python/) directory, where the `hwportal/` package lives.
-
-```python
-import asyncio
-from hwportal import HotWheelsPortal
-
-async def main():
-    async with HotWheelsPortal() as portal:
-        info = await portal.get_info()
-        print(f"Firmware: {info.firmware_version}")
-        print(f"Serial: {info.serial_number}")
-
-        # Get notified of events
-        portal.on_event(lambda e: print(f"Event: {e}"))
-        await portal.start_monitoring()
-
-        await asyncio.sleep(60)
-
-asyncio.run(main())
-```
-
 ## Protocol Documentation
 
 We've fully reverse-engineered the BLE protocol! See [PROTOCOL.md](PROTOCOL.md) for details.
@@ -332,14 +214,9 @@ We'd love your help! Here's how:
 2. **Know BLE/NFC?** Help decode remaining protocol mysteries
 3. **Want features?** Check the issues and submit PRs
 
-```bash
-# Run the monitor and capture events
-python monitor.py > my_events.log
-```
-
 ## Why This Exists
 
-Mattel discontinued the Hot Wheels id app on January 1, 2024, leaving thousands of Race Portals as paperweights. This project aims to restore functionality through reverse engineering, letting Hot Wheels fans continue to enjoy their hardware.
+Mattel discontinued the Hot Wheels id app on January 1, 2024, leaving thousands of Race Portals as paperweights. This project aims to restore functionality through reverse engineering, letting Hot Wheels fans continue to enjoy their hardware.  This fork is because my children wanted an ipad app.  Also the Portal firmware is different on our device and required significant work to decrypt beyond the original project.
 
 ## Support the Project
 
@@ -347,8 +224,6 @@ If this project helped bring your Hot Wheels Portal back to life, consider suppo
 
 - ⭐ **Star this repository**
 - 🐛 **Report issues** and suggest features
-
-[![Sponsor](https://img.shields.io/github/sponsors/mtxmiller?style=for-the-badge&logo=github&label=Sponsor)](https://github.com/sponsors/mtxmiller)
 
 ### PayPal Donations
 
