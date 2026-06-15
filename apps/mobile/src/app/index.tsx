@@ -3,18 +3,28 @@ import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-n
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Link } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import * as Device from 'expo-device';
 
 import { PORTAL_NAME } from '@hotwheelsid/protocol';
 
 import { RecentPasses } from '@/components/RecentPasses';
 import { Speedometer } from '@/components/gauge/Speedometer';
 import { StatusPill } from '@/components/StatusPill';
-import { createMockPortal, type MockPortal } from '@/mock/mockPortal';
+import { createMockPortal } from '@/mock/mockPortal';
+import { createBlePortal, isBleAvailable } from '@/ble/blePortal';
+import type { BlePhase } from '@/ble/types';
 import { usePortalStore } from '@/store/portalStore';
 import { colors, fontSize, fontWeight, radius, spacing, speedGauge } from '@/theme/tokens';
 
 /** How long the needle holds a pass before easing back toward zero. */
 const NEEDLE_HOLD_MS = 1300;
+
+/** Minimal transport shape the home screen drives (mock adds `triggerPass`). */
+interface HomeTransport {
+  start: () => void | Promise<void>;
+  stop: () => void | Promise<void>;
+  triggerPass?: (scaleMph?: number) => void;
+}
 
 export default function SpeedometerScreen() {
   const insets = useSafeAreaInsets();
@@ -26,12 +36,18 @@ export default function SpeedometerScreen() {
   const bestMph = usePortalStore((s) => s.bestMph);
   const passes = usePortalStore((s) => s.passes);
 
-  // The mock portal is the Phase 2a stand-in for the BLE transport. It reuses
-  // the store's own actions so the swap to real BLE (Phase 1) is transparent.
-  const mockRef = useRef<MockPortal | null>(null);
-  if (mockRef.current === null) {
+  // On a real iOS/Android device, drive the speedometer from the *actual* portal
+  // over BLE. On web and the iOS Simulator (no radio) fall back to the mock so
+  // the demo still works. This is why the home screen no longer fabricates races
+  // when nothing is connected — it reflects real hardware on a real device.
+  const useBle = isBleAvailable() && Device.isDevice;
+  const [blePhase, setBlePhase] = useState<BlePhase | null>(null);
+  const transportRef = useRef<HomeTransport | null>(null);
+  if (transportRef.current === null) {
     const { dispatch, setConnection } = usePortalStore.getState();
-    mockRef.current = createMockPortal({ dispatch, setConnection });
+    transportRef.current = useBle
+      ? createBlePortal({ dispatch, setConnection, onPhase: setBlePhase })
+      : createMockPortal({ dispatch, setConnection });
   }
 
   // Needle springs to each pass, then eases back to rest; the digital readout
@@ -67,7 +83,7 @@ export default function SpeedometerScreen() {
   useEffect(() => {
     return () => {
       if (holdTimer.current) clearTimeout(holdTimer.current);
-      mockRef.current?.stop();
+      transportRef.current?.stop();
     };
   }, []);
 
@@ -76,10 +92,10 @@ export default function SpeedometerScreen() {
 
   const toggleConnection = () => {
     if (isConnected || isBusy) {
-      mockRef.current?.stop();
+      transportRef.current?.stop();
       setNeedleValue(0);
     } else {
-      mockRef.current?.start();
+      transportRef.current?.start();
     }
   };
 
@@ -94,10 +110,23 @@ export default function SpeedometerScreen() {
       <View style={styles.header}>
         <View>
           <Text style={styles.title}>HotWheelsID</Text>
-          <Text style={styles.subtitle}>Portal “{PORTAL_NAME}” · demo mode</Text>
+          <Text style={styles.subtitle}>
+            Portal “{PORTAL_NAME}” · {useBle ? 'live BLE' : 'demo mode'}
+          </Text>
         </View>
         <StatusPill connection={connection} controlStatus={controlStatus} />
       </View>
+
+      {useBle && blePhase === 'locked' && (
+        <View style={styles.lockedBanner}>
+          <Text style={styles.lockedTitle}>Portal firmware locked</Text>
+          <Text style={styles.lockedBody}>
+            This portal hides its car &amp; speed data behind the Hot Wheels id auth handshake,
+            which isn’t publicly supported. Connecting succeeds but no events stream. Open the raw
+            event log for the full diagnosis.
+          </Text>
+        </View>
+      )}
 
       <Speedometer
         value={needleValue}
@@ -128,18 +157,20 @@ export default function SpeedometerScreen() {
             {isConnected ? 'Disconnect' : isBusy ? 'Connecting…' : 'Connect portal'}
           </Text>
         </Pressable>
-        <Pressable
-          onPress={() => mockRef.current?.triggerPass()}
-          disabled={!isConnected}
-          style={({ pressed }) => [
-            styles.button,
-            styles.buttonGhost,
-            !isConnected && styles.buttonDisabled,
-            pressed && styles.buttonPressed,
-          ]}
-        >
-          <Text style={styles.buttonText}>Trigger pass</Text>
-        </Pressable>
+        {!useBle && (
+          <Pressable
+            onPress={() => transportRef.current?.triggerPass?.()}
+            disabled={!isConnected}
+            style={({ pressed }) => [
+              styles.button,
+              styles.buttonGhost,
+              !isConnected && styles.buttonDisabled,
+              pressed && styles.buttonPressed,
+            ]}
+          >
+            <Text style={styles.buttonText}>Trigger pass</Text>
+          </Pressable>
+        )}
       </View>
 
       <RecentPasses passes={passes} bestMph={bestMph} />
@@ -152,14 +183,16 @@ export default function SpeedometerScreen() {
             pressed && styles.buttonPressed,
           ]}
         >
-          <Text style={styles.buttonText}>Open live portal (real BLE) →</Text>
+          <Text style={styles.buttonText}>
+            {useBle ? 'Open raw event log →' : 'Open live portal (real BLE) →'}
+          </Text>
         </Pressable>
       </Link>
 
       <Text style={styles.note}>
-        This screen is a demo: flames + haptics run on mocked portal events decoded by
-        @hotwheelsid/protocol. Tap “Live portal” to connect a real Hot Wheels id portal over
-        Bluetooth (needs a custom dev build on a physical iPhone).
+        {useBle
+          ? 'Tap “Connect portal”, then roll a car across your Hot Wheels id portal to log real passes over Bluetooth. “Open raw event log” shows every decoded BLE event.'
+          : 'This screen is a demo: flames + haptics run on mocked portal events decoded by @hotwheelsid/protocol. Run a dev build on a physical iPhone to connect a real portal over Bluetooth.'}
       </Text>
     </ScrollView>
   );
@@ -274,6 +307,26 @@ const styles = StyleSheet.create({
     maxWidth: 420,
     backgroundColor: colors.surface,
     borderColor: colors.accentBlue,
+  },
+  lockedBanner: {
+    width: '100%',
+    maxWidth: 420,
+    backgroundColor: colors.surface,
+    borderColor: colors.danger,
+    borderWidth: 1,
+    borderRadius: radius.md,
+    padding: spacing(4),
+    gap: spacing(2),
+  },
+  lockedTitle: {
+    color: colors.textPrimary,
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.bold,
+  },
+  lockedBody: {
+    color: colors.textSecondary,
+    fontSize: fontSize.sm,
+    lineHeight: 19,
   },
   buttonDisabled: {
     opacity: 0.4,
