@@ -32,6 +32,7 @@ export type BlePhase =
   | "scanning"
   | "connecting"
   | "discovering"
+  | "authenticating"
   | "connected"
   | "locked"
   | "reconnecting"

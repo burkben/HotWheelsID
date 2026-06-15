@@ -40,6 +40,7 @@ const PHASE_LABEL: Record<BlePhase, string> = {
   scanning: "Scanning…",
   connecting: "Connecting…",
   discovering: "Discovering…",
+  authenticating: "Authenticating…",
   connected: "Connected",
   locked: "Portal locked",
   reconnecting: "Reconnecting…",
@@ -53,6 +54,7 @@ function phaseColor(phase: BlePhase): string {
     case "scanning":
     case "connecting":
     case "discovering":
+    case "authenticating":
     case "reconnecting":
       return colors.warn;
     case "poweredOff":
@@ -157,8 +159,8 @@ export default function LiveScreen() {
       >
         <Text style={styles.title}>Live portal</Text>
         <Text style={styles.subtitle}>
-          Real Bluetooth · scans for “{PORTAL_NAME}”, subscribes to the control service, and logs
-          every decoded event.
+          Real Bluetooth · scans for “{PORTAL_NAME}”, connects, and streams every decoded event.
+          Modern firmware is unlocked automatically via the MPID handshake (P-256 ECDH).
         </Text>
 
         {!bleReady && (
@@ -176,13 +178,12 @@ export default function LiveScreen() {
 
         {phase === "locked" && (
           <View style={styles.noticeError}>
-            <Text style={styles.noticeTitle}>Portal firmware locked</Text>
+            <Text style={styles.noticeTitle}>Portal firmware unsupported</Text>
             <Text style={styles.noticeBody}>
-              This portal connected, but it hides its control service — car detection, serial, and
-              speed — behind the Hot Wheels id authentication handshake. That handshake was brokered
-              by Mattel’s now-discontinued app/servers and isn’t publicly supported, so no live
-              events are available from this unit. The log below lists the services it did expose
-              (only Auth + Data). Verified independently with python/diag_portal.py on desktop.
+              This portal connected, but it exposes neither the legacy control service nor a usable
+              MPID auth handshake, so no live events are available from this unit. The log below
+              lists the services it did expose. Verified independently with python/diag_portal.py on
+              desktop.
             </Text>
           </View>
         )}

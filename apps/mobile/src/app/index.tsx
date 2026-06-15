@@ -164,11 +164,11 @@ export default function SpeedometerScreen() {
 
       {useBle && blePhase === 'locked' && (
         <View style={styles.lockedBanner}>
-          <Text style={styles.lockedTitle}>Portal firmware locked</Text>
+          <Text style={styles.lockedTitle}>Portal firmware unsupported</Text>
           <Text style={styles.lockedBody}>
-            This portal hides its car &amp; speed data behind the Hot Wheels id auth handshake,
-            which isn’t publicly supported. Connecting succeeds but no events stream. Open the raw
-            event log for the full diagnosis, or switch to demo mode to explore the full experience.
+            This portal exposes neither the legacy control service nor a usable MPID auth
+            handshake, so no car &amp; speed events stream from this unit. Open the raw event log
+            for the full diagnosis, or switch to demo mode to explore the full experience.
           </Text>
           <Pressable
             onPress={() => switchMode(true)}

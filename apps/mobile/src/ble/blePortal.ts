@@ -42,6 +42,7 @@ import type {
   Subscription,
 } from "react-native-ble-plx";
 import { claimActiveTransport, releaseActiveTransport } from "../transport/active";
+import { findMpidChars, runMpidSession } from "./mpidBle";
 import type { BleLogEntry, BleLogLevel, BlePhase, BlePortalOptions, PortalTransport } from "./types";
 
 type BlePlxModule = typeof import("react-native-ble-plx");
@@ -142,6 +143,15 @@ export function createBlePortal(options: BlePortalOptions): PortalTransport {
     }
   };
 
+  /** Promote a successful subscription (legacy or MPID) to the connected state. */
+  const markConnected = (message: string) => {
+    connecting = false;
+    reconnectAttempts = 0;
+    phase("connected");
+    setConnection("connected");
+    log("info", message);
+  };
+
   const handleCharacteristic = (
     knownUuid: string,
     error: BleError | null,
@@ -240,6 +250,10 @@ export function createBlePortal(options: BlePortalOptions): PortalTransport {
       );
       const services = await manager.servicesForDevice(target.id);
       if (!started) return;
+      // Every discovered characteristic, keyed by lowercased UUID — used both to
+      // subscribe to the legacy notify set and, failing that, to locate the MPID
+      // auth-service characteristics for the modern handshake.
+      const discoveredByLower = new Map<string, Characteristic>();
       let subscribed = 0;
       for (const service of services) {
         let chars: Characteristic[];
@@ -251,6 +265,7 @@ export function createBlePortal(options: BlePortalOptions): PortalTransport {
         if (!started) return;
         for (const ch of chars) {
           const lower = ch.uuid.toLowerCase();
+          discoveredByLower.set(lower, ch);
           const flags =
             `${ch.isNotifiable ? "N" : ""}${ch.isIndicatable ? "I" : ""}` +
             `${ch.isReadable ? "R" : ""}` || "-";
@@ -265,33 +280,67 @@ export function createBlePortal(options: BlePortalOptions): PortalTransport {
           subscribed += 1;
         }
       }
-      if (subscribed === 0) {
-        // Gated firmware: discovery succeeded, but the portal exposes NO
-        // control-service notify characteristics — Service C (car detection,
-        // speed, serial) is hidden behind the Hot Wheels id auth handshake.
-        // `python/diag_portal.py` proves a fresh desktop central (bleak) sees
-        // only Services A (auth) + B (data) too, so this is the portal/firmware,
-        // not an iOS cache. There is nothing to stream and auto-reconnect would
-        // just re-lock in a loop — surface a clear "locked" phase and drop the
-        // link so the single-connection portal is freed.
-        log("error", "portal connected, but exposes no control service (no car/speed characteristics)");
-        log(
-          "error",
-          "this firmware locks the control service behind the auth handshake — unsupported (see python/diag_portal.py)",
-        );
-        await stop();
-        phase("locked");
+
+      if (subscribed > 0) {
+        // Legacy firmware (≤ ~1.2.5): the control service exposed its notify
+        // characteristics directly, no auth required.
+        log("info", `subscribed to ${subscribed} characteristic(s)`);
+        void readFirmware(target.id);
+        markConnected("connected — place a car on the portal");
         return;
       }
 
-      log("info", `subscribed to ${subscribed} characteristic(s)`);
-      void readFirmware(target.id);
+      // No legacy control characteristics. Modern firmware delivers telemetry as
+      // an encrypted protobuf stream over the auth service after a P-256 ECDH
+      // handshake (see mpidBle.ts / ADR-0012). If the three MPID characteristics
+      // are present, run that handshake instead of giving up.
+      const mpidChars = findMpidChars(discoveredByLower);
+      if (mpidChars) {
+        phase("authenticating");
+        log("info", "modern firmware detected — starting MPID handshake…");
+        try {
+          const subs = await runMpidSession(mpidChars, {
+            dispatch,
+            log,
+            isActive: () => started,
+          });
+          if (!started) {
+            for (const sub of subs) {
+              try {
+                sub.remove();
+              } catch {
+                /* already removed */
+              }
+            }
+            return;
+          }
+          monitorSubs.push(...subs);
+          markConnected("connected — place a car on the portal");
+          return;
+        } catch (err) {
+          // A stop()/hand-off (which sets started=false and cancels the
+          // connection) during the handshake's read/write round-trip rejects
+          // here — that is not a locked portal, so bail before the locked path.
+          if (!started) return;
+          log("error", `MPID handshake failed: ${(err as Error).message}`);
+          // Fall through to the locked path below.
+        }
+      }
 
-      connecting = false;
-      reconnectAttempts = 0;
-      phase("connected");
-      setConnection("connected");
-      log("info", "connected — place a car on the portal");
+      // Gated firmware: discovery succeeded, but the portal exposes neither the
+      // legacy control-service notify characteristics nor a usable MPID auth
+      // service. `python/diag_portal.py` proves a fresh desktop central (bleak)
+      // sees the same table, so this is the portal/firmware, not an iOS cache.
+      // There is nothing to stream and auto-reconnect would just re-lock in a
+      // loop — surface a clear "locked" phase and drop the link so the
+      // single-connection portal is freed.
+      log("error", "portal connected, but exposes no usable telemetry service");
+      log(
+        "error",
+        "no legacy control service and no MPID auth handshake available — unsupported (see python/diag_portal.py)",
+      );
+      await stop();
+      phase("locked");
     } catch (err) {
       connecting = false;
       log("error", `connect failed: ${(err as Error).message}`);
