@@ -163,4 +163,54 @@ assert _pb_first(c, 1) == int(CommandType.SET_LED_COLOR)
 assert _pb_first(c, 4) == bytes([255, 0, 128])
 print("command encoding OK (request_device_info, set_led_color)")
 
+# 8) HotWheelsPortal MPID -> legacy synthesis (the shared auto-detect transport).
+#    Verifies dashboard.py / race_mode.py work on modern firmware unchanged: the
+#    portal feeds decoded MPID messages through the same (char, data) callback the
+#    legacy notify path uses, and synthesizes a per-car serial from the mattel_id.
+from hwportal.portal import HotWheelsPortal, PortalInfo  # noqa: E402
+from hwportal.constants import CHAR_SERIAL_NUMBER  # noqa: E402
+
+
+def _emit_collect(msg):
+    p = HotWheelsPortal()
+    p.info = PortalInfo(address="offline-test")
+    out = []
+    p.on_event(lambda ev: out.append((ev.characteristic, ev.data)))
+    p._emit_mpid_message(msg)
+    return p, out
+
+
+# Heartbeat refreshes device info (firmware) and emits no car/speed events.
+p, out = _emit_collect(parse_message(HEARTBEAT))
+assert out == [], out
+assert p.info.firmware_version == "1.0.9", p.info.firmware_version
+print("portal heartbeat OK: firmware -> %s, no spurious events" % p.info.firmware_version)
+
+# Car on portal: legacy events in order + synthesized per-car serial (mattel_id).
+m = parse_message(CAR)
+p, out = _emit_collect(m)
+assert out[: len(to_legacy_events(m))] == to_legacy_events(m), out
+assert out[0] == (CHAR_EVENT_2, bytes.fromhex("042a7ea2f16280")), out[0]
+assert out[-1] == (CHAR_SERIAL_NUMBER, b"AQBBrl5bAAAGAF0TKZcEKn6i8WKA"), out[-1]
+print("portal CAR synthesis OK: detect -> ndef -> serial(%s)" % out[-1][1].decode())
+
+# Car removed: a single empty CHAR_EVENT_2 removal signal, no serial.
+m = parse_message(PRESENT)
+p, out = _emit_collect(m)
+assert out == [(CHAR_EVENT_2, b"")], out
+print("portal CAR-OFF synthesis OK: EVENT_2 removal signal")
+
+# Drive-by: legacy events incl. EVENT_3 speed. This pass reuses the car already
+# identified on CAR_ON_PORTAL (the drive-by carries no NDEF), so no serial is
+# re-synthesized — attribution falls back to the consumer's current car.
+m = parse_message(SPEED)
+p, out = _emit_collect(m)
+assert out == to_legacy_events(m), out
+chars = [c for c, _ in out]
+assert CHAR_EVENT_2 in chars and CHAR_EVENT_3 in chars, chars
+assert CHAR_SERIAL_NUMBER not in chars, chars  # identity already known from CAR_ON
+mph = decode_speed_mph(dict(out)[CHAR_EVENT_3])
+assert abs(mph - 0.595039 * 64) < 0.05, mph
+print("portal SPEED synthesis OK: %.2f scale-mph via EVENT_3 (no re-serial)" % mph)
+
 print("\nALL OFFLINE TESTS PASSED")
