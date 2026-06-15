@@ -9,19 +9,83 @@
 An open-source tool to connect to the Hot Wheels id Race Portal after Mattel discontinued the official app on January 1, 2024. We reverse-engineered the Bluetooth protocol so you can track speeds, lap times, and build your car collection again.
 
 > **HotWheelsID** is a fork of [`mtxmiller/hotwheels-portal`](https://github.com/mtxmiller/hotwheels-portal)
-> evolving the project toward a **polished, cross-platform app that is installable on iOS**
-> (React Native + Expo), while keeping the original Python tools as a reference implementation.
+> that has grown into **two ways to bring your portal back to life**:
 >
-> 📐 **Planning the new app?** Start here:
+> - 📱 **A native iOS app** (React Native + Expo) — a polished speedometer, a lap-timing
+>   **Race Mode**, and a live BLE event log, running on a real iPhone. **[Jump to the iOS app ↓](#ios-app)**
+> - 🖥️ **The original Python terminal tools** (the reference implementation) — live dashboard,
+>   lap race game, and the reverse-engineering toolkit. **[Jump to the terminal tools ↓](#what-it-does)**
+>
+> 📐 **Building on it?** See the
 > [Architecture Overview](docs/architecture/README.md) ·
 > [Decision Records (ADRs)](docs/adr/) ·
 > [Roadmap](docs/ROADMAP.md) ·
-> [BLE & Protocol port](docs/architecture/ble-and-protocol.md)
->
-> The sections below document the **current Python tools** (the reference implementation).
+> [BLE & Protocol port](docs/architecture/ble-and-protocol.md).
 > The reverse-engineered BLE protocol is in [PROTOCOL.md](PROTOCOL.md).
 
+<a id="ios-app"></a>
+
+## 📱 iOS App
+
+The Hot Wheels id portal, reborn as a native iPhone app. Connect over Bluetooth and watch real
+speeds fly across a custom speedometer, then jump into **Race Mode** to time laps and battle for
+the top of the leaderboard.
+
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <img src="docs/screenshots/ios-home.png" alt="Live speedometer reading a real portal pass over Bluetooth" width="280"><br>
+      <strong>Live speedometer</strong><br>
+      Real BLE passes drive the needle, with best speed, pass count, and a recent-pass log.
+    </td>
+    <td align="center" width="50%">
+      <img src="docs/screenshots/ios-race.png" alt="Race Mode results with per-lap times and a session leaderboard" width="280"><br>
+      <strong>🏁 Race Mode</strong><br>
+      Per-lap splits, best / average / worst, and a session leaderboard.
+    </td>
+  </tr>
+</table>
+
+<sub>Running as a development build on a physical iPhone.</sub>
+
+**Three screens:**
+
+- **Speedometer (home)** — Connect to a real portal over Bluetooth and the gauge tracks every
+  pass live in scale mph, keeping your best speed and recent passes. A **Live BLE / Demo** toggle
+  shows off the full experience with simulated passes when no portal is around (great for the
+  Simulator, the web preview, or a firmware-locked portal).
+- **🏁 Race Mode** — Pick a race length (5 / 10 / 15 / 20 laps), enter a player name, and a 3·2·1
+  countdown arms the race. Each car pass closes a lap; you get a live lap clock, last/best lap,
+  then a full results breakdown and a session leaderboard. It's a faithful port of the terminal
+  [`race_mode.py`](python/race_mode.py).
+- **Live portal** — A raw, decoded BLE event log (parity with the Python `monitor.py`) for
+  proving hardware and debugging the protocol.
+
+Under the hood it speaks **both portal firmwares** — the legacy open control service and the
+modern, encrypted **MPID** protocol (ECDH key exchange) — through the shared
+[`@hotwheelsid/protocol`](packages/protocol/) TypeScript port.
+
+### Run it on your iPhone
+
+Expo Go can't load this app (it ships a native BLE module), so you need a **development build**.
+On a Mac with Xcode the fastest, no-cost path is:
+
+```bash
+cd apps/mobile
+npx expo run:ios --device     # local dev build on a free Apple ID, installs on the phone
+```
+
+Then tap **Connect portal**, power on the portal, and roll a car through the gate. No hardware?
+Flip the home screen to **Demo**, or run `npx expo start --web`, to explore the UI with simulated
+passes. The full runbook — EAS cloud builds, the Simulator profile, and signing notes — is in
+**[docs/guides/ios-dev-build.md](docs/guides/ios-dev-build.md)**.
+
+---
+
 ## What It Does
+
+> 🖥️ This section and everything below it documents the **Python terminal tools** (the reference
+> implementation). For the iPhone app, jump to [📱 iOS App](#ios-app) above.
 
 - **Detect cars** - Reads NFC UID and serial number when you place a car on the portal
 - **Track speed** - Measures speed as cars pass through (in "scale mph")
@@ -173,7 +237,7 @@ depends on its firmware:
 ```
 HotWheelsID/
 ├── apps/
-│   └── mobile/             # Expo app (React Native, TypeScript, Expo Router) — iOS-first
+│   └── mobile/             # iOS app (Expo/React Native): speedometer, Race Mode, live BLE log
 ├── packages/
 │   └── protocol/           # @hotwheelsid/protocol — shared TS BLE protocol port (+ tests)
 ├── python/                 # Original Python reference tools (documented above)
@@ -216,15 +280,10 @@ vectors in [PROTOCOL.md](PROTOCOL.md).
 
 ### Mobile app
 
-[`apps/mobile`](apps/mobile/) is an Expo (Expo Router) app with two screens:
-
-- **Hero speedometer** (home) — driven by mocked portal events that are decoded by the real
-  `@hotwheelsid/protocol` pipeline, so it demos with zero hardware (web or simulator).
-- **Live portal** — real Bluetooth. It scans for the portal (`HWiD`), subscribes to the
-  control service, and streams a raw, decoded event log (parity with `python/monitor.py`).
-  Requires a development build on a **physical iPhone**; it shows a clear notice on web/the
-  simulator (no BLE radio there). See
-  [ADR-0011](docs/adr/0011-phase-1-ble-transport.md).
+[`apps/mobile`](apps/mobile/) is the Expo (Expo Router) app — see **[📱 iOS App](#ios-app)**
+above for the screen-by-screen tour and how to run it on a device. It has three screens
+(`index` speedometer, `race` Race Mode, `live` raw event log) and decodes both portal firmwares
+through [`@hotwheelsid/protocol`](packages/protocol/).
 
 **Preview in a browser** (no device or Xcode needed — fastest way to see the UI):
 
@@ -232,19 +291,13 @@ vectors in [PROTOCOL.md](PROTOCOL.md).
 cd apps/mobile && npx expo start --web
 ```
 
-**Run on your iPhone.** Expo Go cannot load this app (newer SDK + native BLE module), so you
-need a **development build**. The fastest, no-cost option on a Mac with Xcode is:
-
-```bash
-cd apps/mobile
-npx expo run:ios --device     # local dev build, free Apple ID, installs on the phone
-```
-
-Then open **Live portal → Scan & connect**, power on the portal, and roll a car through the
-gate to see live detection + speed. For the EAS cloud-build path, the iOS Simulator profile,
-signing/account caveats, and troubleshooting, see the full runbook:
+The home screen auto-runs simulated passes in demo mode, so the gauge animates with zero
+hardware. Real Bluetooth needs a development build on a **physical iPhone** (`npx expo run:ios
+--device`); the **Live portal** screen shows a clear notice on web/the Simulator (no BLE radio
+there). The full runbook — EAS cloud builds, the Simulator profile, and signing notes — is in
 **[docs/guides/ios-dev-build.md](docs/guides/ios-dev-build.md)** (EAS profiles live in
-[`apps/mobile/eas.json`](apps/mobile/eas.json)).
+[`apps/mobile/eas.json`](apps/mobile/eas.json)). See also
+[ADR-0011](docs/adr/0011-phase-1-ble-transport.md).
 
 ## Roadmap
 
@@ -261,8 +314,9 @@ The full, phased plan toward the attractive UI and the installable iOS app lives
 - [ ] Achievement system
 - [ ] Car name lookup from Mattel ID
 
-The next chapter (cross-platform app, polished UI, iOS via TestFlight) is tracked in the
-[Roadmap](docs/ROADMAP.md) and [ADRs](docs/adr/).
+The iOS app is **already running on-device** — a live BLE speedometer, **Race Mode**, and a raw
+event log (see [📱 iOS App](#ios-app)). The remaining polish and TestFlight distribution are
+tracked in the [Roadmap](docs/ROADMAP.md) and [ADRs](docs/adr/).
 
 ## Contributing
 
