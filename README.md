@@ -177,10 +177,15 @@ vectors in [PROTOCOL.md](PROTOCOL.md).
 
 ### Mobile app
 
-[`apps/mobile`](apps/mobile/) is an Expo (Expo Router) app. It currently ships the
-**hero speedometer** screen driven by mocked portal events that are decoded by the real
-`@hotwheelsid/protocol` pipeline; real BLE arrives in a later phase (see
-[docs/ROADMAP.md](docs/ROADMAP.md)).
+[`apps/mobile`](apps/mobile/) is an Expo (Expo Router) app with two screens:
+
+- **Hero speedometer** (home) — driven by mocked portal events that are decoded by the real
+  `@hotwheelsid/protocol` pipeline, so it demos with zero hardware (web or simulator).
+- **Live portal** — real Bluetooth. It scans for the portal (`HWiD`), subscribes to the
+  control service, and streams a raw, decoded event log (parity with `python/monitor.py`).
+  Requires a development build on a **physical iPhone**; it shows a clear notice on web/the
+  simulator (no BLE radio there). See
+  [ADR-0011](docs/adr/0011-phase-1-ble-transport.md).
 
 **Preview in a browser** (no device or Xcode needed — fastest way to see the UI):
 
@@ -196,8 +201,9 @@ cd apps/mobile
 npx expo run:ios --device     # local dev build, free Apple ID, installs on the phone
 ```
 
-For the EAS cloud-build path, the iOS Simulator profile, signing/account caveats, and
-troubleshooting, see the full runbook:
+Then open **Live portal → Scan & connect**, power on the portal, and roll a car through the
+gate to see live detection + speed. For the EAS cloud-build path, the iOS Simulator profile,
+signing/account caveats, and troubleshooting, see the full runbook:
 **[docs/guides/ios-dev-build.md](docs/guides/ios-dev-build.md)** (EAS profiles live in
 [`apps/mobile/eas.json`](apps/mobile/eas.json)).
 

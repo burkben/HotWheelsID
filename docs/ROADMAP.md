@@ -27,23 +27,27 @@ Set up the monorepo and tooling so app work can begin. No hardware needed.
 
 ---
 
-## Phase 1 — Protocol port + first BLE connection ⬜
+## Phase 1 — Protocol port + first BLE connection 🟡
 
 Make the app actually talk to the portal.
 
-- ⬜ Implement `parseCharacteristicValue` + decoders in `@hotwheelsid/protocol`
+- ✅ Implement `parseCharacteristicValue` + decoders in `@hotwheelsid/protocol`
   (car detected/removed, speed, serial; control status). See
   [BLE & Protocol](architecture/ble-and-protocol.md).
-- ⬜ **Unit tests** against the sample vectors in `PROTOCOL.md` (UID, speed floats, control).
-- ⬜ Add the `react-native-ble-plx` config plugin; produce a **custom dev build**
+- ✅ **Unit tests** against the sample vectors in `PROTOCOL.md` (UID, speed floats, control)
+  — now also covering the Base64 wire path (`bytesFromBase64` → parser).
+- ✅ Add the `react-native-ble-plx` config plugin; produce a **custom dev build**
   ([ADR-0003](adr/0003-bluetooth-with-react-native-ble-plx.md)).
-- ⬜ BLE service: scan by `SERVICE_CONTROL` + name `HWiD`, connect, subscribe, base64→bytes,
-  dispatch parsed events into a Zustand store.
-- ⬜ Minimal "Connect" screen + raw event log (parity with `monitor.py`/`scanner.py`).
-- ⬜ Handle permissions, Bluetooth-off, and disconnect/reconnect.
+- ✅ BLE service: scan by name `HWiD` (+ `SERVICE_CONTROL`), connect, subscribe, base64→bytes,
+  dispatch parsed events into the Zustand store (`apps/mobile/src/ble/`,
+  [ADR-0011](adr/0011-phase-1-ble-transport.md)).
+- ✅ Minimal **Live portal** screen + raw event log (parity with `monitor.py`/`scanner.py`).
+- ✅ Handle permissions, Bluetooth-off, and disconnect/reconnect (with backoff).
+- ⬜ **Verify on a physical iPhone** (the only place BLE can run — not web/simulator).
 
 **Exit criteria:** On a physical iPhone, placing a car shows car detection + live speed
-values flowing through the parsed event pipeline.
+values flowing through the parsed event pipeline. *(Code complete + web/simulator-verified;
+on-device confirmation pending the user's dev build.)*
 
 ---
 

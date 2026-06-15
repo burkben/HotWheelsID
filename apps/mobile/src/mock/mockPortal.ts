@@ -17,6 +17,7 @@ import {
   parseCharacteristicValue,
   type PortalEvent,
 } from "@hotwheelsid/protocol";
+import { claimActiveTransport, releaseActiveTransport } from "../transport/active";
 
 type Dispatch = (event: PortalEvent) => void;
 type SetConnection = (state: "disconnected" | "connecting" | "connected") => void;
@@ -98,6 +99,7 @@ export function createMockPortal({
   const start: MockPortal["start"] = () => {
     if (running) return;
     running = true;
+    claimActiveTransport(stop);
 
     setConnection("connecting");
     later(() => {
@@ -131,6 +133,7 @@ export function createMockPortal({
     for (const t of timers) clearTimeout(t);
     timers.clear();
     setConnection("disconnected");
+    releaseActiveTransport(stop);
   };
 
   return { start, stop, triggerPass };
