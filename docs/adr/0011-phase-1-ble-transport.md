@@ -18,7 +18,7 @@ service, and feed decoded events into the UI — the parity target is `python/mo
 The groundwork is already laid:
 
 - [ADR-0004](0004-shared-typescript-protocol-package.md) put all pure parsing in
-  `@hotwheelsid/protocol` (`parseCharacteristicValue`).
+  `@redlineid/protocol` (`parseCharacteristicValue`).
 - Phase 2a made the Zustand store **transport-agnostic** ([ADR-0006](0006-state-management-and-persistence.md)):
   it consumes already-decoded `PortalEvent`s via `dispatch` and lifecycle via
   `setConnection`. The mock encodes *real* portal bytes and runs them through the production
@@ -42,7 +42,7 @@ Two forces shape this decision:
 store is the integration point: the BLE client decodes bytes and calls the exact same
 `dispatch` / `setConnection` the mock calls. Swapping transports changes nothing downstream.
 
-**2. Put the Base64 codec in `@hotwheelsid/protocol`, not the app.** Add a dependency-free
+**2. Put the Base64 codec in `@redlineid/protocol`, not the app.** Add a dependency-free
 `base64.ts` (`bytesFromBase64` / `base64FromBytes`, pure JS lookup-table — no `atob`/`btoa`/
 `Buffer`). Rationale: it is the *wire* contract, it is pure (zero RN/UI deps, satisfies
 [ADR-0004](0004-shared-typescript-protocol-package.md)), and putting it in the protocol

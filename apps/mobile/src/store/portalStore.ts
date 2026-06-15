@@ -11,7 +11,7 @@
  * (connection, current car, last/best speed, recent passes).
  */
 import { create } from "zustand";
-import type { ControlStatus, PortalEvent, SpeedSample } from "@hotwheelsid/protocol";
+import type { ControlStatus, PortalEvent, SpeedSample } from "@redlineid/protocol";
 
 export type ConnectionState = "disconnected" | "connecting" | "connected";
 

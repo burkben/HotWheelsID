@@ -5,7 +5,7 @@ import { Link } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import * as Device from 'expo-device';
 
-import { PORTAL_NAME } from '@hotwheelsid/protocol';
+import { PORTAL_NAME } from '@redlineid/protocol';
 
 import { RecentPasses } from '@/components/RecentPasses';
 import { Speedometer } from '@/components/gauge/Speedometer';
@@ -137,7 +137,7 @@ export default function SpeedometerScreen() {
     >
       <View style={styles.header}>
         <View>
-          <Text style={styles.title}>HotWheelsID</Text>
+          <Text style={styles.title}>Redline ID</Text>
           <Text style={styles.subtitle}>
             Portal “{PORTAL_NAME}” · {useBle ? 'live BLE' : 'demo mode'}
           </Text>
@@ -254,10 +254,10 @@ export default function SpeedometerScreen() {
 
       <Text style={styles.note}>
         {useBle
-          ? 'Tap “Connect portal”, then roll a car across your Hot Wheels id portal to log real passes over Bluetooth. “Open raw event log” shows every decoded BLE event.'
+          ? 'Tap “Connect portal”, then roll a car across your race portal to log real passes over Bluetooth. “Open raw event log” shows every decoded BLE event.'
           : canBle
-            ? 'Demo mode: simulated passes (decoded by @hotwheelsid/protocol) roll automatically — tap “Trigger pass” to fire one, or “Disconnect” to pause. Switch to “Live BLE” to use a real Hot Wheels id portal.'
-            : 'This screen is a demo: simulated passes decoded by @hotwheelsid/protocol roll automatically, driving the flames + haptics. Run a dev build on a physical iPhone to connect a real portal over Bluetooth.'}
+            ? 'Demo mode: simulated passes roll automatically — tap “Trigger pass” to fire one, or “Disconnect” to pause. Switch to “Live BLE” to use a real race portal.'
+            : 'This screen is a demo: simulated passes roll automatically, driving the flames + haptics. Run a dev build on a physical iPhone to connect a real portal over Bluetooth.'}
       </Text>
     </ScrollView>
   );

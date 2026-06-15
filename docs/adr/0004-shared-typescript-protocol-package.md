@@ -32,7 +32,7 @@ The protocol surface to port (from `PROTOCOL.md`):
 
 ## Decision
 
-Create a standalone package **`@hotwheelsid/protocol`** (in `packages/protocol/`,
+Create a standalone package **`@redlineid/protocol`** (in `packages/protocol/`,
 see [ADR-0007](0007-monorepo-structure-and-python-reference.md)) containing:
 
 - `uuids.ts` — all service/characteristic UUID constants, ported 1:1 from

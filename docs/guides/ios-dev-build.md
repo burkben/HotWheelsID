@@ -124,7 +124,7 @@ eas init                        # links the project, writes extra.eas.projectId 
 ```
 
 Always run `eas` commands from `apps/mobile`. EAS detects the npm workspace and installs
-from the repo root automatically; the `@hotwheelsid/protocol` package is consumed as
+from the repo root automatically; the `@redlineid/protocol` package is consumed as
 TypeScript source via Metro, so it needs no separate prebuild.
 
 ### Build for a physical iPhone (needs the paid Apple account)

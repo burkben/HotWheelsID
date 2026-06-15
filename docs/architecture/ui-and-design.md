@@ -55,7 +55,7 @@ Race, plus the roadmap's persistent garage/collection.)
 - **Effects:** Skia particle/flame layer activates past a threshold (the upstream "flames
   at 100+ mph", made real); subtle glow on new best.
 - **Feedback:** `expo-haptics` pulse on car detection and on a new record; optional sound.
-- **Data path:** BLE indication → `@hotwheelsid/protocol` parse → Zustand → Reanimated
+- **Data path:** BLE indication → `@redlineid/protocol` parse → Zustand → Reanimated
   shared value → Skia frame. High-frequency values stay on the UI thread to avoid
   re-render churn ([ADR-0006](../adr/0006-state-management-and-persistence.md)).
 

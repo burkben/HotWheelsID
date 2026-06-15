@@ -5,7 +5,7 @@
  * control service (`…-000c`). Instead, car/speed telemetry is delivered as an
  * encrypted Protocol-Buffers stream over the BLE *auth* service after a P-256
  * ECDH handshake. The transport-agnostic core of that protocol lives in
- * `@hotwheelsid/protocol` (`MpidSession`, `parseMessage`, `mpidToPortalEvents`);
+ * `@redlineid/protocol` (`MpidSession`, `parseMessage`, `mpidToPortalEvents`);
  * this module is the thin BLE glue that drives it, mirroring the hardware-proven
  * `python/mpid_monitor.py` handshake order exactly:
  *
@@ -40,7 +40,7 @@ import {
   CHAR_SESSION,
   CHAR_TXRX,
   type PortalMessage,
-} from "@hotwheelsid/protocol";
+} from "@redlineid/protocol";
 import type { BleError, Characteristic, Subscription } from "react-native-ble-plx";
 import type { BleLogLevel, TransportDispatch } from "./types";
 

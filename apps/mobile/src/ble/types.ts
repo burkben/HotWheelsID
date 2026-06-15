@@ -7,7 +7,7 @@
  * lifecycle via `setConnection`. The store stays transport-agnostic, so swapping
  * the mock for real BLE is just swapping which transport is `start()`ed.
  */
-import type { PortalEvent } from "@hotwheelsid/protocol";
+import type { PortalEvent } from "@redlineid/protocol";
 import type { ConnectionState } from "../store/portalStore";
 
 export type TransportDispatch = (event: PortalEvent) => void;

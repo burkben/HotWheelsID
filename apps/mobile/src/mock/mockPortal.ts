@@ -3,7 +3,7 @@
  *
  * Crucially, it does **not** fabricate {@link PortalEvent}s directly. It builds
  * the same raw byte payloads the real portal sends and decodes them with the
- * production `parseCharacteristicValue` from `@hotwheelsid/protocol`. That means
+ * production `parseCharacteristicValue` from `@redlineid/protocol`. That means
  * the entire UI runs against the *actual* protocol pipeline — the only thing
  * Phase 1 swaps in is the BLE transport that produces those same bytes.
  *
@@ -16,7 +16,7 @@ import {
   CHAR_SERIAL_NUMBER,
   parseCharacteristicValue,
   type PortalEvent,
-} from "@hotwheelsid/protocol";
+} from "@redlineid/protocol";
 import { claimActiveTransport, releaseActiveTransport } from "../transport/active";
 
 type Dispatch = (event: PortalEvent) => void;
@@ -40,7 +40,7 @@ export interface MockPortalOptions {
   random?: () => number;
 }
 
-// --- byte encoders (inverse of the decoders in @hotwheelsid/protocol) ---
+// --- byte encoders (inverse of the decoders in @redlineid/protocol) ---
 
 /** `0x04` + 6-byte NFC UID, as sent on event channel 2. */
 function encodeUid(uid: readonly number[]): Uint8Array {

@@ -55,7 +55,7 @@ Handshake → stream:
 
 ## Decision
 
-**1. Port the MPID core into `@hotwheelsid/protocol` as pure TS — no native deps.** New
+**1. Port the MPID core into `@redlineid/protocol` as pure TS — no native deps.** New
 `packages/protocol/src/mpid/` modules (`crc8`, `crypto`, `token`, `session`, `protobuf`, barrel
 `index`) implement the handshake, AES-128-CTR framing + RX state machine, and protobuf decode.
 Crypto uses **`@noble/curves` (P-256)** and **`@noble/ciphers` (AES-CTR)** — audited, pure-JS,

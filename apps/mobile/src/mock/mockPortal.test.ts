@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { PortalEvent } from "@hotwheelsid/protocol";
+import type { PortalEvent } from "@redlineid/protocol";
 
 import { createMockPortal } from "./mockPortal";
 

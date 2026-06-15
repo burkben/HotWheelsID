@@ -1,5 +1,5 @@
 /**
- * `@hotwheelsid/protocol` — pure TypeScript port of the Hot Wheels id Race
+ * `@redlineid/protocol` — pure TypeScript port of the Hot Wheels id Race
  * Portal BLE protocol (UUIDs, typed events, and byte decoders).
  *
  * No React Native, BLE, DOM, or Node dependencies — safe to unit-test in plain

@@ -1,5 +1,5 @@
 /**
- * Design tokens — the starting palette/scale for the HotWheelsID UI.
+ * Design tokens — the starting palette/scale for the Redline ID UI.
  *
  * Direction from `docs/architecture/ui-and-design.md`: a dark "track" background,
  * high-contrast flame-orange / electric-blue accents, and semantic green→yellow→red

@@ -8,7 +8,7 @@ const workspaceRoot = path.resolve(projectRoot, '../..');
 const config = getDefaultConfig(projectRoot);
 
 // 1. Watch the whole monorepo so Metro can transpile workspace packages
-//    (e.g. @hotwheelsid/protocol, which is consumed as TypeScript source).
+//    (e.g. @redlineid/protocol, which is consumed as TypeScript source).
 config.watchFolders = [workspaceRoot];
 
 // 2. Resolve modules from the app first, then the workspace root.

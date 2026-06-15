@@ -1,22 +1,23 @@
 {
   "expo": {
-    "name": "HotWheelsID",
-    "slug": "hotwheelsid",
+    "name": "Redline ID",
+    "slug": "redline-id",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "hotwheelsid",
+    "scheme": "redlineid",
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon",
       "supportsTablet": true,
-      "bundleIdentifier": "com.burkben.hotwheelsid",
+      "bundleIdentifier": "com.burkben.redlineid",
       "infoPlist": {
-        "NSBluetoothAlwaysUsageDescription": "HotWheelsID uses Bluetooth to connect to your Hot Wheels id Race Portal and read car and speed data."
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSBluetoothAlwaysUsageDescription": "Redline ID uses Bluetooth to connect to your race portal and read car and speed data."
       }
     },
     "android": {
-      "package": "com.burkben.hotwheelsid",
+      "package": "com.burkben.redlineid",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -47,7 +48,7 @@
         {
           "isBackgroundEnabled": false,
           "modes": ["central"],
-          "bluetoothAlwaysPermission": "HotWheelsID uses Bluetooth to connect to your Hot Wheels id Race Portal and read car and speed data."
+          "bluetoothAlwaysPermission": "Redline ID uses Bluetooth to connect to your race portal and read car and speed data."
         }
       ]
     ]

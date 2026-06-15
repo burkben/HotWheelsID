@@ -1,10 +1,10 @@
-# @hotwheelsid/mobile
+# Redline ID — mobile app
 
 Cross-platform (iOS-first) Expo app for the Hot Wheels id Race Portal.
 
 It connects to a real portal over Bluetooth and turns each pass into live telemetry on a custom
 speedometer, a lap-timing **Race Mode**, and a raw decoded event log. All decoding runs through
-the shared [`@hotwheelsid/protocol`](../../packages/protocol/) package, which speaks both the
+the shared [`@redlineid/protocol`](../../packages/protocol/) package, which speaks both the
 legacy open control service and the modern encrypted **MPID** firmware.
 
 > 📸 Screenshots and the full feature tour live in the [repo README](../../README.md#ios-app).
@@ -55,7 +55,7 @@ See the full runbook (EAS cloud builds, Simulator profile, signing) in
 ## Notes
 
 - `metro.config.js` is configured for the monorepo so Metro can transpile the
-  TypeScript `@hotwheelsid/protocol` package directly from source.
+  TypeScript `@redlineid/protocol` package directly from source.
 - The `react-native-ble-plx` config plugin and the iOS
   `NSBluetoothAlwaysUsageDescription` string are wired in `app.json`. The native BLE module is
   only `require`d once a connection starts on a real device, so web/Simulator export stays safe
