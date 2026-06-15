@@ -79,13 +79,22 @@ export default function SpeedometerScreen() {
   // Build (and rebuild) the portal transport whenever the live/demo mode flips.
   // The BleManager is a module-level singleton, so recreating this thin wrapper on
   // toggle is cheap and leak-free; the cleanup tears down the outgoing transport.
+  //
+  // Demo mode auto-starts so the gauge comes alive the instant you enter it (zero
+  // taps — ideal for the showcase, and for the locked-portal "Switch to demo"
+  // escape hatch). Live BLE never auto-starts: scanning the radio is an explicit
+  // "Connect portal" action, so the home screen shows no fabricated activity until
+  // the user opts in.
   useEffect(() => {
     const { dispatch, setConnection } = usePortalStore.getState();
     const transport: HomeTransport = useBle
       ? createBlePortal({ dispatch, setConnection, onPhase: setBlePhase })
       : createMockPortal({ dispatch, setConnection });
     transportRef.current = transport;
-    if (!useBle) setBlePhase(null); // a mock portal is never "locked"
+    if (!useBle) {
+      setBlePhase(null); // a mock portal is never "locked"
+      void transport.start();
+    }
     return () => {
       void transport.stop();
       transportRef.current = null;
@@ -235,8 +244,8 @@ export default function SpeedometerScreen() {
         {useBle
           ? 'Tap “Connect portal”, then roll a car across your Hot Wheels id portal to log real passes over Bluetooth. “Open raw event log” shows every decoded BLE event.'
           : canBle
-            ? 'Demo mode: flames + haptics run on simulated passes decoded by @hotwheelsid/protocol — tap “Connect portal”, then “Trigger pass”. Switch to “Live BLE” to use a real Hot Wheels id portal.'
-            : 'This screen is a demo: flames + haptics run on mocked portal events decoded by @hotwheelsid/protocol. Run a dev build on a physical iPhone to connect a real portal over Bluetooth.'}
+            ? 'Demo mode: simulated passes (decoded by @hotwheelsid/protocol) roll automatically — tap “Trigger pass” to fire one, or “Disconnect” to pause. Switch to “Live BLE” to use a real Hot Wheels id portal.'
+            : 'This screen is a demo: simulated passes decoded by @hotwheelsid/protocol roll automatically, driving the flames + haptics. Run a dev build on a physical iPhone to connect a real portal over Bluetooth.'}
       </Text>
     </ScrollView>
   );
