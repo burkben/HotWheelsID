@@ -1,8 +1,8 @@
 {
-  "name": "hotwheelsid-monorepo",
+  "name": "redlineid-monorepo",
   "version": "0.1.0",
   "private": true,
-  "description": "Monorepo for HotWheelsID: a cross-platform Hot Wheels id Race Portal app (apps/mobile), a shared TypeScript protocol package (packages/protocol), and the original Python tools kept as a reference implementation (python/).",
+  "description": "Monorepo for Redline ID: a cross-platform app for the discontinued Hot Wheels id Race Portal (apps/mobile), a shared TypeScript protocol package (packages/protocol), and the original Python tools kept as a reference implementation (python/).",
   "license": "MIT",
   "workspaces": [
     "apps/*",
@@ -14,6 +14,6 @@
   "scripts": {
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
-    "test:protocol": "npm run test --workspace @hotwheelsid/protocol"
+    "test:protocol": "npm run test --workspace @redlineid/protocol"
   }
 }

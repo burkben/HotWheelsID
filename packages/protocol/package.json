@@ -1,5 +1,5 @@
 {
-  "name": "@hotwheelsid/protocol",
+  "name": "@redlineid/protocol",
   "version": "0.1.0",
   "description": "Pure TypeScript port of the Hot Wheels id Race Portal BLE protocol: service/characteristic UUIDs, typed PortalEvent models, and byte-level decoders. No React Native, DOM, or UI dependencies.",
   "license": "MIT",

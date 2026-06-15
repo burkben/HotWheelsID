@@ -149,7 +149,7 @@ implementation: `python/hwportal/mpid.py` + `python/mpid_monitor.py` (vendored f
    **protobuf** `PortalToApp` message → heartbeats (firmware/battery/mode) + events
    (car on/off, drive-by with speed + IR gate timings).
 
-### TypeScript port (`@hotwheelsid/protocol`, `src/mpid/`)
+### TypeScript port (`@redlineid/protocol`, `src/mpid/`)
 
 `MpidSession` (handshake + framing + RX state machine), `parseMessage` (protobuf), and
 `mpidToPortalEvents` (→ the same `carDetected` / `carRemoved` / `speed` union the legacy parser and

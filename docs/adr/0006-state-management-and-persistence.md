@@ -25,7 +25,7 @@ juggling.
 - **Runtime state: [Zustand](https://github.com/pmndrs/zustand).** A tiny store holds
   connection state, current car, latest speed sample, and race state. The BLE event stream
   ([ADR-0003](0003-bluetooth-with-react-native-ble-plx.md)) parses bytes via
-  `@hotwheelsid/protocol` ([ADR-0004](0004-shared-typescript-protocol-package.md)) and
+  `@redlineid/protocol` ([ADR-0004](0004-shared-typescript-protocol-package.md)) and
   dispatches into this store. High-frequency animation values are held in Reanimated
   shared values to keep re-renders off the JS thread.
 - **Durable storage: [`expo-sqlite`](https://docs.expo.dev/versions/latest/sdk/sqlite/)**

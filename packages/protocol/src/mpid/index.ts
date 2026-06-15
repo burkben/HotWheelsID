@@ -1,5 +1,5 @@
 /**
- * `@hotwheelsid/protocol` MPID (modern-firmware) support.
+ * `@redlineid/protocol` MPID (modern-firmware) support.
  *
  * The modern Hot Wheels id portal firmware delivers car/speed telemetry as an
  * encrypted Protocol-Buffers stream over the BLE "auth" service after a P-256

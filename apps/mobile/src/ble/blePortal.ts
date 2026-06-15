@@ -4,7 +4,7 @@
  * This is the Phase 1 replacement for the mock generator. It scans for the
  * portal, connects, discovers the control service, and subscribes to its
  * indication characteristics. Each raw characteristic value (a Base64 string on
- * the RN bridge) is decoded with the **shared** `@hotwheelsid/protocol`
+ * the RN bridge) is decoded with the **shared** `@redlineid/protocol`
  * pipeline — `bytesFromBase64` → `parseCharacteristicValue` — and the resulting
  * typed {@link PortalEvent} is pushed into the same Zustand store the mock uses.
  * So the UI is byte-for-byte identical whether driven by the mock or hardware.
@@ -32,7 +32,7 @@ import {
   CHAR_SERIAL_NUMBER,
   PORTAL_NAME,
   SERVICE_CONTROL,
-} from "@hotwheelsid/protocol";
+} from "@redlineid/protocol";
 import type {
   BleError,
   BleManager,

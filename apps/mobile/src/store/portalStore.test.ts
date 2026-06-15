@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import type { ControlStatus, PortalEvent } from "@hotwheelsid/protocol";
+import type { ControlStatus, PortalEvent } from "@redlineid/protocol";
 
 import { usePortalStore } from "./portalStore";
 

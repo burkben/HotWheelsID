@@ -6,7 +6,7 @@
  * car is on the pad.
  */
 import { StyleSheet, Text, View } from "react-native";
-import type { ControlStatus } from "@hotwheelsid/protocol";
+import type { ControlStatus } from "@redlineid/protocol";
 
 import { colors, fontSize, fontWeight, radius, spacing } from "@/theme/tokens";
 import type { ConnectionState } from "@/store/portalStore";

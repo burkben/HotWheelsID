@@ -3,7 +3,7 @@
  *
  * Connects to a real Hot Wheels id Race Portal over BLE, shows the connection /
  * adapter phase, and streams a raw event log of everything the portal sends
- * (decoded by the shared `@hotwheelsid/protocol` pipeline). The hero gauge on the
+ * (decoded by the shared `@redlineid/protocol` pipeline). The hero gauge on the
  * home screen keeps using the mock demo; this screen is where hardware is proven.
  *
  * Web/Simulator: there is no BLE radio, so this screen renders a clear notice and
@@ -23,7 +23,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import * as Device from "expo-device";
 
-import { PORTAL_NAME } from "@hotwheelsid/protocol";
+import { PORTAL_NAME } from "@redlineid/protocol";
 
 import { createBlePortal, isBleAvailable } from "@/ble/blePortal";
 import type { BleLogEntry, BlePhase, PortalTransport } from "@/ble/types";

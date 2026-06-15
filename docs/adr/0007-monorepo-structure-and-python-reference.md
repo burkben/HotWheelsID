@@ -25,7 +25,7 @@ HotWheelsID/
 ├── apps/
 │   └── mobile/            # Expo (React Native) app — the product
 ├── packages/
-│   └── protocol/          # @hotwheelsid/protocol — TS port of the BLE protocol
+│   └── protocol/          # @redlineid/protocol — TS port of the BLE protocol
 ├── python/                # existing Python tools, moved here as reference/desktop utility
 │   ├── hwportal/
 │   ├── dashboard.py

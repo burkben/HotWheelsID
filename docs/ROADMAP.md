@@ -16,7 +16,7 @@ Set up the monorepo and tooling so app work can begin. No hardware needed.
 
 - ⬜ Restructure to the monorepo layout from [ADR-0007](adr/0007-monorepo-structure-and-python-reference.md):
   move Python into `python/`, add `apps/` and `packages/` (JS workspaces).
-- ⬜ Scaffold `packages/protocol` (`@hotwheelsid/protocol`) with `uuids.ts` ported from
+- ⬜ Scaffold `packages/protocol` (`@redlineid/protocol`) with `uuids.ts` ported from
   `python/hwportal/constants.py` and stub `events.ts` / `decode.ts`.
 - ⬜ Scaffold `apps/mobile` with Expo (TypeScript, Expo Router) + `expo-dev-client`.
 - ⬜ Add CI: typecheck + unit tests for the protocol package.
@@ -31,7 +31,7 @@ Set up the monorepo and tooling so app work can begin. No hardware needed.
 
 Make the app actually talk to the portal.
 
-- ✅ Implement `parseCharacteristicValue` + decoders in `@hotwheelsid/protocol`
+- ✅ Implement `parseCharacteristicValue` + decoders in `@redlineid/protocol`
   (car detected/removed, speed, serial; control status). See
   [BLE & Protocol](architecture/ble-and-protocol.md).
 - ✅ **Unit tests** against the sample vectors in `PROTOCOL.md` (UID, speed floats, control)
@@ -128,7 +128,7 @@ Pulls in the upstream roadmap's "future features" and more.
 
 ## Cross-cutting (every phase)
 
-- **Testing:** keep `@hotwheelsid/protocol` unit-tested; add UI tests where valuable.
+- **Testing:** keep `@redlineid/protocol` unit-tested; add UI tests where valuable.
 - **Docs:** new significant decisions → a new ADR; keep `architecture/` current.
 - **Protocol truth:** `PROTOCOL.md` stays canonical; the Python tools remain the
   hardware oracle ([ADR-0007](adr/0007-monorepo-structure-and-python-reference.md)).

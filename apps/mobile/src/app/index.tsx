@@ -5,7 +5,7 @@ import { Link } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import * as Device from 'expo-device';
 
-import { PORTAL_NAME } from '@hotwheelsid/protocol';
+import { PORTAL_NAME } from '@redlineid/protocol';
 
 import { RecentPasses } from '@/components/RecentPasses';
 import { Speedometer } from '@/components/gauge/Speedometer';

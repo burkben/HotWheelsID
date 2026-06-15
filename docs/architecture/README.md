@@ -48,7 +48,7 @@ flowchart TB
         Persist["Persistence<br/>expo-sqlite + MMKV settings"]
     end
 
-    subgraph pkg["packages/protocol (@hotwheelsid/protocol)"]
+    subgraph pkg["packages/protocol (@redlineid/protocol)"]
         UUIDs["uuids.ts"]
         Parse["events.ts / decode.ts<br/>pure byte → typed event"]
     end
@@ -84,7 +84,7 @@ flowchart TB
 | Animation | react-native-reanimated | [0005](../adr/0005-ui-stack-reanimated-skia-expo-router.md) |
 | Custom graphics (gauge) | @shopify/react-native-skia | [0005](../adr/0005-ui-stack-reanimated-skia-expo-router.md) |
 | Bluetooth | react-native-ble-plx + expo-dev-client | [0003](../adr/0003-bluetooth-with-react-native-ble-plx.md) |
-| Protocol | `@hotwheelsid/protocol` (shared TS) | [0004](../adr/0004-shared-typescript-protocol-package.md) |
+| Protocol | `@redlineid/protocol` (shared TS) | [0004](../adr/0004-shared-typescript-protocol-package.md) |
 | Runtime state | Zustand | [0006](../adr/0006-state-management-and-persistence.md) |
 | Durable storage | expo-sqlite (+ MMKV settings) | [0006](../adr/0006-state-management-and-persistence.md) |
 | Build & distribution | EAS Build → dev client / TestFlight | [0008](../adr/0008-ios-distribution-with-eas-and-testflight.md) |
@@ -95,7 +95,7 @@ flowchart TB
 ```
 HotWheelsID/
 ├── apps/mobile/            # Expo app (the product)
-├── packages/protocol/      # @hotwheelsid/protocol — TS protocol port
+├── packages/protocol/      # @redlineid/protocol — TS protocol port
 ├── python/                 # existing Python reference tools (moved in Phase 0)
 ├── docs/
 │   ├── adr/                # architecture decision records

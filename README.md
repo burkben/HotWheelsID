@@ -1,4 +1,4 @@
-# HotWheelsID 🏎️
+# Redline ID 🏎️
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -8,7 +8,12 @@
 
 An open-source tool to connect to the Hot Wheels id Race Portal after Mattel discontinued the official app on January 1, 2024. We reverse-engineered the Bluetooth protocol so you can track speeds, lap times, and build your car collection again.
 
-> **HotWheelsID** is a fork of [`mtxmiller/hotwheels-portal`](https://github.com/mtxmiller/hotwheels-portal)
+> _**Redline ID** is an independent, community project and is **not affiliated with,
+> endorsed by, or sponsored by Mattel, Inc.** "Hot Wheels" and "Hot Wheels id" are
+> trademarks of Mattel, Inc., used here only to describe the discontinued hardware this
+> tool works with._
+
+> **Redline ID** is a fork of [`mtxmiller/hotwheels-portal`](https://github.com/mtxmiller/hotwheels-portal)
 > that has grown into **two ways to bring your portal back to life**:
 >
 > - 📱 **A native iOS app** (React Native + Expo) — a polished speedometer, a lap-timing
@@ -63,7 +68,7 @@ the top of the leaderboard.
 
 Under the hood it speaks **both portal firmwares** — the legacy open control service and the
 modern, encrypted **MPID** protocol (ECDH key exchange) — through the shared
-[`@hotwheelsid/protocol`](packages/protocol/) TypeScript port.
+[`@redlineid/protocol`](packages/protocol/) TypeScript port.
 
 ### Run it on your iPhone
 
@@ -239,7 +244,7 @@ HotWheelsID/
 ├── apps/
 │   └── mobile/             # iOS app (Expo/React Native): speedometer, Race Mode, live BLE log
 ├── packages/
-│   └── protocol/           # @hotwheelsid/protocol — shared TS BLE protocol port (+ tests)
+│   └── protocol/           # @redlineid/protocol — shared TS BLE protocol port (+ tests)
 ├── python/                 # Original Python reference tools (documented above)
 │   ├── hwportal/           #   Library: constants.py (BLE UUIDs), portal.py (client)
 │   │   └── mpid.py         #   Modern-firmware MPID transport (ECDH + AES-CTR + protobuf)
@@ -268,12 +273,12 @@ The TypeScript side uses **npm workspaces** (Node 20+). From the repo root:
 npm install              # install every workspace (apps/* and packages/*)
 npm run typecheck        # typecheck all workspaces (protocol + mobile)
 npm test                 # run all workspace tests
-npm run test:protocol    # just the @hotwheelsid/protocol unit tests
+npm run test:protocol    # just the @redlineid/protocol unit tests
 ```
 
 ### Shared protocol package
 
-[`packages/protocol`](packages/protocol/) (`@hotwheelsid/protocol`) is a pure
+[`packages/protocol`](packages/protocol/) (`@redlineid/protocol`) is a pure
 TypeScript port of the BLE protocol — UUIDs, typed events, and byte decoders —
 with no React Native or UI dependencies. It is unit-tested against the sample
 vectors in [PROTOCOL.md](PROTOCOL.md).
@@ -283,7 +288,7 @@ vectors in [PROTOCOL.md](PROTOCOL.md).
 [`apps/mobile`](apps/mobile/) is the Expo (Expo Router) app — see **[📱 iOS App](#ios-app)**
 above for the screen-by-screen tour and how to run it on a device. It has three screens
 (`index` speedometer, `race` Race Mode, `live` raw event log) and decodes both portal firmwares
-through [`@hotwheelsid/protocol`](packages/protocol/).
+through [`@redlineid/protocol`](packages/protocol/).
 
 **Preview in a browser** (no device or Xcode needed — fastest way to see the UI):
 
