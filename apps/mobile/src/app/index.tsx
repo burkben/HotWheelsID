@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Link } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 
 import { PORTAL_NAME } from '@hotwheelsid/protocol';
@@ -143,9 +144,22 @@ export default function SpeedometerScreen() {
 
       <RecentPasses passes={passes} bestMph={bestMph} />
 
+      <Link href="/live" asChild>
+        <Pressable
+          style={({ pressed }) => [
+            styles.button,
+            styles.liveLink,
+            pressed && styles.buttonPressed,
+          ]}
+        >
+          <Text style={styles.buttonText}>Open live portal (real BLE) →</Text>
+        </Pressable>
+      </Link>
+
       <Text style={styles.note}>
-        Phase 2b · flames + haptics on mocked portal events decoded by
-        @hotwheelsid/protocol. Real Bluetooth arrives in Phase 1 with a custom dev build.
+        This screen is a demo: flames + haptics run on mocked portal events decoded by
+        @hotwheelsid/protocol. Tap “Live portal” to connect a real Hot Wheels id portal over
+        Bluetooth (needs a custom dev build on a physical iPhone).
       </Text>
     </ScrollView>
   );
@@ -254,6 +268,12 @@ const styles = StyleSheet.create({
   buttonGhost: {
     backgroundColor: colors.surfaceAlt,
     borderColor: colors.border,
+  },
+  liveLink: {
+    width: '100%',
+    maxWidth: 420,
+    backgroundColor: colors.surface,
+    borderColor: colors.accentBlue,
   },
   buttonDisabled: {
     opacity: 0.4,

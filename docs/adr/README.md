@@ -22,6 +22,7 @@ that **supersedes** the old one (and update the status header) rather than editi
 | [0008](0008-ios-distribution-with-eas-and-testflight.md) | iOS distribution via EAS Build + TestFlight | Accepted |
 | [0009](0009-phase-2a-gauge-svg-first.md) | Phase 2a gauge: SVG-first, defer Skia FX to 2b | Accepted |
 | [0010](0010-phase-2b-flame-fx-svg.md) | Phase 2b flame FX: SVG particles now, Skia still deferred | Accepted |
+| [0011](0011-phase-1-ble-transport.md) | Phase 1 BLE transport: PortalTransport seam + Base64 codec in protocol | Accepted |
 
 ## Statuses
 
