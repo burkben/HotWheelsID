@@ -41,6 +41,7 @@ const PHASE_LABEL: Record<BlePhase, string> = {
   connecting: "Connecting…",
   discovering: "Discovering…",
   connected: "Connected",
+  locked: "Portal locked",
   reconnecting: "Reconnecting…",
   error: "Error",
 };
@@ -57,6 +58,7 @@ function phaseColor(phase: BlePhase): string {
     case "poweredOff":
     case "unauthorized":
     case "unsupported":
+    case "locked":
     case "error":
       return colors.danger;
     case "idle":
@@ -168,6 +170,19 @@ export default function LiveScreen() {
               {isWeb
                 ? "Open this screen in a custom dev build on a physical iPhone to connect to the portal."
                 : "The iOS Simulator has no BLE radio. Run a dev build on a physical iPhone (npx expo run:ios --device) to connect."}
+            </Text>
+          </View>
+        )}
+
+        {phase === "locked" && (
+          <View style={styles.noticeError}>
+            <Text style={styles.noticeTitle}>Portal firmware locked</Text>
+            <Text style={styles.noticeBody}>
+              This portal connected, but it hides its control service — car detection, serial, and
+              speed — behind the Hot Wheels id authentication handshake. That handshake was brokered
+              by Mattel’s now-discontinued app/servers and isn’t publicly supported, so no live
+              events are available from this unit. The log below lists the services it did expose
+              (only Auth + Data). Verified independently with python/diag_portal.py on desktop.
             </Text>
           </View>
         )}
@@ -307,6 +322,14 @@ const styles = StyleSheet.create({
   notice: {
     backgroundColor: colors.surface,
     borderColor: colors.warn,
+    borderWidth: 1,
+    borderRadius: radius.md,
+    padding: spacing(4),
+    gap: spacing(2),
+  },
+  noticeError: {
+    backgroundColor: colors.surface,
+    borderColor: colors.danger,
     borderWidth: 1,
     borderRadius: radius.md,
     padding: spacing(4),

@@ -112,6 +112,9 @@ export function createBlePortal(options: BlePortalOptions): PortalTransport {
   let logId = 0;
   const log = (level: BleLogLevel, message: string) => {
     const entry: BleLogEntry = { id: ++logId, at: Date.now(), level, message };
+    // Mirror to the JS console so logs stream to the Metro terminal during dev —
+    // invaluable for diagnosing on-device BLE without reading the in-app log back.
+    if (__DEV__) console.log(`[ble:${level}] ${message}`);
     onLog?.(entry);
   };
   const phase = (p: BlePhase) => onPhase?.(p);
@@ -152,6 +155,10 @@ export function createBlePortal(options: BlePortalOptions): PortalTransport {
     }
     const value = characteristic?.value;
     if (!value) return;
+    // Log every raw notification (Base64 payload) before decode, so we can see
+    // exactly which characteristics actually fire on the wire — even ones that
+    // decode to "unknown".
+    if (__DEV__) console.log(`[ble:raw] ${shortUuid(knownUuid)} <- ${value}`);
     try {
       const bytes = bytesFromBase64(value);
       const event = parseCharacteristicValue(knownUuid, bytes);
@@ -217,16 +224,67 @@ export function createBlePortal(options: BlePortalOptions): PortalTransport {
       });
 
       removeMonitors();
-      for (const charUuid of MONITORED_CHARACTERISTICS) {
-        const sub = manager.monitorCharacteristicForDevice(
-          target.id,
-          SERVICE_CONTROL,
-          charUuid,
-          (error, characteristic) => handleCharacteristic(charUuid, error, characteristic),
+
+      // Enumerate the *actual* discovered GATT table and subscribe to the
+      // characteristics the device really exposes. The Python reference uses
+      // bleak's `start_notify(char_uuid)`, which resolves the parent service
+      // automatically; ble-plx instead requires us to name the owning service.
+      // Hardcoding (SERVICE_CONTROL, charUuid) pairs proved fragile on iOS
+      // ("characteristic not found"), because we must use the exact service/char
+      // UUID strings iOS reports (its own casing) and the real parent service.
+      // So: walk every service, match each characteristic against our known
+      // notify set case-insensitively, and monitor it via the characteristic's
+      // own service. The full table is logged for diagnostics.
+      const canonicalByLower = new Map<string, string>(
+        MONITORED_CHARACTERISTICS.map((u) => [u.toLowerCase(), u] as const),
+      );
+      const services = await manager.servicesForDevice(target.id);
+      if (!started) return;
+      let subscribed = 0;
+      for (const service of services) {
+        let chars: Characteristic[];
+        try {
+          chars = await manager.characteristicsForDevice(target.id, service.uuid);
+        } catch {
+          continue;
+        }
+        if (!started) return;
+        for (const ch of chars) {
+          const lower = ch.uuid.toLowerCase();
+          const flags =
+            `${ch.isNotifiable ? "N" : ""}${ch.isIndicatable ? "I" : ""}` +
+            `${ch.isReadable ? "R" : ""}` || "-";
+          log("info", `gatt ${shortUuid(service.uuid)} / ${shortUuid(ch.uuid)} [${flags}]`);
+          const known = canonicalByLower.get(lower);
+          if (!known) continue;
+          if (!ch.isNotifiable && !ch.isIndicatable) continue;
+          const sub = ch.monitor((error, characteristic) =>
+            handleCharacteristic(known, error, characteristic),
+          );
+          monitorSubs.push(sub);
+          subscribed += 1;
+        }
+      }
+      if (subscribed === 0) {
+        // Gated firmware: discovery succeeded, but the portal exposes NO
+        // control-service notify characteristics — Service C (car detection,
+        // speed, serial) is hidden behind the Hot Wheels id auth handshake.
+        // `python/diag_portal.py` proves a fresh desktop central (bleak) sees
+        // only Services A (auth) + B (data) too, so this is the portal/firmware,
+        // not an iOS cache. There is nothing to stream and auto-reconnect would
+        // just re-lock in a loop — surface a clear "locked" phase and drop the
+        // link so the single-connection portal is freed.
+        log("error", "portal connected, but exposes no control service (no car/speed characteristics)");
+        log(
+          "error",
+          "this firmware locks the control service behind the auth handshake — unsupported (see python/diag_portal.py)",
         );
-        monitorSubs.push(sub);
+        await stop();
+        phase("locked");
+        return;
       }
 
+      log("info", `subscribed to ${subscribed} characteristic(s)`);
       void readFirmware(target.id);
 
       connecting = false;
@@ -454,6 +512,12 @@ export function createBlePortal(options: BlePortalOptions): PortalTransport {
   };
 
   return { start, stop };
+}
+
+/** Compact UUID label for logs: `af0a6ec7-0003-000c-…` → `0003-000c`. */
+function shortUuid(uuid: string): string {
+  const parts = uuid.split("-");
+  return parts.length >= 3 ? `${parts[1]}-${parts[2]}` : uuid;
 }
 
 function hexPreview(bytes: Uint8Array, max = 8): string {

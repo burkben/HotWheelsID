@@ -33,6 +33,7 @@ export type BlePhase =
   | "connecting"
   | "discovering"
   | "connected"
+  | "locked"
   | "reconnecting"
   | "error";
 

@@ -90,6 +90,7 @@ python dashboard.py
 | `python portal_app.py` | Detailed event monitor with car data |
 | `python scanner.py` | Scan for BLE devices |
 | `python monitor.py` | Raw event monitor for debugging |
+| `python diag_portal.py` | Diagnose a portal's GATT table — verdict on whether the **control service** (car/speed) is exposed or **auth-gated** by firmware |
 
 ### 🏁 Lap Race Mode
 
@@ -150,6 +151,7 @@ HotWheelsID/
 │   ├── portal_app.py       #   Event monitor
 │   ├── scanner.py          #   BLE scanner
 │   ├── monitor.py          #   Raw event monitor
+│   ├── diag_portal.py      #   GATT diagnostic (control-service / auth-gate verdict)
 │   └── requirements.txt
 ├── docs/                   # Architecture notes, ADRs, and the roadmap
 ├── PROTOCOL.md             # Canonical reverse-engineered BLE protocol

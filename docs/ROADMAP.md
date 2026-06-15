@@ -44,10 +44,20 @@ Make the app actually talk to the portal.
 - ✅ Minimal **Live portal** screen + raw event log (parity with `monitor.py`/`scanner.py`).
 - ✅ Handle permissions, Bluetooth-off, and disconnect/reconnect (with backoff).
 - ⬜ **Verify on a physical iPhone** (the only place BLE can run — not web/simulator).
+- ⛔ **Blocked on this portal:** the user's unit runs **gated firmware** that exposes only
+  Service A (auth) + Service B (data) — **Service C (control), which holds every car/speed/serial
+  characteristic, is hidden behind the unsolved Service-A auth handshake**. Confirmed independently
+  from a fresh desktop central via `python/diag_portal.py` (so it is the portal, not an iOS cache).
+  The original tooling worked because it targeted **firmware 1.2.5**, which exposed all 3 services
+  freely. The app now detects this and surfaces a clear **"Portal locked"** state instead of a
+  silent dead connection. Live car/speed therefore needs either the auth handshake (see below) or a
+  1.2.5-era portal.
 
 **Exit criteria:** On a physical iPhone, placing a car shows car detection + live speed
-values flowing through the parsed event pipeline. *(Code complete + web/simulator-verified;
-on-device confirmation pending the user's dev build.)*
+values flowing through the parsed event pipeline. *(Code complete + web/simulator-verified.
+On-device: BLE connect/discovery verified; live events **blocked** by the portal's firmware
+auth-gate on Service C — see the auth-handshake known-unknown in
+[BLE & Protocol §6](architecture/ble-and-protocol.md) and Phase 5 below.)*
 
 ---
 
@@ -109,7 +119,10 @@ Pulls in the upstream roadmap's "future features" and more.
 - ⬜ Multiplayer/turn-based race nights; share results.
 - ⬜ Sound design; optional "TV/host mode."
 - ⬜ Calibrate speed to real-world units.
-- ⬜ Decode remaining protocol unknowns (auth handshake, full NDEF schema).
+- ⬜ Decode remaining protocol unknowns (auth handshake, full NDEF schema). **Now load-bearing:**
+  on **gated firmware** the Service-A challenge-response (read 148-byte cert at `0003-000a`, respond
+  on `0002-000a`/`0004-000a`) is what unlocks **Service C** (all car/speed data). `python/diag_portal.py`
+  is the desktop lab bench for probing it. No public solution exists (Mattel backend, discontinued 2024).
 
 ---
 
