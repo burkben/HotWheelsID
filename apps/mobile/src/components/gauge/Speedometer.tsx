@@ -6,20 +6,24 @@
  * worklet so updates run on the UI thread without React re-renders; new samples
  * spring in via `withSpring` for an interruptible, lively motion.
  *
- * Rendering choice (ADR-0009): react-native-svg now for rock-solid web + native
- * parity; the Skia flame/particle FX layer arrives in Phase 2b and will hook the
- * `isHot` threshold already plumbed here.
+ * Rendering choice (ADR-0009 / ADR-0010): react-native-svg for rock-solid web +
+ * native parity. The Phase 2b flame/particle FX (`FlameField`) is also SVG, hung
+ * off the `flameThreshold` already plumbed here; a Skia particle renderer remains
+ * the eventual upgrade (ADR-0005) once it can be verified on a device.
  */
 import { useEffect } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Animated, {
+  ReduceMotion,
   useAnimatedProps,
+  useReducedMotion,
   useSharedValue,
   withSpring,
 } from "react-native-reanimated";
 import Svg, { Circle, G, Line, Path, Text as SvgText } from "react-native-svg";
 
 import { colors, fontSize, fontWeight } from "@/theme/tokens";
+import { FlameField } from "./FlameField";
 import {
   GAUGE_END_ANGLE,
   GAUGE_START_ANGLE,
@@ -65,11 +69,17 @@ export function Speedometer({
   const needleLength = r - stroke / 2 - 6;
 
   const angle = useSharedValue(GAUGE_START_ANGLE);
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     const fraction = Math.max(0, Math.min(value, max)) / max;
     const target = GAUGE_START_ANGLE + fraction * (GAUGE_END_ANGLE - GAUGE_START_ANGLE);
-    angle.value = withSpring(target, { damping: 13, stiffness: 95, mass: 0.7 });
+    angle.value = withSpring(target, {
+      damping: 13,
+      stiffness: 95,
+      mass: 0.7,
+      reduceMotion: ReduceMotion.System,
+    });
   }, [value, max, angle]);
 
   const needleProps = useAnimatedProps(() => {
@@ -83,6 +93,11 @@ export function Speedometer({
 
   const ticks = makeTicks(cx, cy, r - stroke / 2, max, tickStep);
   const isHot = readoutMph >= flameThreshold;
+
+  // Live heat for the flame layer: how far the *current* needle target sits
+  // past the threshold (flares on a fast pass, fades as the needle returns).
+  const headroom = Math.max(1, max - flameThreshold);
+  const liveIntensity = Math.max(0, Math.min((value - flameThreshold) / headroom, 1));
 
   return (
     <View style={[styles.wrap, { width: size, height: size }]}>
@@ -146,6 +161,9 @@ export function Speedometer({
             </SvgText>
           ))}
         </G>
+
+        {/* Phase 2b flame FX — beneath the needle so the needle stays crisp. */}
+        <FlameField cx={cx} cy={cy} r={r} intensity={liveIntensity} reduceMotion={reduceMotion} />
 
         {/* Needle + hub */}
         <AnimatedLine

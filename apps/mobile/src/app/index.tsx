@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
 
 import { PORTAL_NAME } from '@hotwheelsid/protocol';
 
@@ -44,7 +45,23 @@ export default function SpeedometerScreen() {
     setNeedleValue(lastSpeed.scaleMph);
     if (holdTimer.current) clearTimeout(holdTimer.current);
     holdTimer.current = setTimeout(() => setNeedleValue(0), NEEDLE_HOLD_MS);
+
+    // Tactile punch on each pass; a celebratory cue when it's a new best.
+    // (The store has already folded this pass into bestMph by now.)
+    if (Platform.OS !== 'web') {
+      const isRecord = lastSpeed.scaleMph >= usePortalStore.getState().bestMph - 0.001;
+      const haptic = isRecord
+        ? Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+        : Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      haptic.catch(() => {});
+    }
   }, [lastSpeed]);
+
+  // Light tick when a new car is detected on the portal.
+  useEffect(() => {
+    if (!car) return;
+    if (Platform.OS !== 'web') Haptics.selectionAsync().catch(() => {});
+  }, [car?.uid]);
 
   useEffect(() => {
     return () => {
@@ -127,8 +144,8 @@ export default function SpeedometerScreen() {
       <RecentPasses passes={passes} bestMph={bestMph} />
 
       <Text style={styles.note}>
-        Phase 2a · UI runs on mocked portal events decoded by @hotwheelsid/protocol.
-        Real Bluetooth arrives in Phase 1 with a custom dev build.
+        Phase 2b · flames + haptics on mocked portal events decoded by
+        @hotwheelsid/protocol. Real Bluetooth arrives in Phase 1 with a custom dev build.
       </Text>
     </ScrollView>
   );

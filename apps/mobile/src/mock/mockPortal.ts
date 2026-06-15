@@ -89,8 +89,9 @@ export function createMockPortal({
 
   const triggerPass: MockPortal["triggerPass"] = (scaleMph) => {
     if (!running) return;
-    // Default: a random pass roughly across the dial (40..285 scale mph).
-    const mph = scaleMph ?? 40 + random() * 245;
+    // Default: a believable spread, with ~1 in 3 "burner" passes into the red
+    // zone (>240) so the high-speed flame FX shows up regularly in the demo.
+    const mph = scaleMph ?? (random() < 0.34 ? 242 + random() * 53 : 55 + random() * 175);
     emit(CHAR_EVENT_3, encodeSpeedRaw(mph / 64)); // scaleMph = raw * 64
   };
 
