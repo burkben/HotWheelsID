@@ -1,8 +1,9 @@
 # Redline ID 🏎️
 
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![Platform: iOS](https://img.shields.io/badge/platform-iOS-000000?logo=apple&logoColor=white)](apps/mobile/)
+[![TypeScript: React Native + Expo](https://img.shields.io/badge/TypeScript-React_Native_%2B_Expo-3178C6?logo=typescript&logoColor=white)](apps/mobile/)
+[![Python 3.10+ (terminal tools)](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](python/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey.svg)](https://github.com/burkben/HotWheelsID)
 
 **Bring your Hot Wheels id Race Portal back to life!**
 
