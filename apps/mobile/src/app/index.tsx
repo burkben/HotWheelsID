@@ -36,19 +36,15 @@ export default function SpeedometerScreen() {
   const bestMph = usePortalStore((s) => s.bestMph);
   const passes = usePortalStore((s) => s.passes);
 
-  // On a real iOS/Android device, drive the speedometer from the *actual* portal
-  // over BLE. On web and the iOS Simulator (no radio) fall back to the mock so
-  // the demo still works. This is why the home screen no longer fabricates races
-  // when nothing is connected — it reflects real hardware on a real device.
-  const useBle = isBleAvailable() && Device.isDevice;
+  // On a real device we can drive the speedometer from the *actual* portal over
+  // BLE. On web / the iOS Simulator there's no radio, so we fall back to the mock.
+  // `demoMode` also lets the user opt into the mock on a real device — invaluable
+  // when their portal is firmware-locked but they still want to show off the UI.
+  const canBle = isBleAvailable() && Device.isDevice;
+  const [demoMode, setDemoMode] = useState(!canBle);
+  const useBle = canBle && !demoMode;
   const [blePhase, setBlePhase] = useState<BlePhase | null>(null);
   const transportRef = useRef<HomeTransport | null>(null);
-  if (transportRef.current === null) {
-    const { dispatch, setConnection } = usePortalStore.getState();
-    transportRef.current = useBle
-      ? createBlePortal({ dispatch, setConnection, onPhase: setBlePhase })
-      : createMockPortal({ dispatch, setConnection });
-  }
 
   // Needle springs to each pass, then eases back to rest; the digital readout
   // keeps showing the last recorded speed.
@@ -80,10 +76,34 @@ export default function SpeedometerScreen() {
     if (Platform.OS !== 'web') Haptics.selectionAsync().catch(() => {});
   }, [car?.uid]);
 
+  // Build (and rebuild) the portal transport whenever the live/demo mode flips.
+  // The BleManager is a module-level singleton, so recreating this thin wrapper on
+  // toggle is cheap and leak-free; the cleanup tears down the outgoing transport.
+  //
+  // Demo mode auto-starts so the gauge comes alive the instant you enter it (zero
+  // taps — ideal for the showcase, and for the locked-portal "Switch to demo"
+  // escape hatch). Live BLE never auto-starts: scanning the radio is an explicit
+  // "Connect portal" action, so the home screen shows no fabricated activity until
+  // the user opts in.
+  useEffect(() => {
+    const { dispatch, setConnection } = usePortalStore.getState();
+    const transport: HomeTransport = useBle
+      ? createBlePortal({ dispatch, setConnection, onPhase: setBlePhase })
+      : createMockPortal({ dispatch, setConnection });
+    transportRef.current = transport;
+    if (!useBle) {
+      setBlePhase(null); // a mock portal is never "locked"
+      void transport.start();
+    }
+    return () => {
+      void transport.stop();
+      transportRef.current = null;
+    };
+  }, [useBle]);
+
   useEffect(() => {
     return () => {
       if (holdTimer.current) clearTimeout(holdTimer.current);
-      transportRef.current?.stop();
     };
   }, []);
 
@@ -97,6 +117,14 @@ export default function SpeedometerScreen() {
     } else {
       transportRef.current?.start();
     }
+  };
+
+  // Flip between the real BLE transport and the in-app mock. The effect keyed on
+  // `useBle` tears down the old transport and spins up the new one.
+  const switchMode = (toDemo: boolean) => {
+    if (toDemo === demoMode) return;
+    setNeedleValue(0);
+    setDemoMode(toDemo);
   };
 
   return (
@@ -117,14 +145,37 @@ export default function SpeedometerScreen() {
         <StatusPill connection={connection} controlStatus={controlStatus} />
       </View>
 
+      {canBle && (
+        <View style={styles.modeToggle}>
+          <Pressable
+            onPress={() => switchMode(false)}
+            style={[styles.modeOption, useBle && styles.modeOptionActive]}
+          >
+            <Text style={[styles.modeText, useBle && styles.modeTextActive]}>Live BLE</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => switchMode(true)}
+            style={[styles.modeOption, demoMode && styles.modeOptionActive]}
+          >
+            <Text style={[styles.modeText, demoMode && styles.modeTextActive]}>Demo</Text>
+          </Pressable>
+        </View>
+      )}
+
       {useBle && blePhase === 'locked' && (
         <View style={styles.lockedBanner}>
           <Text style={styles.lockedTitle}>Portal firmware locked</Text>
           <Text style={styles.lockedBody}>
             This portal hides its car &amp; speed data behind the Hot Wheels id auth handshake,
             which isn’t publicly supported. Connecting succeeds but no events stream. Open the raw
-            event log for the full diagnosis.
+            event log for the full diagnosis, or switch to demo mode to explore the full experience.
           </Text>
+          <Pressable
+            onPress={() => switchMode(true)}
+            style={({ pressed }) => [styles.lockedButton, pressed && styles.buttonPressed]}
+          >
+            <Text style={styles.lockedButtonText}>Switch to demo mode</Text>
+          </Pressable>
         </View>
       )}
 
@@ -192,7 +243,9 @@ export default function SpeedometerScreen() {
       <Text style={styles.note}>
         {useBle
           ? 'Tap “Connect portal”, then roll a car across your Hot Wheels id portal to log real passes over Bluetooth. “Open raw event log” shows every decoded BLE event.'
-          : 'This screen is a demo: flames + haptics run on mocked portal events decoded by @hotwheelsid/protocol. Run a dev build on a physical iPhone to connect a real portal over Bluetooth.'}
+          : canBle
+            ? 'Demo mode: simulated passes (decoded by @hotwheelsid/protocol) roll automatically — tap “Trigger pass” to fire one, or “Disconnect” to pause. Switch to “Live BLE” to use a real Hot Wheels id portal.'
+            : 'This screen is a demo: simulated passes decoded by @hotwheelsid/protocol roll automatically, driving the flames + haptics. Run a dev build on a physical iPhone to connect a real portal over Bluetooth.'}
       </Text>
     </ScrollView>
   );
@@ -327,6 +380,46 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: fontSize.sm,
     lineHeight: 19,
+  },
+  lockedButton: {
+    marginTop: spacing(1),
+    alignSelf: 'flex-start',
+    backgroundColor: colors.surfaceAlt,
+    borderColor: colors.accent,
+    borderWidth: 1,
+    borderRadius: radius.md,
+    paddingVertical: spacing(2.5),
+    paddingHorizontal: spacing(4),
+  },
+  lockedButtonText: {
+    color: colors.accent,
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+  },
+  modeToggle: {
+    flexDirection: 'row',
+    backgroundColor: colors.surfaceAlt,
+    borderColor: colors.border,
+    borderWidth: 1,
+    borderRadius: radius.pill,
+    padding: 3,
+    gap: 3,
+  },
+  modeOption: {
+    paddingVertical: spacing(1.5),
+    paddingHorizontal: spacing(4),
+    borderRadius: radius.pill,
+  },
+  modeOptionActive: {
+    backgroundColor: colors.accent,
+  },
+  modeText: {
+    color: colors.textSecondary,
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+  },
+  modeTextActive: {
+    color: colors.bg,
   },
   buttonDisabled: {
     opacity: 0.4,
