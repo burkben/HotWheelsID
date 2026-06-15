@@ -340,14 +340,13 @@ Mattel discontinued the Hot Wheels id app on January 1, 2024, leaving thousands 
 If this project helped bring your Hot Wheels Portal back to life, consider supporting development:
 
 - ⭐ **Star this repository**
-- 💖 **[Sponsor on GitHub](https://github.com/sponsors/mtxmiller)**
 - 🐛 **Report issues** and suggest features
 
 [![Sponsor](https://img.shields.io/github/sponsors/mtxmiller?style=for-the-badge&logo=github&label=Sponsor)](https://github.com/sponsors/mtxmiller)
 
 ### PayPal Donations
 
-[![Donate with PayPal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/ncp/payment/WWXW56JQE4GR4)
+[Donate with Paypal!](https://www.paypal.com/donate/?business=DAABJ7R4P22CC&no_recurring=0&currency_code=USD)
 
 ## License
 
