@@ -29,6 +29,27 @@ beforeEach(() => {
 });
 
 describe("initRacePersistence", () => {
+  it("skips SQLite entirely when the native module is absent (no repo injected)", async () => {
+    // Mirrors a dev client built before expo-sqlite: globalThis.expo is undefined
+    // in Node, so the probe is falsy and we must NOT import the native adapter.
+    // Regression guard for the LogBox red screen ("Cannot find native module
+    // 'ExpoSQLite'" / "Requiring unknown module").
+    expect(
+      (globalThis as { expo?: unknown }).expo,
+      "test env unexpectedly exposes globalThis.expo",
+    ).toBeUndefined();
+
+    await expect(initRacePersistence()).resolves.toBeUndefined();
+    expect(useRaceStore.getState().leaderboard).toHaveLength(0);
+
+    // No sinks were registered, so finishing a race must not throw.
+    const store = useRaceStore.getState();
+    store.configure({ targetLaps: 1, player: "Ada", carUid: "C0DE" });
+    store.startRacing();
+    useRaceStore.getState().gate(0);
+    expect(() => useRaceStore.getState().gate(500)).not.toThrow();
+  });
+
   it("hydrates the leaderboard from the injected repository", async () => {
     const repo = new InMemoryRaceRepository();
     await repo.saveResult(makeResult({ player: "Ada", totalTime: 2 }));

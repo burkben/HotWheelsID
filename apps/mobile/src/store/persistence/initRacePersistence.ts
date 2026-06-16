@@ -11,10 +11,17 @@
  * client is rebuilt. This mirrors the "build before hardware" discipline: the
  * pure store never depends on the native seam being present.
  *
+ * Crucially, we **probe for the native module before importing `expo-sqlite`**.
+ * `expo-sqlite` throws *at module-evaluation time* when `ExpoSQLite` is missing,
+ * and Metro reports that eval-throw straight to LogBox (a red screen) — and then
+ * "Requiring unknown module" on the next attempt — even when the resulting
+ * promise rejection is caught. Checking `globalThis.expo.modules.ExpoSQLite`
+ * first (the very lookup expo itself does) means we simply never import the
+ * adapter when the module is absent, so nothing throws and no red screen appears.
+ *
  * The attempt is **one-shot per JS runtime**: a missing native module can't
  * appear without an app rebuild (which restarts the runtime anyway), so we never
- * retry on failure — retrying on every layout remount / fast-refresh would spam
- * the console with the same "cannot find native module" error.
+ * retry.
  */
 import { setRacePersistence, useRaceStore } from "../raceStore";
 import type { RaceRepository } from "./raceRepository";
@@ -22,24 +29,46 @@ import type { RaceRepository } from "./raceRepository";
 let started = false;
 
 /**
- * Load the native SQLite repository **lazily**. A dev client built before
- * `expo-sqlite` was added has no `ExpoSQLite` native module, and that module is
- * evaluated the moment `expo-sqlite` is imported — so a *static* import here
- * would throw at load time and take the whole root layout down with it. Doing
- * the import inside {@link initRacePersistence}'s try/catch lets that failure be
- * caught and degraded to the in-memory leaderboard instead.
+ * True when the `ExpoSQLite` native module is actually present in this binary.
+ * Reads the same `globalThis.expo.modules` registry `requireOptionalNativeModule`
+ * uses, but without importing `expo-sqlite` (which would throw if absent) or
+ * `expo-modules-core` (whose TS source can't load under the Node test runner).
+ * In Node/CI `globalThis.expo` is undefined, so this is `false` and tests never
+ * touch the native seam.
  */
-async function loadSqliteRepository(): Promise<RaceRepository> {
+function sqliteNativeModuleAvailable(): boolean {
+  try {
+    const expo = (globalThis as { expo?: { modules?: Record<string, unknown> } }).expo;
+    return Boolean(expo?.modules?.ExpoSQLite);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Dynamically import the SQLite adapter, but only after confirming the native
+ * module exists. Returns `null` (not a throw) when it doesn't, so the caller can
+ * fall back to the in-memory leaderboard cleanly.
+ */
+async function loadSqliteRepository(): Promise<RaceRepository | null> {
+  if (!sqliteNativeModuleAvailable()) return null;
   const { SqliteRaceRepository } = await import("./sqliteRaceRepository");
   return new SqliteRaceRepository();
 }
 
 export async function initRacePersistence(repo?: RaceRepository): Promise<void> {
   if (started) return;
-  started = true; // attempt once; never reset on failure (see file header)
+  started = true; // attempt once; never reset (see file header)
 
   try {
     const repository = repo ?? (await loadSqliteRepository());
+    if (!repository) {
+      console.log(
+        "[race] SQLite not in this build — leaderboard is in-memory until you rebuild the dev client (expo run:ios).",
+      );
+      return;
+    }
+
     await repository.init();
     const stored = await repository.loadResults();
     useRaceStore.getState().hydrate(stored);
@@ -57,18 +86,9 @@ export async function initRacePersistence(repo?: RaceRepository): Promise<void> 
       },
     });
   } catch (err) {
-    // Expected on a dev client that predates expo-sqlite: log quietly (console.log
-    // doesn't trip RN's LogBox) so it reads as a notice, not a crash. Surface
-    // anything *other* than a missing native module as a real warning.
-    const missingNativeModule =
-      err instanceof Error && /native module|ExpoSQLite/i.test(err.message);
-    if (missingNativeModule) {
-      console.log(
-        "[race] SQLite not in this build — leaderboard is in-memory until you rebuild the dev client (expo run:ios).",
-      );
-    } else {
-      console.warn("[race] persistence init failed; using in-memory leaderboard", err);
-    }
+    // The native module was present but init failed for some other reason (e.g.
+    // a corrupt DB). Keep the app on the in-memory leaderboard rather than crash.
+    console.warn("[race] persistence init failed; using in-memory leaderboard", err);
   }
 }
 
