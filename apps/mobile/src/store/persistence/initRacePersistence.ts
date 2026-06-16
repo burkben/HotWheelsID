@@ -10,6 +10,11 @@
  * with the in-memory leaderboard, results just won't survive a restart until the
  * client is rebuilt. This mirrors the "build before hardware" discipline: the
  * pure store never depends on the native seam being present.
+ *
+ * The attempt is **one-shot per JS runtime**: a missing native module can't
+ * appear without an app rebuild (which restarts the runtime anyway), so we never
+ * retry on failure — retrying on every layout remount / fast-refresh would spam
+ * the console with the same "cannot find native module" error.
  */
 import { setRacePersistence, useRaceStore } from "../raceStore";
 import type { RaceRepository } from "./raceRepository";
@@ -31,7 +36,7 @@ async function loadSqliteRepository(): Promise<RaceRepository> {
 
 export async function initRacePersistence(repo?: RaceRepository): Promise<void> {
   if (started) return;
-  started = true;
+  started = true; // attempt once; never reset on failure (see file header)
 
   try {
     const repository = repo ?? (await loadSqliteRepository());
@@ -52,15 +57,23 @@ export async function initRacePersistence(repo?: RaceRepository): Promise<void> 
       },
     });
   } catch (err) {
-    started = false;
-    console.warn(
-      "[race] persistence unavailable, leaderboard will be in-memory only",
-      err,
-    );
+    // Expected on a dev client that predates expo-sqlite: log quietly (console.log
+    // doesn't trip RN's LogBox) so it reads as a notice, not a crash. Surface
+    // anything *other* than a missing native module as a real warning.
+    const missingNativeModule =
+      err instanceof Error && /native module|ExpoSQLite/i.test(err.message);
+    if (missingNativeModule) {
+      console.log(
+        "[race] SQLite not in this build — leaderboard is in-memory until you rebuild the dev client (expo run:ios).",
+      );
+    } else {
+      console.warn("[race] persistence init failed; using in-memory leaderboard", err);
+    }
   }
 }
 
-/** Test-only: reset the one-shot guard so each test starts clean. */
+/** Test-only: reset the one-shot guard (and sinks) so each test starts clean. */
 export function resetRacePersistenceForTests(): void {
   started = false;
+  setRacePersistence(null);
 }

@@ -51,7 +51,7 @@ describe("initRacePersistence", () => {
     expect(await repo.loadResults()).toHaveLength(0);
   });
 
-  it("degrades gracefully when the repository cannot initialize, and can retry", async () => {
+  it("degrades gracefully when the repository cannot initialize", async () => {
     const failing: RaceRepository = {
       init: () => Promise.reject(new Error("Cannot find native module 'ExpoSQLite'")),
       loadResults: () => Promise.resolve([]),
@@ -62,10 +62,26 @@ describe("initRacePersistence", () => {
     // Must not throw — a missing native module degrades to in-memory only.
     await expect(initRacePersistence(failing)).resolves.toBeUndefined();
     expect(useRaceStore.getState().leaderboard).toHaveLength(0);
+  });
 
-    // The one-shot guard was released, so a later (good) client still hydrates.
+  it("is one-shot per runtime; a rebuilt client (guard reset) hydrates", async () => {
+    const failing: RaceRepository = {
+      init: () => Promise.reject(new Error("Cannot find native module 'ExpoSQLite'")),
+      loadResults: () => Promise.resolve([]),
+      saveResult: () => Promise.resolve(),
+      clear: () => Promise.resolve(),
+    };
     const good = new InMemoryRaceRepository();
     await good.saveResult(makeResult({ player: "Ada" }));
+
+    await initRacePersistence(failing);
+    // Same runtime: the guard stays latched, so we do NOT retry (no log spam).
+    await initRacePersistence(good);
+    expect(useRaceStore.getState().leaderboard).toHaveLength(0);
+
+    // A rebuild restarts the JS runtime; emulate that by resetting the guard.
+    resetRacePersistenceForTests();
+    useRaceStore.setState({ race: createRace(), leaderboard: [] });
     await initRacePersistence(good);
     expect(useRaceStore.getState().leaderboard.map((r) => r.player)).toEqual(["Ada"]);
   });
