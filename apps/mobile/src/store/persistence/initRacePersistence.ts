@@ -13,16 +13,28 @@
  */
 import { setRacePersistence, useRaceStore } from "../raceStore";
 import type { RaceRepository } from "./raceRepository";
-import { SqliteRaceRepository } from "./sqliteRaceRepository";
 
 let started = false;
+
+/**
+ * Load the native SQLite repository **lazily**. A dev client built before
+ * `expo-sqlite` was added has no `ExpoSQLite` native module, and that module is
+ * evaluated the moment `expo-sqlite` is imported — so a *static* import here
+ * would throw at load time and take the whole root layout down with it. Doing
+ * the import inside {@link initRacePersistence}'s try/catch lets that failure be
+ * caught and degraded to the in-memory leaderboard instead.
+ */
+async function loadSqliteRepository(): Promise<RaceRepository> {
+  const { SqliteRaceRepository } = await import("./sqliteRaceRepository");
+  return new SqliteRaceRepository();
+}
 
 export async function initRacePersistence(repo?: RaceRepository): Promise<void> {
   if (started) return;
   started = true;
 
-  const repository = repo ?? new SqliteRaceRepository();
   try {
+    const repository = repo ?? (await loadSqliteRepository());
     await repository.init();
     const stored = await repository.loadResults();
     useRaceStore.getState().hydrate(stored);
