@@ -6,28 +6,44 @@ This roadmap is organized into phases with clear **exit criteria**. It assumes t
 direction set in the [ADRs](adr/) (React Native + Expo, shared TS protocol package, BLE via
 `react-native-ble-plx`). Architecture detail lives in [`docs/architecture/`](architecture/).
 
-**Legend:** ✅ done · 🔜 next · ⬜ planned
+**Legend:** ✅ done · 🟡 in progress · 🔜 next · ⬜ planned
 
 ---
 
-## Phase 0 — Foundations & repo setup 🔜
+## Status at a glance (updated 2026-06-16)
+
+| Phase | Status | Notes |
+|---|---|---|
+| 0 — Foundations & repo setup | ✅ Done | Monorepo, `@redlineid/protocol`, Expo app, CI all in place. |
+| 1 — Protocol port + first BLE connection | ✅ Done | **Live car + speed hardware-validated on iPhone.** The modern-firmware auth gate is decoded (PR #9, [ADR-0012](adr/0012-modern-mpid-protocol-and-transport.md)). |
+| 2 — Attractive UI | ✅ Done | Skia speedometer, flames, haptics, reduce-motion, mock generator, recent passes. |
+| 3 — Persistence: garage, history, races | 🟡 In progress | **Race Mode shipped** (in-memory leaderboard). SQLite, Garage, and History are the remaining frontier. |
+| 4 — iOS distribution | ⬜ Planned | EAS profiles, TestFlight, Android parity. |
+| 5 — Delight & depth | ⬜ Backlog | Achievements, richer car identity, multiplayer, sound. |
+
+> The headline goal — a polished, hardware-validated live speedometer on iOS — is **achieved**.
+> Current focus: **Phase 3 persistence**, starting by making the Race leaderboard durable.
+
+---
+
+## Phase 0 — Foundations & repo setup ✅
 
 Set up the monorepo and tooling so app work can begin. No hardware needed.
 
-- ⬜ Restructure to the monorepo layout from [ADR-0007](adr/0007-monorepo-structure-and-python-reference.md):
+- ✅ Restructure to the monorepo layout from [ADR-0007](adr/0007-monorepo-structure-and-python-reference.md):
   move Python into `python/`, add `apps/` and `packages/` (JS workspaces).
-- ⬜ Scaffold `packages/protocol` (`@redlineid/protocol`) with `uuids.ts` ported from
-  `python/hwportal/constants.py` and stub `events.ts` / `decode.ts`.
-- ⬜ Scaffold `apps/mobile` with Expo (TypeScript, Expo Router) + `expo-dev-client`.
-- ⬜ Add CI: typecheck + unit tests for the protocol package.
-- ⬜ Update README with monorepo dev instructions.
+- ✅ Scaffold `packages/protocol` (`@redlineid/protocol`) with `uuids.ts` ported from
+  `python/hwportal/constants.py` and `events.ts` / `decode.ts`.
+- ✅ Scaffold `apps/mobile` with Expo (TypeScript, Expo Router) + `expo-dev-client`.
+- ✅ Add CI: typecheck + unit tests (`.github/workflows/ci.yml`).
+- ✅ Update README with monorepo dev instructions.
 
-**Exit criteria:** `apps/mobile` runs in the iOS Simulator (placeholder screen);
-`packages/protocol` builds and is imported by the app; CI green.
+**Exit criteria:** ✅ `apps/mobile` runs; `packages/protocol` builds and is imported by the
+app; CI green.
 
 ---
 
-## Phase 1 — Protocol port + first BLE connection 🟡
+## Phase 1 — Protocol port + first BLE connection ✅
 
 Make the app actually talk to the portal.
 
@@ -43,54 +59,59 @@ Make the app actually talk to the portal.
   [ADR-0011](adr/0011-phase-1-ble-transport.md)).
 - ✅ Minimal **Live portal** screen + raw event log (parity with `monitor.py`/`scanner.py`).
 - ✅ Handle permissions, Bluetooth-off, and disconnect/reconnect (with backoff).
-- ⬜ **Verify on a physical iPhone** (the only place BLE can run — not web/simulator).
-- ⛔ **Blocked on this portal:** the user's unit runs **gated firmware** that exposes only
-  Service A (auth) + Service B (data) — **Service C (control), which holds every car/speed/serial
-  characteristic, is hidden behind the unsolved Service-A auth handshake**. Confirmed independently
-  from a fresh desktop central via `python/diag_portal.py` (so it is the portal, not an iOS cache).
-  The original tooling worked because it targeted **firmware 1.2.5**, which exposed all 3 services
-  freely. The app now detects this and surfaces a clear **"Portal locked"** state instead of a
-  silent dead connection. Live car/speed therefore needs either the auth handshake (see below) or a
-  1.2.5-era portal.
+- ✅ **Verified on a physical iPhone** ("Hyperion V", iOS 26.5.1): placing a car shows live
+  detection + speed on the Home gauge, and the Live screen streams decoded telemetry.
+- ✅ **Modern-firmware unlock (was the blocker):** the user's portal runs **modern firmware
+  (1.0.9)** that exposes **no** legacy control service — telemetry is encrypted protobuf over
+  the **auth service** after a P-256 ECDH handshake (AES-128-CTR, CRC-8). The portal
+  authenticates *itself* (anti-counterfeit), so the client only sends an ephemeral pubkey and
+  the stream is decodable offline with **no Mattel secret or backend**. Ported to TS in
+  `packages/protocol/src/mpid/` and driven over BLE by `apps/mobile/src/ble/mpidBle.ts`; the
+  transport auto-detects **legacy → MPID → locked** (PR #9,
+  [ADR-0012](adr/0012-modern-mpid-protocol-and-transport.md); RE credit @mitchcapper). A
+  genuinely locked unit (neither path available) still surfaces a clear **"Portal locked"** state.
 
-**Exit criteria:** On a physical iPhone, placing a car shows car detection + live speed
-values flowing through the parsed event pipeline. *(Code complete + web/simulator-verified.
-On-device: BLE connect/discovery verified; live events **blocked** by the portal's firmware
-auth-gate on Service C — see the auth-handshake known-unknown in
-[BLE & Protocol §6](architecture/ble-and-protocol.md) and Phase 5 below.)*
+**Exit criteria:** ✅ **Met.** On a physical iPhone, placing a car shows car detection + live
+speed flowing through the parsed event pipeline — on this modern-firmware portal via the MPID
+transport.
 
 ---
 
-## Phase 2 — Attractive UI (the headline goal) ⬜
+## Phase 2 — Attractive UI (the headline goal) ✅
 
 Build the polished experience, developing against mocked events in parallel with Phase 1.
 
-- ⬜ Design tokens + base components ([UI & Design](architecture/ui-and-design.md)).
-- ⬜ **Skia speedometer gauge** with Reanimated needle, speed zones, digital readout.
-- ⬜ High-speed flame/particle effect + haptics on detect/record.
-- ⬜ Speedometer screen: current car, recent passes, best speed/lap.
-- ⬜ Mock event generator for hardware-free UI iteration; respect "reduce motion".
-- ⬜ App theming, icon, splash.
+- ✅ Design tokens + base components ([UI & Design](architecture/ui-and-design.md)).
+- ✅ **Skia speedometer gauge** with Reanimated needle, speed zones, digital readout
+  (`components/gauge/Speedometer.tsx`, `geometry.ts`).
+- ✅ High-speed flame/particle effect + haptics on detect/record (`components/gauge/FlameField.tsx`).
+- ✅ Speedometer screen: current car, recent passes, best speed/lap (`app/index.tsx`,
+  `components/RecentPasses.tsx`).
+- ✅ Mock event generator for hardware-free UI iteration; respects "reduce motion"
+  (`mock/mockPortal.ts`).
+- ✅ App theming, icon, splash.
 
-**Exit criteria:** The live speedometer looks and feels great on device and in the
-Simulator; a non-technical family member can understand it at a glance.
+**Exit criteria:** ✅ The live speedometer looks and feels great on device and in the
+Simulator; understandable at a glance.
 
 ---
 
-## Phase 3 — Persistence: garage, history, races ⬜
+## Phase 3 — Persistence: garage, history, races 🟡
 
 Fix the upstream "no persistent storage" gap and bring races across.
 
 - ⬜ `expo-sqlite` schema (cars, sessions, passes, races, results) +
   settings via MMKV ([ADR-0006](adr/0006-state-management-and-persistence.md)).
 - ⬜ **Garage**: car collection with per-car best speed/lap; car detail screen.
-- ⬜ **Race mode** port of `race_mode.py` (5/10/15/20 laps, countdown, results) + local
-  **leaderboard**.
+- ✅ **Race mode** port of `race_mode.py` (5/10/15/20 laps, countdown, results) + on-screen
+  **leaderboard** — shipped in `app/race.tsx` / `race/raceEngine.ts` / `store/raceStore.ts`.
+  Leaderboard is currently **in-memory** (resets on restart); the `expo-sqlite` seam to make it
+  durable is the **next step** ([ADR-0012](adr/0012-modern-mpid-protocol-and-transport.md)).
 - ⬜ **History**: past sessions and passes.
 - ⬜ Car-name lookup from the Mattel NDEF id (best-effort; see known unknowns).
 
 **Exit criteria:** Cars, bests, and race results survive app restarts; race mode is fully
-playable with a saved leaderboard.
+playable with a saved leaderboard. *(Race mode is playable now; durability is the remaining gap.)*
 
 ---
 
@@ -119,10 +140,11 @@ Pulls in the upstream roadmap's "future features" and more.
 - ⬜ Multiplayer/turn-based race nights; share results.
 - ⬜ Sound design; optional "TV/host mode."
 - ⬜ Calibrate speed to real-world units.
-- ⬜ Decode remaining protocol unknowns (auth handshake, full NDEF schema). **Now load-bearing:**
-  on **gated firmware** the Service-A challenge-response (read 148-byte cert at `0003-000a`, respond
-  on `0002-000a`/`0004-000a`) is what unlocks **Service C** (all car/speed data). `python/diag_portal.py`
-  is the desktop lab bench for probing it. No public solution exists (Mattel backend, discontinued 2024).
+- ⬜ Decode remaining protocol unknowns. The **live-telemetry gate is solved** on modern
+  firmware (the encrypted auth-service stream is fully decoded — see Phase 1 / ADR-0012). What
+  remains is best-effort **car identity**: the full **NDEF / Mattel-id schema** (model name, art,
+  rarity). The Python tools + `python/diag_portal.py` stay the desktop lab bench for probing it.
+  No public catalog exists (Mattel backend, discontinued 2024), so this stays exploratory.
 
 ---
 
@@ -137,12 +159,12 @@ Pulls in the upstream roadmap's "future features" and more.
 
 ```mermaid
 flowchart LR
-    P0[Phase 0<br/>foundations] --> P1[Phase 1<br/>protocol + BLE]
-    P0 --> P2[Phase 2<br/>attractive UI]
-    P1 --> P3[Phase 3<br/>persistence + races]
+    P0["Phase 0 ✅<br/>foundations"] --> P1["Phase 1 ✅<br/>protocol + BLE"]
+    P0 --> P2["Phase 2 ✅<br/>attractive UI"]
+    P1 --> P3["Phase 3 🟡<br/>persistence + races"]
     P2 --> P3
-    P3 --> P4[Phase 4<br/>iOS distribution]
-    P4 --> P5[Phase 5<br/>delight & depth]
+    P3 --> P4["Phase 4 ⬜<br/>iOS distribution"]
+    P4 --> P5["Phase 5 ⬜<br/>delight & depth"]
 ```
 
 > Phases 1 and 2 can run **in parallel** — the UI builds against mocked events while the
