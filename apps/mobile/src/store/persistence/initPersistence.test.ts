@@ -5,8 +5,13 @@ import { useGarageStore } from "../garageStore";
 import { usePortalStore } from "../portalStore";
 import { useRaceStore } from "../raceStore";
 import { InMemoryCarRepository } from "./carRepository";
+import { getSessionRepository } from "./historyAccess";
 import { initPersistence, resetPersistenceForTests } from "./initPersistence";
 import { InMemoryRaceRepository, type RaceRepository } from "./raceRepository";
+import { InMemorySessionRepository } from "./sessionRepository";
+
+/** Flush pending micro + macro tasks so async repo writes settle. */
+const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 function makeResult(over: Partial<RaceResult> = {}): RaceResult {
   return {
@@ -131,6 +136,92 @@ describe("initPersistence", () => {
     const cars = await car.getCars();
     expect(cars).toHaveLength(1);
     expect(cars[0]).toMatchObject({ uid: "AA:BB", detections: 1, bestMph: 12 });
+  });
+
+  it("bridges portal connection + passes into history sessions", async () => {
+    const session = new InMemorySessionRepository();
+    await initPersistence({ session });
+
+    const portal = usePortalStore.getState();
+    portal.setConnection("connected");
+    await flush(); // let startSession resolve before passes arrive
+
+    portal.dispatch({ kind: "carDetected", uid: "6C:C4" });
+    portal.dispatch({ kind: "serial", serial: "1102032557" });
+    portal.dispatch({ kind: "speed", raw: 100, scaleMph: 18 });
+    portal.dispatch({ kind: "speed", raw: 60, scaleMph: 9 });
+    await flush();
+
+    portal.setConnection("disconnected");
+    await flush();
+
+    const sessions = await session.listSessions();
+    expect(sessions).toHaveLength(1);
+    expect(sessions[0]).toMatchObject({ passCount: 2, bestMph: 18 });
+    expect(sessions[0].endedAt).not.toBeNull();
+
+    const passes = await session.passesForSession(sessions[0].id);
+    expect(passes).toHaveLength(2);
+    expect(passes[0]).toMatchObject({ carUid: "6C:C4", serial: "1102032557" });
+  });
+
+  it("opens a fresh session on each reconnect and closes it on disconnect", async () => {
+    const session = new InMemorySessionRepository();
+    await initPersistence({ session });
+    const portal = usePortalStore.getState();
+
+    for (let i = 0; i < 2; i++) {
+      portal.setConnection("connected");
+      await flush();
+      portal.setConnection("disconnected");
+      await flush();
+    }
+
+    const sessions = await session.listSessions();
+    expect(sessions).toHaveLength(2);
+    expect(sessions.every((s) => s.endedAt != null)).toBe(true);
+  });
+
+  it("publishes the session repository for History screens, and clears it on reset", async () => {
+    const session = new InMemorySessionRepository();
+    await initPersistence({ session });
+    expect(getSessionRepository()).toBe(session);
+
+    resetPersistenceForTests();
+    expect(getSessionRepository()).toBeNull();
+  });
+
+  it("does not misattribute passes when a connection drops before its session opens", async () => {
+    // Race: connect then disconnect *before* the async startSession resolves. The
+    // epoch guard must close that orphan session and open a fresh one on reconnect,
+    // so a later pass belongs to the new session — never the stale one.
+    const session = new InMemorySessionRepository();
+    await initPersistence({ session });
+    const portal = usePortalStore.getState();
+
+    portal.setConnection("connected");
+    portal.setConnection("disconnected"); // no flush between — startSession still pending
+    await flush();
+
+    portal.setConnection("connected");
+    await flush();
+    portal.dispatch({ kind: "carDetected", uid: "AA:BB" });
+    portal.dispatch({ kind: "speed", raw: 100, scaleMph: 14 });
+    await flush();
+
+    const sessions = await session.listSessions();
+    expect(sessions).toHaveLength(2);
+
+    // Exactly one session holds the pass; the other is an empty, properly-ended orphan.
+    const counts = await Promise.all(
+      sessions.map(async (s) => ({
+        endedAt: s.endedAt,
+        passes: (await session.passesForSession(s.id)).length,
+      })),
+    );
+    expect(counts.map((c) => c.passes).sort()).toEqual([0, 1]);
+    const orphan = counts.find((c) => c.passes === 0);
+    expect(orphan?.endedAt).not.toBeNull();
   });
 
   it("degrades gracefully when a repository cannot initialize", async () => {
