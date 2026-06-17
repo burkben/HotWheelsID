@@ -11,13 +11,21 @@
  * client is rebuilt. This mirrors the "build before hardware" discipline: the
  * pure store never depends on the native seam being present.
  *
- * Crucially, we **probe for the native module before importing `expo-sqlite`**.
- * `expo-sqlite` throws *at module-evaluation time* when `ExpoSQLite` is missing,
- * and Metro reports that eval-throw straight to LogBox (a red screen) — and then
- * "Requiring unknown module" on the next attempt — even when the resulting
- * promise rejection is caught. Checking `globalThis.expo.modules.ExpoSQLite`
- * first (the very lookup expo itself does) means we simply never import the
- * adapter when the module is absent, so nothing throws and no red screen appears.
+ * Crucially, we **probe for the native module before requiring `expo-sqlite`**.
+ * `expo-sqlite` throws *at module-evaluation time* when `ExpoSQLite` is missing
+ * (its `ExpoSQLite.js` is literally `export default requireNativeModule('ExpoSQLite')`),
+ * and Metro reports that eval-throw straight to LogBox (a red screen). Checking
+ * `globalThis.expo.modules.ExpoSQLite` first (the very lookup expo itself does)
+ * means we simply never load the adapter when the module is absent, so nothing
+ * throws and no red screen appears.
+ *
+ * We pull the adapter in with a **synchronous `require()`, not a dynamic
+ * `import()`**. A dynamic `import()` makes Metro split the adapter into a separate
+ * async chunk; the first time `expo-sqlite` throws at eval, that chunk's module id
+ * is "poisoned" and every later reload reports `Requiring unknown module "…"`
+ * even though our probe never calls it. `require()` keeps the adapter in the main
+ * bundle, and its module factory only runs when we call it here — which we only do
+ * once the native module is confirmed present — so the failure mode can't occur.
  *
  * The attempt is **one-shot per JS runtime**: a missing native module can't
  * appear without an app rebuild (which restarts the runtime anyway), so we never
@@ -46,13 +54,15 @@ function sqliteNativeModuleAvailable(): boolean {
 }
 
 /**
- * Dynamically import the SQLite adapter, but only after confirming the native
- * module exists. Returns `null` (not a throw) when it doesn't, so the caller can
- * fall back to the in-memory leaderboard cleanly.
+ * Load the SQLite adapter, but only after confirming the native module exists.
+ * Returns `null` (not a throw) when it doesn't, so the caller can fall back to the
+ * in-memory leaderboard cleanly. Uses a synchronous `require()` on purpose — see
+ * the file header for why a dynamic `import()` reintroduces the red screen.
  */
-async function loadSqliteRepository(): Promise<RaceRepository | null> {
+function loadSqliteRepository(): RaceRepository | null {
   if (!sqliteNativeModuleAvailable()) return null;
-  const { SqliteRaceRepository } = await import("./sqliteRaceRepository");
+  const { SqliteRaceRepository } =
+    require("./sqliteRaceRepository") as typeof import("./sqliteRaceRepository");
   return new SqliteRaceRepository();
 }
 
@@ -61,7 +71,7 @@ export async function initRacePersistence(repo?: RaceRepository): Promise<void> 
   started = true; // attempt once; never reset (see file header)
 
   try {
-    const repository = repo ?? (await loadSqliteRepository());
+    const repository = repo ?? loadSqliteRepository();
     if (!repository) {
       console.log(
         "[race] SQLite not in this build — leaderboard is in-memory until you rebuild the dev client (expo run:ios).",
