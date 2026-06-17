@@ -10,19 +10,21 @@ direction set in the [ADRs](adr/) (React Native + Expo, shared TS protocol packa
 
 ---
 
-## Status at a glance (updated 2026-06-16)
+## Status at a glance (updated 2026-06-17)
 
 | Phase | Status | Notes |
 |---|---|---|
 | 0 — Foundations & repo setup | ✅ Done | Monorepo, `@redlineid/protocol`, Expo app, CI all in place. |
 | 1 — Protocol port + first BLE connection | ✅ Done | **Live car + speed hardware-validated on iPhone.** The modern-firmware auth gate is decoded (PR #9, [ADR-0012](adr/0012-modern-mpid-protocol-and-transport.md)). |
 | 2 — Attractive UI | ✅ Done | Skia speedometer, flames, haptics, reduce-motion, mock generator, recent passes. |
-| 3 — Persistence: garage, history, races | 🟡 In progress | **Race Mode shipped** (in-memory leaderboard). SQLite, Garage, and History are the remaining frontier. |
-| 4 — iOS distribution | ⬜ Planned | EAS profiles, TestFlight, Android parity. |
+| 3 — Persistence: garage, history, races | ✅ Done | **Race Mode, Garage, History, and Settings all durable** on a shared `expo-sqlite` db (PRs #15/#16/#18/#19). Restart-safe and device-validated. |
+| 4 — iOS distribution | 🔜 Next | EAS profiles, TestFlight, Android parity. |
 | 5 — Delight & depth | ⬜ Backlog | Achievements, richer car identity, multiplayer, sound. |
 
-> The headline goal — a polished, hardware-validated live speedometer on iOS — is **achieved**.
-> Current focus: **Phase 3 persistence**, starting by making the Race leaderboard durable.
+> The headline goal — a polished, hardware-validated live speedometer on iOS — is **achieved**,
+> and **Phase 3 persistence is complete**: garage, race results, history, and settings all
+> survive restarts (device-validated).
+> Current focus: **Phase 4 — iOS distribution** (get it installable for the family via TestFlight).
 
 ---
 
@@ -96,26 +98,33 @@ Simulator; understandable at a glance.
 
 ---
 
-## Phase 3 — Persistence: garage, history, races 🟡
+## Phase 3 — Persistence: garage, history, races ✅
 
 Fix the upstream "no persistent storage" gap and bring races across.
 
-- ⬜ `expo-sqlite` schema (cars, sessions, passes, races, results) +
-  settings via MMKV ([ADR-0006](adr/0006-state-management-and-persistence.md)).
-- ⬜ **Garage**: car collection with per-car best speed/lap; car detail screen.
+- ✅ `expo-sqlite` schema (cars, sessions, passes, races, results) on a single shared
+  `redlineid.db` with a versioned migration ladder (`store/persistence/sqliteDb.ts`),
+  loaded behind a native-module probe so a missing build degrades gracefully instead of
+  red-screening ([ADR-0006](adr/0006-state-management-and-persistence.md)).
+- ✅ **Garage**: car collection with per-car best speed/lap + car detail screen
+  (PR #16) — auto-populated as cars are detected on the portal.
 - ✅ **Race mode** port of `race_mode.py` (5/10/15/20 laps, countdown, results) + on-screen
-  **leaderboard** — shipped in `app/race.tsx` / `race/raceEngine.ts` / `store/raceStore.ts`.
-  Leaderboard is currently **in-memory** (resets on restart); the `expo-sqlite` seam to make it
-  durable is the **next step** ([ADR-0012](adr/0012-modern-mpid-protocol-and-transport.md)).
-- ⬜ **History**: past sessions and passes.
-- ⬜ Car-name lookup from the Mattel NDEF id (best-effort; see known unknowns).
+  **leaderboard** (`app/race.tsx` / `race/raceEngine.ts` / `store/raceStore.ts`). The
+  leaderboard is now **durable** — race results persist across restarts (PR #15).
+- ✅ **History**: past sessions and passes, browsable with a detail view (PR #19).
+- ✅ **Settings**: durable app preferences — player name, default laps, haptics,
+  reduce-motion, demo-mode default (PR #18). Landed as a `settings` KV table on the **same
+  SQLite db** rather than MMKV (ADR-0006's original pick): no native rebuild, fully
+  Node-testable; MMKV stays a clean swap-in if a synchronous pre-paint read is ever needed.
+- ⬜ Car-name lookup from the Mattel NDEF id (best-effort; see Phase 5 / known unknowns).
 
-**Exit criteria:** Cars, bests, and race results survive app restarts; race mode is fully
-playable with a saved leaderboard. *(Race mode is playable now; durability is the remaining gap.)*
+**Exit criteria:** ✅ **Met.** Cars, bests, race results, history, and settings all survive
+app restarts; race mode is fully playable with a saved leaderboard. *(Car-name lookup is the
+one open best-effort item, tracked under Phase 5.)*
 
 ---
 
-## Phase 4 — iOS distribution ⬜
+## Phase 4 — iOS distribution 🔜
 
 Make it genuinely installable for the family.
 
@@ -161,9 +170,9 @@ Pulls in the upstream roadmap's "future features" and more.
 flowchart LR
     P0["Phase 0 ✅<br/>foundations"] --> P1["Phase 1 ✅<br/>protocol + BLE"]
     P0 --> P2["Phase 2 ✅<br/>attractive UI"]
-    P1 --> P3["Phase 3 🟡<br/>persistence + races"]
+    P1 --> P3["Phase 3 ✅<br/>persistence + races"]
     P2 --> P3
-    P3 --> P4["Phase 4 ⬜<br/>iOS distribution"]
+    P3 --> P4["Phase 4 🔜<br/>iOS distribution"]
     P4 --> P5["Phase 5 ⬜<br/>delight & depth"]
 ```
 
