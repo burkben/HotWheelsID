@@ -4,11 +4,11 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { initRacePersistence } from '@/store/persistence/initRacePersistence';
+import { initPersistence } from '@/store/persistence/initPersistence';
 
 export default function RootLayout() {
   useEffect(() => {
-    initRacePersistence();
+    initPersistence();
   }, []);
 
   return (
@@ -18,6 +18,8 @@ export default function RootLayout() {
           <Stack.Screen name="index" />
           <Stack.Screen name="live" />
           <Stack.Screen name="race" />
+          <Stack.Screen name="garage" />
+          <Stack.Screen name="garage/[uid]" />
         </Stack>
         <StatusBar style="light" />
       </SafeAreaProvider>
