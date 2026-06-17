@@ -20,7 +20,7 @@ Expo Go (the App Store client) **cannot** run this app, for two independent reas
 2. **Native modules.** The app depends on `react-native-ble-plx` (Bluetooth) and
    `expo-dev-client`, which are *custom native code*. Expo Go only ships Expo's own native
    modules, so it can never load these — see
-   [ADR-0003](../adr/0003-ble-react-native-ble-plx.md).
+   [ADR-0003](../adr/0003-bluetooth-with-react-native-ble-plx.md).
 
 The fix is a **development build** — your own app binary (a "dev client") that bundles the
 native modules and loads your JavaScript from Metro. That's what both paths below produce.
@@ -88,9 +88,9 @@ the Simulator, installs the app, and starts Metro. After that, day-to-day you on
 - If CLI signing fails, open the generated workspace in Xcode once and set your **Team** to
   your personal Apple ID, then re-run:
   ```bash
-  open ios/HotWheelsID.xcworkspace
+  open ios/*.xcworkspace      # the generated workspace (RedlineID.xcworkspace)
   ```
-- If the bundle identifier `com.burkben.hotwheelsid` is already taken on your account,
+- If the bundle identifier `com.burkben.redlineid` is already taken on your account,
   change `ios.bundleIdentifier` in [`app.json`](../../apps/mobile/app.json) to something
   unique and rebuild.
 
@@ -149,6 +149,10 @@ eas build --profile simulator --platform ios
 Download the resulting `.app` and drag it onto a booted simulator (you may need to install
 an iOS runtime in **Xcode → Settings → Components** first). Then `npx expo start
 --dev-client`.
+
+> **Ready to share with family via TestFlight?** Once you have the paid Apple Developer
+> Program, see the **[iOS TestFlight & distribution runbook](ios-testflight.md)** for the
+> production build → submit → invite-testers flow (plus Android parity).
 
 ---
 
