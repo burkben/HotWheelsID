@@ -3,9 +3,9 @@
  *
  * Opens the shared `redlineid.db` **once**, hydrates every render store from disk,
  * registers write-through sinks, and bridges the runtime portal store into the
- * Garage and History. Today it wires three repositories — Race (durable
- * leaderboard), Car (durable garage), and Session (durable history) — sharing a
- * single migrated DB handle; Settings joins the same pattern later.
+ * Garage and History. Today it wires four repositories — Race (durable
+ * leaderboard), Car (durable garage), Session (durable history), and Settings
+ * (durable preferences) — sharing a single migrated DB handle.
  *
  * **Native-module discipline (load-bearing — do not relax):** `expo-sqlite`
  * throws *at module-evaluation time* when `ExpoSQLite` is absent (its
@@ -29,16 +29,19 @@
 import { setGaragePersistence, useGarageStore } from "../garageStore";
 import { usePortalStore } from "../portalStore";
 import { setRacePersistence, useRaceStore } from "../raceStore";
+import { setSettingsPersistence, useSettingsStore } from "../settingsStore";
 import { InMemoryCarRepository, type CarRepository } from "./carRepository";
 import { InMemoryRaceRepository, type RaceRepository } from "./raceRepository";
 import { setSessionRepository } from "./historyAccess";
 import { InMemorySessionRepository, type SessionRepository } from "./sessionRepository";
+import { InMemorySettingsRepository, type SettingsRepository } from "./settingsRepository";
 
 /** The repositories the bootstrap wires. Tests may inject any subset. */
 export interface PersistenceRepositories {
   race: RaceRepository;
   car: CarRepository;
   session: SessionRepository;
+  settings: SettingsRepository;
 }
 
 let started = false;
@@ -69,11 +72,12 @@ function sqliteNativeModuleAvailable(): boolean {
 async function resolveRepositories(
   injected?: Partial<PersistenceRepositories>,
 ): Promise<PersistenceRepositories | null> {
-  if (injected?.race || injected?.car || injected?.session) {
+  if (injected?.race || injected?.car || injected?.session || injected?.settings) {
     return {
       race: injected.race ?? new InMemoryRaceRepository(),
       car: injected.car ?? new InMemoryCarRepository(),
       session: injected.session ?? new InMemorySessionRepository(),
+      settings: injected.settings ?? new InMemorySettingsRepository(),
     };
   }
 
@@ -86,12 +90,15 @@ async function resolveRepositories(
     require("./sqliteCarRepository") as typeof import("./sqliteCarRepository");
   const { SqliteSessionRepository } =
     require("./sqliteSessionRepository") as typeof import("./sqliteSessionRepository");
+  const { SqliteSettingsRepository } =
+    require("./sqliteSettingsRepository") as typeof import("./sqliteSettingsRepository");
 
   const db = await openRedlineDb();
   return {
     race: new SqliteRaceRepository(db),
     car: new SqliteCarRepository(db),
     session: new SqliteSessionRepository(db),
+    settings: new SqliteSettingsRepository(db),
   };
 }
 
@@ -103,18 +110,23 @@ export async function initPersistence(injected?: Partial<PersistenceRepositories
     const repos = await resolveRepositories(injected);
     if (!repos) {
       console.log(
-        "[persist] SQLite not in this build — Race leaderboard, Garage, and History are in-memory until you rebuild the dev client (expo run:ios).",
+        "[persist] SQLite not in this build — Race leaderboard, Garage, History, and Settings are in-memory until you rebuild the dev client (expo run:ios).",
       );
+      // Settings stay at defaults, but mark them "loaded" so hydration-gated UI
+      // (e.g. Home's startup demo-mode default) doesn't wait forever.
+      if (!useSettingsStore.getState().hydrated) useSettingsStore.getState().hydrate({});
       return;
     }
 
     await repos.race.init();
     await repos.car.init();
     await repos.session.init();
+    await repos.settings.init();
 
     // Hydrate the render stores from durable storage.
     useRaceStore.getState().hydrate(await repos.race.loadResults());
     useGarageStore.getState().hydrate(await repos.car.getCars());
+    useSettingsStore.getState().hydrate(await repos.settings.load());
 
     // History has no render store — publish the repo so screens read it on focus.
     setSessionRepository(repos.session);
@@ -138,6 +150,12 @@ export async function initPersistence(injected?: Partial<PersistenceRepositories
       onClear: () =>
         void repos.car.clear().catch((e) => console.warn("[garage] clear failed", e)),
     });
+    setSettingsPersistence({
+      onSave: (key, value) =>
+        void repos.settings.save(key, value).catch((e) => console.warn("[settings] save failed", e)),
+      onClear: () =>
+        void repos.settings.clear().catch((e) => console.warn("[settings] clear failed", e)),
+    });
 
     // Bridge the runtime portal store → Garage (collect every detected car) and
     // → History (open a session per connection, record each pass), keeping
@@ -147,6 +165,9 @@ export async function initPersistence(injected?: Partial<PersistenceRepositories
     // Native module present but init failed (e.g. a corrupt DB). Keep the app on
     // in-memory stores rather than crash.
     console.warn("[persist] init failed; using in-memory stores", err);
+    // If settings never hydrated before the failure, fall back to defaults so the
+    // store reports "loaded" (don't clobber a successful settings hydration).
+    if (!useSettingsStore.getState().hydrated) useSettingsStore.getState().hydrate({});
   }
 }
 
@@ -269,6 +290,7 @@ export function resetPersistenceForTests(): void {
   setRacePersistence(null);
   setGaragePersistence(null);
   setSessionRepository(null);
+  setSettingsPersistence(null);
   if (unsubscribePortal) {
     unsubscribePortal();
     unsubscribePortal = null;
