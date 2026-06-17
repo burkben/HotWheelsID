@@ -4,11 +4,13 @@ import { createRace, type RaceResult } from "../../race/raceEngine";
 import { useGarageStore } from "../garageStore";
 import { usePortalStore } from "../portalStore";
 import { useRaceStore } from "../raceStore";
+import { DEFAULT_SETTINGS, useSettingsStore } from "../settingsStore";
 import { InMemoryCarRepository } from "./carRepository";
 import { getSessionRepository } from "./historyAccess";
 import { initPersistence, resetPersistenceForTests } from "./initPersistence";
 import { InMemoryRaceRepository, type RaceRepository } from "./raceRepository";
 import { InMemorySessionRepository } from "./sessionRepository";
+import { InMemorySettingsRepository } from "./settingsRepository";
 
 /** Flush pending micro + macro tasks so async repo writes settle. */
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -34,6 +36,7 @@ beforeEach(() => {
   resetPersistenceForTests();
   useRaceStore.setState({ race: createRace(), leaderboard: [] });
   useGarageStore.setState({ cars: [] });
+  useSettingsStore.setState({ ...DEFAULT_SETTINGS, hydrated: false });
   usePortalStore.getState().reset();
 });
 
@@ -51,6 +54,8 @@ describe("initPersistence", () => {
     await expect(initPersistence()).resolves.toBeUndefined();
     expect(useRaceStore.getState().leaderboard).toHaveLength(0);
     expect(useGarageStore.getState().cars).toHaveLength(0);
+    // Settings still report "loaded" (at defaults) so hydration-gated UI proceeds.
+    expect(useSettingsStore.getState().hydrated).toBe(true);
 
     // No sinks registered, so finishing a race must not throw.
     const store = useRaceStore.getState();
@@ -78,6 +83,34 @@ describe("initPersistence", () => {
     await initPersistence({ car });
 
     expect(useGarageStore.getState().cars.map((c) => c.uid)).toEqual(["NEW", "OLD"]);
+  });
+
+  it("hydrates settings from the injected settings repository", async () => {
+    const settings = new InMemorySettingsRepository();
+    await settings.save("playerName", "Ace");
+    await settings.save("defaultLaps", 20);
+    await settings.save("mockModeDefault", true);
+
+    await initPersistence({ settings });
+
+    const s = useSettingsStore.getState();
+    expect(s).toMatchObject({ playerName: "Ace", defaultLaps: 20, mockModeDefault: true });
+    expect(s.haptics).toBe(DEFAULT_SETTINGS.haptics); // unset key stays default
+    expect(s.hydrated).toBe(true);
+  });
+
+  it("wires settings sinks so edits persist and reset clears storage", async () => {
+    const settings = new InMemorySettingsRepository();
+    await initPersistence({ settings });
+
+    useSettingsStore.getState().setPlayerName("Ben");
+    useSettingsStore.getState().setHaptics(false);
+    await Promise.resolve();
+    expect(await settings.load()).toMatchObject({ playerName: "Ben", haptics: false });
+
+    useSettingsStore.getState().reset();
+    await Promise.resolve();
+    expect(await settings.load()).toEqual({});
   });
 
   it("wires race sinks so clearing the leaderboard clears storage", async () => {

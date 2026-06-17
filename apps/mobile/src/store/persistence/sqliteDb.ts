@@ -78,6 +78,15 @@ const MIGRATIONS: ((db: Db) => Promise<void>)[] = [
       CREATE INDEX IF NOT EXISTS idx_passes_session ON passes (session_id);
     `);
   },
+  // v4 — settings: durable app preferences as a small JSON-encoded KV table.
+  async (db) => {
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS settings (
+        key   TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+      );
+    `);
+  },
 ];
 
 /** Open the shared DB, enable WAL, and run any pending migrations. */

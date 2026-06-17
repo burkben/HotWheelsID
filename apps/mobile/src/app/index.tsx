@@ -14,6 +14,7 @@ import { createMockPortal } from '@/mock/mockPortal';
 import { createBlePortal, isBleAvailable } from '@/ble/blePortal';
 import type { BlePhase } from '@/ble/types';
 import { usePortalStore } from '@/store/portalStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import { colors, fontSize, fontWeight, radius, spacing, speedGauge } from '@/theme/tokens';
 
 /** How long the needle holds a pass before easing back toward zero. */
@@ -46,6 +47,23 @@ export default function SpeedometerScreen() {
   const [blePhase, setBlePhase] = useState<BlePhase | null>(null);
   const transportRef = useRef<HomeTransport | null>(null);
 
+  // Apply the persisted "start in demo mode" preference once Settings hydrate.
+  // Only meaningful on a BLE-capable device (otherwise demo is already forced on);
+  // runs a single time so it seeds the initial mode without fighting later toggles.
+  // If the user has already picked a mode or hit connect (possible if hydration is
+  // slow), their choice wins — we never yank them back to the startup default.
+  const mockModeDefault = useSettingsStore((s) => s.mockModeDefault);
+  const settingsHydrated = useSettingsStore((s) => s.hydrated);
+  const appliedMockDefault = useRef(false);
+  const userTouchedMode = useRef(false);
+  useEffect(() => {
+    if (!canBle || appliedMockDefault.current || userTouchedMode.current || !settingsHydrated) {
+      return;
+    }
+    appliedMockDefault.current = true;
+    if (mockModeDefault) setDemoMode(true);
+  }, [canBle, settingsHydrated, mockModeDefault]);
+
   // Needle springs to each pass, then eases back to rest; the digital readout
   // keeps showing the last recorded speed.
   const [needleValue, setNeedleValue] = useState(0);
@@ -61,7 +79,7 @@ export default function SpeedometerScreen() {
 
     // Tactile punch on each pass; a celebratory cue when it's a new best.
     // (The store has already folded this pass into bestMph by now.)
-    if (Platform.OS !== 'web') {
+    if (Platform.OS !== 'web' && useSettingsStore.getState().haptics) {
       const isRecord = lastSpeed.scaleMph >= usePortalStore.getState().bestMph - 0.001;
       const haptic = isRecord
         ? Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
@@ -73,7 +91,9 @@ export default function SpeedometerScreen() {
   // Light tick when a new car is detected on the portal.
   useEffect(() => {
     if (!car) return;
-    if (Platform.OS !== 'web') Haptics.selectionAsync().catch(() => {});
+    if (Platform.OS !== 'web' && useSettingsStore.getState().haptics) {
+      Haptics.selectionAsync().catch(() => {});
+    }
   }, [car?.uid]);
 
   // Build (and rebuild) the portal transport whenever the live/demo mode flips.
@@ -111,6 +131,7 @@ export default function SpeedometerScreen() {
   const isBusy = connection === 'connecting';
 
   const toggleConnection = () => {
+    userTouchedMode.current = true; // an explicit connect/disconnect counts as intent
     if (isConnected || isBusy) {
       transportRef.current?.stop();
       setNeedleValue(0);
@@ -122,6 +143,7 @@ export default function SpeedometerScreen() {
   // Flip between the real BLE transport and the in-app mock. The effect keyed on
   // `useBle` tears down the old transport and spins up the new one.
   const switchMode = (toDemo: boolean) => {
+    userTouchedMode.current = true; // a manual Live/Demo pick overrides the startup default
     if (toDemo === demoMode) return;
     setNeedleValue(0);
     setDemoMode(toDemo);
@@ -259,6 +281,18 @@ export default function SpeedometerScreen() {
           ]}
         >
           <Text style={styles.buttonText}>🕘 History →</Text>
+        </Pressable>
+      </Link>
+
+      <Link href="/settings" asChild>
+        <Pressable
+          style={({ pressed }) => [
+            styles.button,
+            styles.settingsLink,
+            pressed && styles.buttonPressed,
+          ]}
+        >
+          <Text style={styles.buttonText}>⚙️ Settings →</Text>
         </Pressable>
       </Link>
 
@@ -414,6 +448,12 @@ const styles = StyleSheet.create({
     maxWidth: 420,
     backgroundColor: colors.surface,
     borderColor: colors.accentBlue,
+  },
+  settingsLink: {
+    width: '100%',
+    maxWidth: 420,
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
   },
   lockedBanner: {
     width: '100%',

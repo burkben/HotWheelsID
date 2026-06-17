@@ -34,6 +34,7 @@ import { useReducedMotion } from 'react-native-reanimated';
 import { LAP_OPTIONS, currentLapElapsed, type RaceResult } from '@/race/raceEngine';
 import { useRaceStore } from '@/store/raceStore';
 import { usePortalStore } from '@/store/portalStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import { getActiveTransportControls } from '@/transport/active';
 import { colors, fontSize, fontWeight, radius, spacing } from '@/theme/tokens';
 
@@ -41,7 +42,7 @@ import { colors, fontSize, fontWeight, radius, spacing } from '@/theme/tokens';
 const COUNTDOWN_STEP_MS = 800;
 
 function haptic(fn: () => Promise<unknown>) {
-  if (Platform.OS !== 'web') fn().catch(() => {});
+  if (Platform.OS !== 'web' && useSettingsStore.getState().haptics) fn().catch(() => {});
 }
 
 /** "12.34s", or "1:02.34" once a lap crosses a minute. */
@@ -62,7 +63,8 @@ function shortUid(uid?: string | null): string {
 
 export default function RaceScreen() {
   const insets = useSafeAreaInsets();
-  const reduceMotion = useReducedMotion();
+  // Force-reduce via the Settings toggle even when the OS setting is off.
+  const reduceMotion = useReducedMotion() || useSettingsStore((s) => s.reduceMotion);
 
   const race = useRaceStore((s) => s.race);
   const leaderboard = useRaceStore((s) => s.leaderboard);
@@ -80,9 +82,9 @@ export default function RaceScreen() {
 
   const phase = race.phase;
 
-  // --- Setup form state ---
-  const [laps, setLaps] = useState<number>(race.targetLaps);
-  const [player, setPlayer] = useState<string>(race.player);
+  // --- Setup form state (seeded from Settings defaults) ---
+  const [laps, setLaps] = useState<number>(() => useSettingsStore.getState().defaultLaps);
+  const [player, setPlayer] = useState<string>(() => useSettingsStore.getState().playerName);
 
   // --- Gate wiring: fold each *new* portal pass into the race -----------------
   // Track the newest pass id we've already consumed. Reset it when the race arms
