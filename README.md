@@ -185,7 +185,9 @@ hardware. Real Bluetooth needs a development build on a **physical iPhone** (`np
 there). The full runbook — EAS cloud builds, the Simulator profile, and signing notes — is in
 **[docs/guides/ios-dev-build.md](docs/guides/ios-dev-build.md)** (EAS profiles live in
 [`apps/mobile/eas.json`](apps/mobile/eas.json)). See also
-[ADR-0011](docs/adr/0011-phase-1-ble-transport.md).
+[ADR-0011](docs/adr/0011-phase-1-ble-transport.md). To put the app in family/friends' hands
+over **TestFlight**, follow the
+**[iOS TestFlight & distribution runbook](docs/guides/ios-testflight.md)**.
 
 ## Roadmap
 
