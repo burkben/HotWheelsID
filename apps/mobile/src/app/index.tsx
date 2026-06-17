@@ -250,6 +250,18 @@ export default function SpeedometerScreen() {
         </Pressable>
       </Link>
 
+      <Link href="/history" asChild>
+        <Pressable
+          style={({ pressed }) => [
+            styles.button,
+            styles.historyLink,
+            pressed && styles.buttonPressed,
+          ]}
+        >
+          <Text style={styles.buttonText}>🕘 History →</Text>
+        </Pressable>
+      </Link>
+
       <Link href="/live" asChild>
         <Pressable
           style={({ pressed }) => [
@@ -392,6 +404,12 @@ const styles = StyleSheet.create({
     borderColor: colors.accent,
   },
   garageLink: {
+    width: '100%',
+    maxWidth: 420,
+    backgroundColor: colors.surface,
+    borderColor: colors.accentBlue,
+  },
+  historyLink: {
     width: '100%',
     maxWidth: 420,
     backgroundColor: colors.surface,

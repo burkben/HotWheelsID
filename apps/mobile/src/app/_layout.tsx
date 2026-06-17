@@ -20,6 +20,8 @@ export default function RootLayout() {
           <Stack.Screen name="race" />
           <Stack.Screen name="garage" />
           <Stack.Screen name="garage/[uid]" />
+          <Stack.Screen name="history" />
+          <Stack.Screen name="history/[id]" />
         </Stack>
         <StatusBar style="light" />
       </SafeAreaProvider>

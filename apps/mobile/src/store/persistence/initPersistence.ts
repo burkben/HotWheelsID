@@ -3,9 +3,9 @@
  *
  * Opens the shared `redlineid.db` **once**, hydrates every render store from disk,
  * registers write-through sinks, and bridges the runtime portal store into the
- * Garage. Today it wires two repositories — Race (durable leaderboard) and Car
- * (durable garage) — sharing a single migrated DB handle; History/Settings join
- * the same pattern later.
+ * Garage and History. Today it wires three repositories — Race (durable
+ * leaderboard), Car (durable garage), and Session (durable history) — sharing a
+ * single migrated DB handle; Settings joins the same pattern later.
  *
  * **Native-module discipline (load-bearing — do not relax):** `expo-sqlite`
  * throws *at module-evaluation time* when `ExpoSQLite` is absent (its
@@ -31,11 +31,14 @@ import { usePortalStore } from "../portalStore";
 import { setRacePersistence, useRaceStore } from "../raceStore";
 import { InMemoryCarRepository, type CarRepository } from "./carRepository";
 import { InMemoryRaceRepository, type RaceRepository } from "./raceRepository";
+import { setSessionRepository } from "./historyAccess";
+import { InMemorySessionRepository, type SessionRepository } from "./sessionRepository";
 
-/** The repositories the bootstrap wires. Tests may inject either or both. */
+/** The repositories the bootstrap wires. Tests may inject any subset. */
 export interface PersistenceRepositories {
   race: RaceRepository;
   car: CarRepository;
+  session: SessionRepository;
 }
 
 let started = false;
@@ -66,10 +69,11 @@ function sqliteNativeModuleAvailable(): boolean {
 async function resolveRepositories(
   injected?: Partial<PersistenceRepositories>,
 ): Promise<PersistenceRepositories | null> {
-  if (injected?.race || injected?.car) {
+  if (injected?.race || injected?.car || injected?.session) {
     return {
       race: injected.race ?? new InMemoryRaceRepository(),
       car: injected.car ?? new InMemoryCarRepository(),
+      session: injected.session ?? new InMemorySessionRepository(),
     };
   }
 
@@ -80,9 +84,15 @@ async function resolveRepositories(
     require("./sqliteRaceRepository") as typeof import("./sqliteRaceRepository");
   const { SqliteCarRepository } =
     require("./sqliteCarRepository") as typeof import("./sqliteCarRepository");
+  const { SqliteSessionRepository } =
+    require("./sqliteSessionRepository") as typeof import("./sqliteSessionRepository");
 
   const db = await openRedlineDb();
-  return { race: new SqliteRaceRepository(db), car: new SqliteCarRepository(db) };
+  return {
+    race: new SqliteRaceRepository(db),
+    car: new SqliteCarRepository(db),
+    session: new SqliteSessionRepository(db),
+  };
 }
 
 export async function initPersistence(injected?: Partial<PersistenceRepositories>): Promise<void> {
@@ -93,17 +103,21 @@ export async function initPersistence(injected?: Partial<PersistenceRepositories
     const repos = await resolveRepositories(injected);
     if (!repos) {
       console.log(
-        "[persist] SQLite not in this build — Race leaderboard and Garage are in-memory until you rebuild the dev client (expo run:ios).",
+        "[persist] SQLite not in this build — Race leaderboard, Garage, and History are in-memory until you rebuild the dev client (expo run:ios).",
       );
       return;
     }
 
     await repos.race.init();
     await repos.car.init();
+    await repos.session.init();
 
     // Hydrate the render stores from durable storage.
     useRaceStore.getState().hydrate(await repos.race.loadResults());
     useGarageStore.getState().hydrate(await repos.car.getCars());
+
+    // History has no render store — publish the repo so screens read it on focus.
+    setSessionRepository(repos.session);
 
     // Write-through sinks: every store mutation persists (failures stay non-fatal).
     setRacePersistence({
@@ -125,9 +139,10 @@ export async function initPersistence(injected?: Partial<PersistenceRepositories
         void repos.car.clear().catch((e) => console.warn("[garage] clear failed", e)),
     });
 
-    // Bridge the runtime portal store → Garage so any detected car is collected,
-    // keeping portalStore pure (no new coupling, just an external subscription).
-    wirePortalToGarage();
+    // Bridge the runtime portal store → Garage (collect every detected car) and
+    // → History (open a session per connection, record each pass), keeping
+    // portalStore pure (no new coupling, just an external subscription).
+    wirePortalBridges(repos.session);
   } catch (err) {
     // Native module present but init failed (e.g. a corrupt DB). Keep the app on
     // in-memory stores rather than crash.
@@ -136,20 +151,65 @@ export async function initPersistence(injected?: Partial<PersistenceRepositories
 }
 
 /**
- * Subscribe to the runtime portal store and feed the Garage:
+ * Subscribe to the runtime portal store and feed both durable mirrors:
+ *
+ * **Garage** (every detected car is collected):
  *  - a new/changed car `uid` is a placement → `recordDetection`;
  *  - the same car gaining a serial is a late serial → `recordSerial`;
  *  - a new pass with a uid is a speed sample → `recordSpeed` (best-mph tracking).
- * Seeded from the current state so existing values aren't replayed as new.
+ *
+ * **History** (one session per BLE connection):
+ *  - `connection` → `connected` opens a session (`startSession`);
+ *  - `connection` → `disconnected` closes it (`endSession`);
+ *  - each new pass while a session is open is recorded (`addPass`).
+ *
+ * Seeded from the current state so existing values aren't replayed as new. The
+ * `startSession` write is async, so the current session id is tracked in a closure
+ * var and a pass arriving before it resolves is simply not recorded (a connect is
+ * always followed by seconds of setup before the first crossing, so this is moot).
  */
-function wirePortalToGarage(): void {
+function wirePortalBridges(sessionRepo: SessionRepository): void {
   if (unsubscribePortal) return; // idempotent within a runtime
 
   const garage = () => useGarageStore.getState();
+  const warn = (label: string) => (e: unknown) => console.warn(`[history] ${label} failed`, e);
   const seed = usePortalStore.getState();
   let lastUid: string | null = seed.car?.uid ?? null;
   let lastSerial: string | null = seed.car?.serial ?? null;
   let lastPassId = seed.passes[0]?.id ?? 0;
+  let lastConnection = seed.connection;
+  let sessionId: number | null = null;
+
+  // A History session is open **iff** the portal connection is `connected`. The
+  // `startSession` write is async, so a connection that drops before it resolves
+  // would otherwise leave a stale `sessionId`; an epoch counter — bumped on every
+  // open/close — lets a late `startSession` detect that the connection has moved on
+  // and close the orphan session instead of mis-binding later passes to it.
+  let sessionEpoch = 0;
+
+  const openSession = () => {
+    const epoch = ++sessionEpoch;
+    void sessionRepo
+      .startSession(Date.now())
+      .then((id) => {
+        if (epoch === sessionEpoch) {
+          sessionId = id;
+        } else {
+          // The connection changed before this resolved — immediately close it.
+          void sessionRepo.endSession(id, Date.now()).catch(warn("endSession"));
+        }
+      })
+      .catch(warn("startSession"));
+  };
+
+  const closeSession = () => {
+    sessionEpoch++; // invalidate any in-flight openSession
+    const closing = sessionId;
+    sessionId = null;
+    if (closing != null) {
+      void sessionRepo.endSession(closing, Date.now()).catch(warn("endSession"));
+    }
+  };
 
   // If a car is already on the portal when we subscribe (e.g. init ran after a
   // connection was established), collect it now so its detection isn't missed —
@@ -159,10 +219,22 @@ function wirePortalToGarage(): void {
     garage().recordDetection({ uid: lastUid, serial: lastSerial, at: Date.now() });
   }
 
+  // Likewise, open a session if we boot already connected.
+  if (seed.connection === "connected") openSession();
+
   unsubscribePortal = usePortalStore.subscribe((state) => {
+    // --- connection → History session lifecycle (open iff connected) ---
+    if (state.connection !== lastConnection) {
+      const wasConnected = lastConnection === "connected";
+      const nowConnected = state.connection === "connected";
+      if (nowConnected && !wasConnected) openSession();
+      else if (wasConnected && !nowConnected) closeSession();
+      lastConnection = state.connection;
+    }
+
+    // --- car → Garage ---
     const uid = state.car?.uid ?? null;
     const serial = state.car?.serial ?? null;
-
     if (uid && uid !== lastUid) {
       garage().recordDetection({ uid, serial, at: Date.now() });
     } else if (uid && uid === lastUid && serial && serial !== lastSerial) {
@@ -171,10 +243,22 @@ function wirePortalToGarage(): void {
     lastUid = uid;
     lastSerial = serial;
 
+    // --- pass → Garage best-mph + History pass log ---
     const head = state.passes[0];
     if (head && head.id !== lastPassId) {
       lastPassId = head.id;
       if (head.uid) garage().recordSpeed({ uid: head.uid, mph: head.scaleMph, at: head.at });
+      if (sessionId != null) {
+        void sessionRepo
+          .addPass(sessionId, {
+            carUid: head.uid || null,
+            serial,
+            raw: head.raw,
+            scaleMph: head.scaleMph,
+            at: head.at,
+          })
+          .catch(warn("addPass"));
+      }
     }
   });
 }
@@ -184,6 +268,7 @@ export function resetPersistenceForTests(): void {
   started = false;
   setRacePersistence(null);
   setGaragePersistence(null);
+  setSessionRepository(null);
   if (unsubscribePortal) {
     unsubscribePortal();
     unsubscribePortal = null;

@@ -56,6 +56,28 @@ const MIGRATIONS: ((db: Db) => Promise<void>)[] = [
       );
     `);
   },
+  // v3 — history: one session per BLE connection + the passes recorded in it.
+  async (db) => {
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS sessions (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        started_at  INTEGER NOT NULL,
+        ended_at    INTEGER,
+        pass_count  INTEGER NOT NULL DEFAULT 0,
+        best_mph    REAL    NOT NULL DEFAULT 0
+      );
+      CREATE TABLE IF NOT EXISTS passes (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        session_id  INTEGER NOT NULL,
+        car_uid     TEXT,
+        serial      TEXT,
+        raw         REAL    NOT NULL,
+        scale_mph   REAL    NOT NULL,
+        at          INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_passes_session ON passes (session_id);
+    `);
+  },
 ];
 
 /** Open the shared DB, enable WAL, and run any pending migrations. */
