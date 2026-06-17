@@ -50,7 +50,8 @@
           "modes": ["central"],
           "bluetoothAlwaysPermission": "Redline ID uses Bluetooth to connect to your race portal and read car and speed data."
         }
-      ]
+      ],
+      "expo-sqlite"
     ]
   }
 }
