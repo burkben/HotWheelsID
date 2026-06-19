@@ -8,6 +8,7 @@
  * `expo-sqlite` implementation lives in `sqliteRaceRepository.ts`, which is
  * imported solely by the app bootstrap (never by the store or unit tests).
  */
+import type { RaceAggregate } from "../../achievements/stats";
 import type { RaceResult } from "../../race/raceEngine";
 
 export interface RaceRepository {
@@ -17,8 +18,37 @@ export interface RaceRepository {
   loadResults(): Promise<RaceResult[]>;
   /** Append one finished race. */
   saveResult(result: RaceResult): Promise<void>;
+  /**
+   * Lifetime totals across *all* persisted races (not the capped leaderboard),
+   * for the achievements engine. One cheap roll-up query on SQLite.
+   */
+  aggregate(): Promise<RaceAggregate>;
   /** Remove all persisted results (mirrors clearing the leaderboard). */
   clear(): Promise<void>;
+}
+
+/** Roll a list of results into the lifetime {@link RaceAggregate} (shared by
+ *  the in-memory repo and any other pure caller). */
+export function aggregateResults(results: readonly RaceResult[]): RaceAggregate {
+  let totalLaps = 0;
+  let longestRaceLaps = 0;
+  let bestLapSeconds = Infinity;
+  let fastestRaceSeconds = Infinity;
+  for (const r of results) {
+    totalLaps += r.lapCount;
+    if (r.lapCount > longestRaceLaps) longestRaceLaps = r.lapCount;
+    if (r.bestLap < bestLapSeconds) bestLapSeconds = r.bestLap;
+    if (r.totalTime < fastestRaceSeconds) fastestRaceSeconds = r.totalTime;
+  }
+  return {
+    racesFinished: results.length,
+    totalLaps,
+    longestRaceLaps,
+    bestLapSeconds: Number.isFinite(bestLapSeconds) ? bestLapSeconds : null,
+    fastestRaceSeconds: Number.isFinite(fastestRaceSeconds)
+      ? fastestRaceSeconds
+      : null,
+  };
 }
 
 /**
@@ -37,6 +67,10 @@ export class InMemoryRaceRepository implements RaceRepository {
 
   async saveResult(result: RaceResult): Promise<void> {
     this.results.push({ ...result, lapTimes: [...result.lapTimes] });
+  }
+
+  async aggregate(): Promise<RaceAggregate> {
+    return aggregateResults(this.results);
   }
 
   async clear(): Promise<void> {

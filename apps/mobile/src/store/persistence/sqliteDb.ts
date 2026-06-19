@@ -87,6 +87,15 @@ const MIGRATIONS: ((db: Db) => Promise<void>)[] = [
       );
     `);
   },
+  // v5 — achievements: the durable set of unlocked badges (id → first unlock).
+  async (db) => {
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS achievements (
+        id          TEXT    PRIMARY KEY,
+        unlocked_at INTEGER NOT NULL
+      );
+    `);
+  },
 ];
 
 /** Open the shared DB, enable WAL, and run any pending migrations. */

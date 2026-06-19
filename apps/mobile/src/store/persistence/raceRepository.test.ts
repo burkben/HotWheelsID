@@ -48,4 +48,32 @@ describe("InMemoryRaceRepository", () => {
     const again = await repo.loadResults();
     expect(again[0].lapTimes).toEqual([1.2, 1.4]);
   });
+
+  it("aggregates lifetime totals (empty → zeros + nulls)", async () => {
+    const repo = new InMemoryRaceRepository();
+    expect(await repo.aggregate()).toEqual({
+      racesFinished: 0,
+      totalLaps: 0,
+      longestRaceLaps: 0,
+      bestLapSeconds: null,
+      fastestRaceSeconds: null,
+    });
+  });
+
+  it("aggregates counts, sums, longest race, and fastest lap/race", async () => {
+    const repo = new InMemoryRaceRepository();
+    await repo.saveResult(
+      makeResult({ lapCount: 5, totalTime: 12, bestLap: 2.1 }),
+    );
+    await repo.saveResult(
+      makeResult({ lapCount: 20, totalTime: 40, bestLap: 1.5 }),
+    );
+    expect(await repo.aggregate()).toEqual({
+      racesFinished: 2,
+      totalLaps: 25,
+      longestRaceLaps: 20,
+      bestLapSeconds: 1.5,
+      fastestRaceSeconds: 12,
+    });
+  });
 });

@@ -9,8 +9,17 @@
  */
 import type { SQLiteDatabase } from "expo-sqlite";
 
+import type { RaceAggregate } from "../../achievements/stats";
 import type { RaceResult } from "../../race/raceEngine";
 import type { RaceRepository } from "./raceRepository";
+
+interface RaceAggregateRow {
+  races_finished: number;
+  total_laps: number | null;
+  longest_race_laps: number | null;
+  best_lap_seconds: number | null;
+  fastest_race_seconds: number | null;
+}
 
 interface RaceResultRow {
   finished_at: number;
@@ -84,6 +93,24 @@ export class SqliteRaceRepository implements RaceRepository {
       result.avgLap,
       JSON.stringify(result.lapTimes),
     );
+  }
+
+  async aggregate(): Promise<RaceAggregate> {
+    const row = await this.db.getFirstAsync<RaceAggregateRow>(
+      `SELECT COUNT(*)        AS races_finished,
+              SUM(lap_count)   AS total_laps,
+              MAX(lap_count)   AS longest_race_laps,
+              MIN(best_lap)    AS best_lap_seconds,
+              MIN(total_time)  AS fastest_race_seconds
+         FROM race_results`,
+    );
+    return {
+      racesFinished: row?.races_finished ?? 0,
+      totalLaps: row?.total_laps ?? 0,
+      longestRaceLaps: row?.longest_race_laps ?? 0,
+      bestLapSeconds: row?.best_lap_seconds ?? null,
+      fastestRaceSeconds: row?.fastest_race_seconds ?? null,
+    };
   }
 
   async clear(): Promise<void> {
