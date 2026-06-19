@@ -284,6 +284,18 @@ export default function SpeedometerScreen() {
         </Pressable>
       </Link>
 
+      <Link href="/achievements" asChild>
+        <Pressable
+          style={({ pressed }) => [
+            styles.button,
+            styles.achievementsLink,
+            pressed && styles.buttonPressed,
+          ]}
+        >
+          <Text style={styles.buttonText}>🏆 Achievements →</Text>
+        </Pressable>
+      </Link>
+
       <Link href="/settings" asChild>
         <Pressable
           style={({ pressed }) => [
@@ -448,6 +460,12 @@ const styles = StyleSheet.create({
     maxWidth: 420,
     backgroundColor: colors.surface,
     borderColor: colors.accentBlue,
+  },
+  achievementsLink: {
+    width: '100%',
+    maxWidth: 420,
+    backgroundColor: colors.surface,
+    borderColor: colors.accent,
   },
   settingsLink: {
     width: '100%',
