@@ -21,6 +21,7 @@ import {
   Platform,
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   TextInput,
@@ -33,8 +34,10 @@ import { useReducedMotion } from 'react-native-reanimated';
 
 import { LAP_OPTIONS, currentLapElapsed, type RaceResult } from '@/race/raceEngine';
 import { useRaceStore } from '@/store/raceStore';
+import { useGarageStore } from '@/store/garageStore';
 import { usePortalStore } from '@/store/portalStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { raceShareText } from '@/share/summary';
 import { getActiveTransportControls } from '@/transport/active';
 import { colors, fontSize, fontWeight, radius, spacing } from '@/theme/tokens';
 
@@ -369,6 +372,13 @@ function LapList({ lapTimes, bestLap }: { lapTimes: readonly number[]; bestLap: 
 }
 
 function Results({ result, onAgain }: { result: RaceResult; onAgain: () => void }) {
+  const carName = useGarageStore((s) => s.cars.find((c) => c.uid === result.carUid)?.name ?? null);
+
+  const onShare = () => {
+    haptic(() => Haptics.selectionAsync());
+    Share.share({ message: raceShareText(result, { carName }) }).catch(() => {});
+  };
+
   return (
     <View style={styles.section}>
       <View style={styles.resultHero}>
@@ -386,6 +396,13 @@ function Results({ result, onAgain }: { result: RaceResult; onAgain: () => void 
       </View>
 
       <LapList lapTimes={result.lapTimes} bestLap={result.bestLap} />
+
+      <Pressable
+        onPress={onShare}
+        style={({ pressed }) => [styles.shareBtn, pressed && styles.pressed]}
+      >
+        <Text style={styles.shareBtnText}>Share result</Text>
+      </Pressable>
 
       <View style={styles.actionRow}>
         <Pressable
@@ -577,6 +594,16 @@ const styles = StyleSheet.create({
 
   actionRow: { flexDirection: 'row', gap: spacing(2) },
   flex1: { flex: 1 },
+  shareBtn: {
+    backgroundColor: colors.surfaceAlt,
+    borderColor: colors.border,
+    borderWidth: 1,
+    borderRadius: radius.md,
+    paddingVertical: spacing(3),
+    alignItems: 'center',
+    marginBottom: spacing(2),
+  },
+  shareBtnText: { color: colors.accent, fontSize: fontSize.md, fontWeight: fontWeight.bold },
   ghostBtn: {
     backgroundColor: colors.surfaceAlt,
     borderColor: colors.border,
