@@ -14,6 +14,7 @@
 import { create } from "zustand";
 
 import { LAP_OPTIONS } from "../race/raceEngine";
+import { clampCalibration, type SpeedUnit } from "../speed/format";
 
 export interface SettingsState {
   /** Default racer name pre-filled on the Race setup screen. */
@@ -26,6 +27,10 @@ export interface SettingsState {
   reduceMotion: boolean;
   /** Open the app in demo (mock portal) mode instead of live BLE. */
   mockModeDefault: boolean;
+  /** Unit every speed readout is shown in ("scale" mph or km/h). */
+  speedUnit: SpeedUnit;
+  /** Calibration trim applied to displayed speeds (display-only; 0.5–2.0). */
+  speedCalibration: number;
 }
 
 export const DEFAULT_SETTINGS: SettingsState = {
@@ -34,6 +39,8 @@ export const DEFAULT_SETTINGS: SettingsState = {
   haptics: true,
   reduceMotion: false,
   mockModeDefault: false,
+  speedUnit: "mph",
+  speedCalibration: 1,
 };
 
 export const SETTINGS_KEYS = Object.keys(DEFAULT_SETTINGS) as (keyof SettingsState)[];
@@ -63,6 +70,14 @@ function coerceSetting<K extends keyof SettingsState>(
     case "reduceMotion":
     case "mockModeDefault":
       return (typeof value === "boolean" ? value : undefined) as SettingsState[K] | undefined;
+    case "speedUnit":
+      return (value === "mph" || value === "kmh" ? value : undefined) as
+        | SettingsState[K]
+        | undefined;
+    case "speedCalibration":
+      return (typeof value === "number" && Number.isFinite(value)
+        ? clampCalibration(value)
+        : undefined) as SettingsState[K] | undefined;
     default:
       return undefined;
   }
@@ -100,6 +115,8 @@ interface SettingsStore extends SettingsState {
   setHaptics: (value: boolean) => void;
   setReduceMotion: (value: boolean) => void;
   setMockModeDefault: (value: boolean) => void;
+  setSpeedUnit: (value: SpeedUnit) => void;
+  setSpeedCalibration: (value: number) => void;
   /** Restore defaults and clear durable storage. */
   reset: () => void;
 }
@@ -135,6 +152,15 @@ export const useSettingsStore = create<SettingsStore>((set) => ({
   setMockModeDefault: (value) => {
     set({ mockModeDefault: value });
     persist("mockModeDefault", value);
+  },
+  setSpeedUnit: (value) => {
+    set({ speedUnit: value });
+    persist("speedUnit", value);
+  },
+  setSpeedCalibration: (value) => {
+    const next = clampCalibration(value);
+    set({ speedCalibration: next });
+    persist("speedCalibration", next);
   },
 
   reset: () => {

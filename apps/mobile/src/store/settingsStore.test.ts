@@ -101,6 +101,40 @@ describe("settingsStore", () => {
     ]);
   });
 
+  it("sets speed unit and calibration through their setters", () => {
+    const onSave = vi.fn();
+    setSettingsPersistence({ onSave, onClear: vi.fn() });
+
+    const s = useSettingsStore.getState();
+    s.setSpeedUnit("kmh");
+    s.setSpeedCalibration(1.2);
+
+    expect(useSettingsStore.getState()).toMatchObject({
+      speedUnit: "kmh",
+      speedCalibration: 1.2,
+    });
+    expect(onSave.mock.calls).toEqual([
+      ["speedUnit", "kmh"],
+      ["speedCalibration", 1.2],
+    ]);
+  });
+
+  it("clamps an out-of-range calibration on set", () => {
+    useSettingsStore.getState().setSpeedCalibration(99);
+    expect(useSettingsStore.getState().speedCalibration).toBe(2);
+  });
+
+  it("hydrate validates speed keys (bad unit dropped, calibration clamped)", () => {
+    useSettingsStore.getState().hydrate({
+      speedUnit: "lightyears",
+      speedCalibration: 99,
+    } as never);
+
+    const s = useSettingsStore.getState();
+    expect(s.speedUnit).toBe(DEFAULT_SETTINGS.speedUnit);
+    expect(s.speedCalibration).toBe(2);
+  });
+
   it("reset restores defaults and fires onClear", () => {
     const onClear = vi.fn();
     setSettingsPersistence({ onSave: vi.fn(), onClear });

@@ -2,6 +2,7 @@
  * Pure formatting helpers for the History screens. Framework-free so they unit
  * test under Node and stay consistent between the session list and detail views.
  */
+import { formatBestSpeed, formatSpeedValue, type SpeedDisplay } from '../speed/format';
 
 const MONTHS = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -36,13 +37,13 @@ export function formatClock(at: number): string {
 }
 
 /** Whole-number mph for a pass row. */
-export function formatPassMph(scaleMph: number): string {
-  return Math.round(scaleMph).toString();
+export function formatPassMph(scaleMph: number, display?: SpeedDisplay): string {
+  return formatSpeedValue(scaleMph, display);
 }
 
 /** Best mph for a session row, or an em dash when no pass was recorded. */
-export function formatMphLabel(bestMph: number): string {
-  return bestMph > 0 ? Math.round(bestMph).toString() : '—';
+export function formatMphLabel(bestMph: number, display?: SpeedDisplay): string {
+  return formatBestSpeed(bestMph, display);
 }
 
 /** `"3 passes"` / `"1 pass"`. */

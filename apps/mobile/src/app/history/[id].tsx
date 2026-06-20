@@ -12,6 +12,8 @@ import { Link, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-rout
 import { useGarageStore } from '@/store/garageStore';
 import { getSessionRepository } from '@/store/persistence/historyAccess';
 import type { SessionPass, SessionSummary } from '@/store/persistence/sessionRepository';
+import { useSettingsStore } from '@/store/settingsStore';
+import { speedUnitLabel } from '@/speed/format';
 import { carLabel, shortUid } from '@/garage/format';
 import { colors, fontSize, fontWeight, radius, spacing } from '@/theme/tokens';
 import {
@@ -30,6 +32,9 @@ export default function SessionDetailScreen() {
   const sessionId = Number(id);
 
   const cars = useGarageStore((s) => s.cars);
+  const speedUnit = useSettingsStore((s) => s.speedUnit);
+  const speedCalibration = useSettingsStore((s) => s.speedCalibration);
+  const speedDisplay = { unit: speedUnit, calibration: speedCalibration };
   const [session, setSession] = useState<SessionSummary | null>(null);
   const [passes, setPasses] = useState<SessionPass[] | null>(null);
 
@@ -82,7 +87,7 @@ export default function SessionDetailScreen() {
             {'  ·  '}
             {formatDuration(session.startedAt, session.endedAt)}
             {'  ·  '}
-            best {formatMphLabel(session.bestMph)} mph
+            best {formatMphLabel(session.bestMph, speedDisplay)} {speedUnitLabel(speedUnit)}
           </Text>
         )}
       </View>
@@ -105,11 +110,15 @@ export default function SessionDetailScreen() {
 }
 
 function PassRow({ pass, name }: { pass: SessionPass; name: string }) {
+  const speedUnit = useSettingsStore((s) => s.speedUnit);
+  const speedCalibration = useSettingsStore((s) => s.speedCalibration);
   const body = (
     <View style={styles.row}>
       <View style={styles.rowLeft}>
-        <Text style={styles.mph}>{formatPassMph(pass.scaleMph)}</Text>
-        <Text style={styles.mphUnit}>mph</Text>
+        <Text style={styles.mph}>
+          {formatPassMph(pass.scaleMph, { unit: speedUnit, calibration: speedCalibration })}
+        </Text>
+        <Text style={styles.mphUnit}>{speedUnitLabel(speedUnit)}</Text>
       </View>
       <View style={styles.rowRight}>
         <Text style={styles.carName} numberOfLines={1}>

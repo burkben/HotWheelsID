@@ -7,11 +7,18 @@
 import { StyleSheet, Text, View } from "react-native";
 
 import { colors, fontSize, fontWeight, radius, spacing } from "@/theme/tokens";
+import {
+  DEFAULT_SPEED_DISPLAY,
+  formatSpeedValue,
+  speedUnitLabel,
+  type SpeedDisplay,
+} from "@/speed/format";
 import type { Pass } from "@/store/portalStore";
 
 export interface RecentPassesProps {
   passes: readonly Pass[];
   bestMph: number;
+  display?: SpeedDisplay;
 }
 
 function shortUid(uid?: string): string {
@@ -26,7 +33,7 @@ function clockTime(at: number): string {
   return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
 
-export function RecentPasses({ passes, bestMph }: RecentPassesProps) {
+export function RecentPasses({ passes, bestMph, display = DEFAULT_SPEED_DISPLAY }: RecentPassesProps) {
   return (
     <View style={styles.card}>
       <Text style={styles.heading}>Recent passes</Text>
@@ -39,9 +46,9 @@ export function RecentPasses({ passes, bestMph }: RecentPassesProps) {
             <View key={pass.id} style={styles.row}>
               <View style={styles.rowLeft}>
                 <Text style={[styles.mph, isBest && styles.mphBest]}>
-                  {Math.round(pass.scaleMph)}
+                  {formatSpeedValue(pass.scaleMph, display)}
                 </Text>
-                <Text style={styles.unit}>mph</Text>
+                <Text style={styles.unit}>{speedUnitLabel(display.unit)}</Text>
                 {isBest ? <Text style={styles.bestTag}>BEST</Text> : null}
               </View>
               <View style={styles.rowRight}>
