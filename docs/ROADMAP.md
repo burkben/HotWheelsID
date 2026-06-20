@@ -144,11 +144,12 @@ race end-to-end.
 
 Pulls in the upstream roadmap's "future features" and more.
 
-- ⬜ Achievements (top speed, lap streaks, collection milestones).
+- ✅ Achievements (top speed, lap streaks, collection milestones) (PR #23).
 - ⬜ Richer car identity: art, model names, rarity from the Mattel id.
-- ⬜ Multiplayer/turn-based race nights; share results.
+- ⬜ Multiplayer/turn-based race nights.
+- ✅ Share race & session results to the native share sheet (PR #26).
 - ⬜ Sound design; optional "TV/host mode."
-- ✅ Speed units (mph / km/h) + display calibration to real-world speeds (PR #24).
+- ✅ Speed units (mph / km/h) + display calibration to real-world speeds (PR #25).
 - ⬜ Decode remaining protocol unknowns. The **live-telemetry gate is solved** on modern
   firmware (the encrypted auth-service stream is fully decoded — see Phase 1 / ADR-0012). What
   remains is best-effort **car identity**: the full **NDEF / Mattel-id schema** (model name, art,

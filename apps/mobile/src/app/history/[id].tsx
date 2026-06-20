@@ -5,7 +5,7 @@
  * shows the car's nickname when the Garage knows it, else the shortened UID.
  */
 import { useCallback, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Link, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 
@@ -14,6 +14,7 @@ import { getSessionRepository } from '@/store/persistence/historyAccess';
 import type { SessionPass, SessionSummary } from '@/store/persistence/sessionRepository';
 import { useSettingsStore } from '@/store/settingsStore';
 import { speedUnitLabel } from '@/speed/format';
+import { sessionShareText } from '@/share/summary';
 import { carLabel, shortUid } from '@/garage/format';
 import { colors, fontSize, fontWeight, radius, spacing } from '@/theme/tokens';
 import {
@@ -65,6 +66,19 @@ export default function SessionDetailScreen() {
     return car ? carLabel(car) : shortUid(uid);
   };
 
+  const canShare = !!session && !!passes && passes.length > 0;
+  const onShare = () => {
+    if (!session || !passes) return;
+    const carNames = new Map(
+      cars
+        .filter((c) => c.name?.trim())
+        .map((c) => [c.uid, c.name!.trim()] as const),
+    );
+    Share.share({
+      message: sessionShareText(session, passes, { display: speedDisplay, carNames }),
+    }).catch(() => {});
+  };
+
   return (
     <View style={[styles.screen, { paddingTop: insets.top + spacing(2) }]}>
       <View style={styles.header}>
@@ -75,6 +89,16 @@ export default function SessionDetailScreen() {
         >
           <Text style={styles.backText}>‹ History</Text>
         </Pressable>
+        <View style={styles.headerSpacer} />
+        {canShare && (
+          <Pressable
+            hitSlop={12}
+            onPress={onShare}
+            style={({ pressed }) => [styles.share, pressed && styles.pressed]}
+          >
+            <Text style={styles.shareText}>Share</Text>
+          </Pressable>
+        )}
       </View>
 
       <View style={styles.summary}>
@@ -147,6 +171,9 @@ const styles = StyleSheet.create({
   },
   back: { paddingVertical: spacing(1), paddingRight: spacing(1) },
   backText: { color: colors.accentBlue, fontSize: fontSize.md, fontWeight: fontWeight.medium },
+  headerSpacer: { flex: 1 },
+  share: { paddingVertical: spacing(1), paddingLeft: spacing(1) },
+  shareText: { color: colors.accent, fontSize: fontSize.md, fontWeight: fontWeight.bold },
   summary: { paddingHorizontal: spacing(5), paddingBottom: spacing(3), gap: 4 },
   summaryDate: { color: colors.textPrimary, fontSize: fontSize.xl, fontWeight: fontWeight.heavy },
   summaryMeta: { color: colors.textSecondary, fontSize: fontSize.sm },
