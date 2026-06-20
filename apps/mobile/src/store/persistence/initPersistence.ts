@@ -26,10 +26,16 @@
  * The attempt is **one-shot per JS runtime** (a missing module can't appear without
  * an app rebuild, which restarts the runtime anyway), so we never retry.
  */
+import { combineStats, garageAggregate } from "../../achievements/stats";
+import { setAchievementsPersistence, useAchievementsStore } from "../achievementsStore";
 import { setGaragePersistence, useGarageStore } from "../garageStore";
 import { usePortalStore } from "../portalStore";
 import { setRacePersistence, useRaceStore } from "../raceStore";
 import { setSettingsPersistence, useSettingsStore } from "../settingsStore";
+import {
+  InMemoryAchievementsRepository,
+  type AchievementsRepository,
+} from "./achievementsRepository";
 import { InMemoryCarRepository, type CarRepository } from "./carRepository";
 import { InMemoryRaceRepository, type RaceRepository } from "./raceRepository";
 import { setSessionRepository } from "./historyAccess";
@@ -42,10 +48,12 @@ export interface PersistenceRepositories {
   car: CarRepository;
   session: SessionRepository;
   settings: SettingsRepository;
+  achievements: AchievementsRepository;
 }
 
 let started = false;
 let unsubscribePortal: (() => void) | null = null;
+let unsubscribeGarage: (() => void) | null = null;
 
 /**
  * True when the `ExpoSQLite` native module is present in this binary. Reads the
@@ -72,12 +80,19 @@ function sqliteNativeModuleAvailable(): boolean {
 async function resolveRepositories(
   injected?: Partial<PersistenceRepositories>,
 ): Promise<PersistenceRepositories | null> {
-  if (injected?.race || injected?.car || injected?.session || injected?.settings) {
+  if (
+    injected?.race ||
+    injected?.car ||
+    injected?.session ||
+    injected?.settings ||
+    injected?.achievements
+  ) {
     return {
       race: injected.race ?? new InMemoryRaceRepository(),
       car: injected.car ?? new InMemoryCarRepository(),
       session: injected.session ?? new InMemorySessionRepository(),
       settings: injected.settings ?? new InMemorySettingsRepository(),
+      achievements: injected.achievements ?? new InMemoryAchievementsRepository(),
     };
   }
 
@@ -92,6 +107,8 @@ async function resolveRepositories(
     require("./sqliteSessionRepository") as typeof import("./sqliteSessionRepository");
   const { SqliteSettingsRepository } =
     require("./sqliteSettingsRepository") as typeof import("./sqliteSettingsRepository");
+  const { SqliteAchievementsRepository } =
+    require("./sqliteAchievementsRepository") as typeof import("./sqliteAchievementsRepository");
 
   const db = await openRedlineDb();
   return {
@@ -99,6 +116,7 @@ async function resolveRepositories(
     car: new SqliteCarRepository(db),
     session: new SqliteSessionRepository(db),
     settings: new SqliteSettingsRepository(db),
+    achievements: new SqliteAchievementsRepository(db),
   };
 }
 
@@ -122,21 +140,42 @@ export async function initPersistence(injected?: Partial<PersistenceRepositories
     await repos.car.init();
     await repos.session.init();
     await repos.settings.init();
+    await repos.achievements.init();
 
     // Hydrate the render stores from durable storage.
     useRaceStore.getState().hydrate(await repos.race.loadResults());
     useGarageStore.getState().hydrate(await repos.car.getCars());
     useSettingsStore.getState().hydrate(await repos.settings.load());
+    useAchievementsStore.getState().hydrate(await repos.achievements.loadUnlocked());
 
     // History has no render store — publish the repo so screens read it on focus.
     setSessionRepository(repos.session);
 
+    // Recompute achievement stats from the durable race totals + the live garage,
+    // then fold them in (unlocking anything newly earned). Called once now and
+    // again whenever a race is banked or the garage changes (see below).
+    const refreshAchievements = (): void => {
+      void repos.race
+        .aggregate()
+        .then((race) => {
+          const stats = combineStats(race, garageAggregate(useGarageStore.getState().cars));
+          useAchievementsStore.getState().applyStats(stats);
+        })
+        .catch((e) => console.warn("[achievements] refresh failed", e));
+    };
+
     // Write-through sinks: every store mutation persists (failures stay non-fatal).
     setRacePersistence({
       onResult: (result) =>
-        void repos.race.saveResult(result).catch((e) => console.warn("[race] persist result failed", e)),
+        void repos.race
+          .saveResult(result)
+          .then(refreshAchievements) // the new race is now in the durable totals
+          .catch((e) => console.warn("[race] persist result failed", e)),
       onClear: () =>
-        void repos.race.clear().catch((e) => console.warn("[race] clear failed", e)),
+        void repos.race
+          .clear()
+          .then(refreshAchievements)
+          .catch((e) => console.warn("[race] clear failed", e)),
     });
     setGaragePersistence({
       onDetection: (input) =>
@@ -156,11 +195,30 @@ export async function initPersistence(injected?: Partial<PersistenceRepositories
       onClear: () =>
         void repos.settings.clear().catch((e) => console.warn("[settings] clear failed", e)),
     });
+    setAchievementsPersistence({
+      onUnlock: (id, at) =>
+        void repos.achievements.unlock(id, at).catch((e) => console.warn("[achievements] unlock failed", e)),
+      onClear: () =>
+        void repos.achievements.clear().catch((e) => console.warn("[achievements] clear failed", e)),
+    });
+
+    // Garage changes (new car, faster pass) move collection/speed achievements;
+    // refresh off the in-memory store snapshot. Race achievements refresh via the
+    // race sink above (after the durable write, so aggregate() counts it).
+    let lastCars = useGarageStore.getState().cars;
+    unsubscribeGarage = useGarageStore.subscribe((state) => {
+      if (state.cars === lastCars) return;
+      lastCars = state.cars;
+      refreshAchievements();
+    });
 
     // Bridge the runtime portal store → Garage (collect every detected car) and
     // → History (open a session per connection, record each pass), keeping
     // portalStore pure (no new coupling, just an external subscription).
     wirePortalBridges(repos.session);
+
+    // Initial evaluation against the hydrated totals (may unlock retroactively).
+    refreshAchievements();
   } catch (err) {
     // Native module present but init failed (e.g. a corrupt DB). Keep the app on
     // in-memory stores rather than crash.
@@ -291,8 +349,13 @@ export function resetPersistenceForTests(): void {
   setGaragePersistence(null);
   setSessionRepository(null);
   setSettingsPersistence(null);
+  setAchievementsPersistence(null);
   if (unsubscribePortal) {
     unsubscribePortal();
     unsubscribePortal = null;
+  }
+  if (unsubscribeGarage) {
+    unsubscribeGarage();
+    unsubscribeGarage = null;
   }
 }

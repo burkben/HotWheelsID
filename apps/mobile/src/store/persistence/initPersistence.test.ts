@@ -1,16 +1,19 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { createRace, type RaceResult } from "../../race/raceEngine";
+import { useAchievementsStore } from "../achievementsStore";
 import { useGarageStore } from "../garageStore";
 import { usePortalStore } from "../portalStore";
 import { useRaceStore } from "../raceStore";
 import { DEFAULT_SETTINGS, useSettingsStore } from "../settingsStore";
+import { InMemoryAchievementsRepository } from "./achievementsRepository";
 import { InMemoryCarRepository } from "./carRepository";
 import { getSessionRepository } from "./historyAccess";
 import { initPersistence, resetPersistenceForTests } from "./initPersistence";
 import { InMemoryRaceRepository, type RaceRepository } from "./raceRepository";
 import { InMemorySessionRepository } from "./sessionRepository";
 import { InMemorySettingsRepository } from "./settingsRepository";
+import { emptyStats } from "../../achievements/stats";
 
 /** Flush pending micro + macro tasks so async repo writes settle. */
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -37,6 +40,7 @@ beforeEach(() => {
   useRaceStore.setState({ race: createRace(), leaderboard: [] });
   useGarageStore.setState({ cars: [] });
   useSettingsStore.setState({ ...DEFAULT_SETTINGS, hydrated: false });
+  useAchievementsStore.setState({ unlocked: {}, stats: emptyStats(), hydrated: false });
   usePortalStore.getState().reset();
 });
 
@@ -262,6 +266,14 @@ describe("initPersistence", () => {
       init: () => Promise.reject(new Error("Cannot find native module 'ExpoSQLite'")),
       loadResults: () => Promise.resolve([]),
       saveResult: () => Promise.resolve(),
+      aggregate: () =>
+        Promise.resolve({
+          racesFinished: 0,
+          totalLaps: 0,
+          longestRaceLaps: 0,
+          bestLapSeconds: null,
+          fastestRaceSeconds: null,
+        }),
       clear: () => Promise.resolve(),
     };
 
@@ -274,6 +286,14 @@ describe("initPersistence", () => {
       init: () => Promise.reject(new Error("Cannot find native module 'ExpoSQLite'")),
       loadResults: () => Promise.resolve([]),
       saveResult: () => Promise.resolve(),
+      aggregate: () =>
+        Promise.resolve({
+          racesFinished: 0,
+          totalLaps: 0,
+          longestRaceLaps: 0,
+          bestLapSeconds: null,
+          fastestRaceSeconds: null,
+        }),
       clear: () => Promise.resolve(),
     };
     const good = new InMemoryRaceRepository();
@@ -289,5 +309,57 @@ describe("initPersistence", () => {
     useRaceStore.setState({ race: createRace(), leaderboard: [] });
     await initPersistence({ race: good });
     expect(useRaceStore.getState().leaderboard.map((r) => r.player)).toEqual(["Ada"]);
+  });
+
+  it("unlocks achievements retroactively from durable totals and persists them", async () => {
+    const race = new InMemoryRaceRepository();
+    // A finished 20-lap race with a sub-3 best lap → race-first, race-marathon, lap-sub3.
+    await race.saveResult(
+      makeResult({ lapCount: 20, totalTime: 40, bestLap: 2.5, lapTimes: Array(20).fill(2) }),
+    );
+    const achievements = new InMemoryAchievementsRepository();
+
+    await initPersistence({ race, achievements });
+    await flush();
+
+    const unlocked = useAchievementsStore.getState().unlocked;
+    expect(unlocked["race-first"]).toBeDefined();
+    expect(unlocked["race-marathon"]).toBeDefined();
+    expect(unlocked["lap-sub3"]).toBeDefined();
+    // Persisted, so a relaunch would rehydrate them.
+    expect(Object.keys(await achievements.loadUnlocked()).sort()).toEqual(
+      ["lap-sub3", "race-first", "race-marathon"].sort(),
+    );
+  });
+
+  it("unlocks a collection achievement when the garage gains a car", async () => {
+    const achievements = new InMemoryAchievementsRepository();
+    await initPersistence({ achievements });
+    await flush();
+    expect(useAchievementsStore.getState().unlocked["collect-1"]).toBeUndefined();
+
+    // A detected car flows portal → garage → achievements refresh.
+    usePortalStore.getState().dispatch({ kind: "carDetected", uid: "AA:BB:CC" });
+    await flush();
+    expect(useAchievementsStore.getState().unlocked["collect-1"]).toBeDefined();
+    expect((await achievements.loadUnlocked())["collect-1"]).toBeDefined();
+  });
+
+  it("banking a new race unlocks first-finish through the race sink", async () => {
+    const achievements = new InMemoryAchievementsRepository();
+    await initPersistence({ achievements });
+    await flush();
+    expect(useAchievementsStore.getState().unlocked["race-first"]).toBeUndefined();
+
+    // Drive the race store to a finish; its onResult sink saves then refreshes.
+    const store = useRaceStore.getState();
+    store.configure({ targetLaps: 1, player: "Ben", carUid: "AA11" });
+    store.startRacing();
+    useRaceStore.getState().gate(0); // arm
+    useRaceStore.getState().gate(1000); // lap 1 → finish
+    await flush();
+
+    expect(useAchievementsStore.getState().unlocked["race-first"]).toBeDefined();
+    expect((await achievements.loadUnlocked())["race-first"]).toBeDefined();
   });
 });
