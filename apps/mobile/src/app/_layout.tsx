@@ -15,14 +15,14 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="live" />
-          <Stack.Screen name="race" />
-          <Stack.Screen name="garage" />
+          {/* Primary modes live in the bottom tab bar (issue #29). */}
+          <Stack.Screen name="(tabs)" />
+          {/* Secondary screens push over the tabs — reached from the More tab
+              or from a tab's detail links. */}
           <Stack.Screen name="garage/[uid]" />
-          <Stack.Screen name="history" />
           <Stack.Screen name="history/[id]" />
           <Stack.Screen name="achievements" />
+          <Stack.Screen name="live" />
           <Stack.Screen name="settings" />
         </Stack>
         <StatusBar style="light" />

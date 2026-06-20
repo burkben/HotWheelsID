@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Link } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import * as Device from 'expo-device';
 
@@ -253,83 +252,9 @@ export default function SpeedometerScreen() {
 
       <RecentPasses passes={passes} bestMph={bestMph} display={speedDisplay} />
 
-      <Link href="/race" asChild>
-        <Pressable
-          style={({ pressed }) => [
-            styles.button,
-            styles.raceLink,
-            pressed && styles.buttonPressed,
-          ]}
-        >
-          <Text style={styles.buttonText}>🏁 Race mode →</Text>
-        </Pressable>
-      </Link>
-
-      <Link href="/garage" asChild>
-        <Pressable
-          style={({ pressed }) => [
-            styles.button,
-            styles.garageLink,
-            pressed && styles.buttonPressed,
-          ]}
-        >
-          <Text style={styles.buttonText}>🏎️ Garage →</Text>
-        </Pressable>
-      </Link>
-
-      <Link href="/history" asChild>
-        <Pressable
-          style={({ pressed }) => [
-            styles.button,
-            styles.historyLink,
-            pressed && styles.buttonPressed,
-          ]}
-        >
-          <Text style={styles.buttonText}>🕘 History →</Text>
-        </Pressable>
-      </Link>
-
-      <Link href="/achievements" asChild>
-        <Pressable
-          style={({ pressed }) => [
-            styles.button,
-            styles.achievementsLink,
-            pressed && styles.buttonPressed,
-          ]}
-        >
-          <Text style={styles.buttonText}>🏆 Achievements →</Text>
-        </Pressable>
-      </Link>
-
-      <Link href="/settings" asChild>
-        <Pressable
-          style={({ pressed }) => [
-            styles.button,
-            styles.settingsLink,
-            pressed && styles.buttonPressed,
-          ]}
-        >
-          <Text style={styles.buttonText}>⚙️ Settings →</Text>
-        </Pressable>
-      </Link>
-
-      <Link href="/live" asChild>
-        <Pressable
-          style={({ pressed }) => [
-            styles.button,
-            styles.liveLink,
-            pressed && styles.buttonPressed,
-          ]}
-        >
-          <Text style={styles.buttonText}>
-            {useBle ? 'Open raw event log →' : 'Open live portal (real BLE) →'}
-          </Text>
-        </Pressable>
-      </Link>
-
       <Text style={styles.note}>
         {useBle
-          ? 'Tap “Connect portal”, then roll a car across your race portal to log real passes over Bluetooth. “Open raw event log” shows every decoded BLE event.'
+          ? 'Tap “Connect portal”, then roll a car across your race portal to log real passes over Bluetooth. The Live portal screen (under More) shows every decoded BLE event.'
           : canBle
             ? 'Demo mode: simulated passes roll automatically — tap “Trigger pass” to fire one, or “Disconnect” to pause. Switch to “Live BLE” to use a real race portal.'
             : 'This screen is a demo: simulated passes roll automatically, driving the flames + haptics. Run a dev build on a physical iPhone to connect a real portal over Bluetooth.'}
@@ -440,42 +365,6 @@ const styles = StyleSheet.create({
   },
   buttonGhost: {
     backgroundColor: colors.surfaceAlt,
-    borderColor: colors.border,
-  },
-  liveLink: {
-    width: '100%',
-    maxWidth: 420,
-    backgroundColor: colors.surface,
-    borderColor: colors.accentBlue,
-  },
-  raceLink: {
-    width: '100%',
-    maxWidth: 420,
-    backgroundColor: colors.surface,
-    borderColor: colors.accent,
-  },
-  garageLink: {
-    width: '100%',
-    maxWidth: 420,
-    backgroundColor: colors.surface,
-    borderColor: colors.accentBlue,
-  },
-  historyLink: {
-    width: '100%',
-    maxWidth: 420,
-    backgroundColor: colors.surface,
-    borderColor: colors.accentBlue,
-  },
-  achievementsLink: {
-    width: '100%',
-    maxWidth: 420,
-    backgroundColor: colors.surface,
-    borderColor: colors.accent,
-  },
-  settingsLink: {
-    width: '100%',
-    maxWidth: 420,
-    backgroundColor: colors.surface,
     borderColor: colors.border,
   },
   lockedBanner: {
