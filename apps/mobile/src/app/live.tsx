@@ -28,6 +28,8 @@ import { PORTAL_NAME } from "@redlineid/protocol";
 import { createBlePortal, isBleAvailable } from "@/ble/blePortal";
 import type { BleLogEntry, BlePhase, PortalTransport } from "@/ble/types";
 import { usePortalStore } from "@/store/portalStore";
+import { useSettingsStore } from "@/store/settingsStore";
+import { formatBestSpeed, formatSpeedValue, speedUnitLabel } from "@/speed/format";
 import { colors, fontSize, fontWeight, radius, spacing } from "@/theme/tokens";
 
 const MAX_LOG = 100;
@@ -84,6 +86,8 @@ export default function LiveScreen() {
   const lastSpeed = usePortalStore((s) => s.lastSpeed);
   const bestMph = usePortalStore((s) => s.bestMph);
   const passes = usePortalStore((s) => s.passes);
+  const speedUnit = useSettingsStore((s) => s.speedUnit);
+  const speedCalibration = useSettingsStore((s) => s.speedCalibration);
 
   const [phase, setPhase] = useState<BlePhase>("idle");
   const [logs, setLogs] = useState<BleLogEntry[]>([]);
@@ -129,13 +133,17 @@ export default function LiveScreen() {
   };
 
   const summary = useMemo(() => {
+    const display = { unit: speedUnit, calibration: speedCalibration };
     if (car) {
-      const speed = lastSpeed && lastSpeed.scaleMph >= 1 ? `${Math.round(lastSpeed.scaleMph)} mph` : "—";
+      const speed =
+        lastSpeed && lastSpeed.scaleMph >= 1
+          ? `${formatSpeedValue(lastSpeed.scaleMph, display)} ${speedUnitLabel(speedUnit)}`
+          : "—";
       return `Car ${car.uid}${car.serial ? ` · #${car.serial}` : ""} · last ${speed}`;
     }
     if (isLive) return "Connected — place a car on the portal";
     return "No car detected";
-  }, [car, lastSpeed, isLive]);
+  }, [car, lastSpeed, isLive, speedUnit, speedCalibration]);
 
   return (
     <View style={styles.screen}>
@@ -192,7 +200,14 @@ export default function LiveScreen() {
           <Text style={styles.summaryLabel}>Status</Text>
           <Text style={styles.summaryValue}>{summary}</Text>
           <View style={styles.statRow}>
-            <MiniStat label="Best" value={bestMph > 0 ? `${Math.round(bestMph)} mph` : "—"} />
+            <MiniStat
+              label="Best"
+              value={
+                bestMph > 0
+                  ? `${formatBestSpeed(bestMph, { unit: speedUnit, calibration: speedCalibration })} ${speedUnitLabel(speedUnit)}`
+                  : "—"
+              }
+            />
             <MiniStat label="Passes" value={passes.length.toString()} />
             <MiniStat label="Adapter" value={PHASE_LABEL[phase]} />
           </View>

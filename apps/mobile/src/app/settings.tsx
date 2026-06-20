@@ -28,6 +28,14 @@ import * as Haptics from 'expo-haptics';
 
 import { LAP_OPTIONS } from '@/race/raceEngine';
 import { DEFAULT_SETTINGS, useSettingsStore } from '@/store/settingsStore';
+import {
+  CALIBRATION_STEP,
+  MAX_CALIBRATION,
+  MIN_CALIBRATION,
+  formatCalibration,
+  speedUnitLabel,
+  type SpeedUnit,
+} from '@/speed/format';
 import { colors, fontSize, fontWeight, radius, spacing } from '@/theme/tokens';
 
 export default function SettingsScreen() {
@@ -38,12 +46,16 @@ export default function SettingsScreen() {
   const haptics = useSettingsStore((s) => s.haptics);
   const reduceMotion = useSettingsStore((s) => s.reduceMotion);
   const mockModeDefault = useSettingsStore((s) => s.mockModeDefault);
+  const speedUnit = useSettingsStore((s) => s.speedUnit);
+  const speedCalibration = useSettingsStore((s) => s.speedCalibration);
 
   const setPlayerName = useSettingsStore((s) => s.setPlayerName);
   const setDefaultLaps = useSettingsStore((s) => s.setDefaultLaps);
   const setHaptics = useSettingsStore((s) => s.setHaptics);
   const setReduceMotion = useSettingsStore((s) => s.setReduceMotion);
   const setMockModeDefault = useSettingsStore((s) => s.setMockModeDefault);
+  const setSpeedUnit = useSettingsStore((s) => s.setSpeedUnit);
+  const setSpeedCalibration = useSettingsStore((s) => s.setSpeedCalibration);
   const reset = useSettingsStore((s) => s.reset);
 
   // Player name edits commit on blur/submit (one persist, not one per keystroke).
@@ -77,6 +89,20 @@ export default function SettingsScreen() {
   const selectLaps = (laps: number) => {
     if (laps === defaultLaps) return;
     setDefaultLaps(laps);
+    tick();
+  };
+
+  const selectUnit = (unit: SpeedUnit) => {
+    if (unit === speedUnit) return;
+    setSpeedUnit(unit);
+    tick();
+  };
+
+  const nudgeCalibration = (delta: number) => {
+    const raw = Number((speedCalibration + delta).toFixed(2));
+    const clamped = Math.min(MAX_CALIBRATION, Math.max(MIN_CALIBRATION, raw));
+    if (clamped === speedCalibration) return;
+    setSpeedCalibration(clamped);
     tick();
   };
 
@@ -152,6 +178,68 @@ export default function SettingsScreen() {
             })}
           </View>
           <Text style={styles.hint}>The lap target selected by default on the race setup screen.</Text>
+        </View>
+
+        <Text style={styles.sectionLabel}>Speed</Text>
+        <View style={styles.card}>
+          <Text style={styles.rowLabel}>Units</Text>
+          <View style={styles.chips}>
+            {(['mph', 'kmh'] as SpeedUnit[]).map((unit) => {
+              const active = speedUnit === unit;
+              return (
+                <Pressable
+                  key={unit}
+                  onPress={() => selectUnit(unit)}
+                  style={({ pressed }) => [
+                    styles.chip,
+                    active && styles.chipActive,
+                    pressed && styles.pressed,
+                  ]}
+                >
+                  <Text style={[styles.chipNum, active && styles.chipTextActive]}>
+                    {speedUnitLabel(unit)}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <View style={styles.divider} />
+          <View style={styles.stepperRow}>
+            <View style={styles.stepperText}>
+              <Text style={styles.rowLabel}>Calibration</Text>
+              <Text style={styles.hint}>
+                Trim displayed speeds to match a known reference. Recorded data and goals stay
+                unchanged.
+              </Text>
+            </View>
+            <View style={styles.stepper}>
+              <Pressable
+                onPress={() => nudgeCalibration(-CALIBRATION_STEP)}
+                disabled={speedCalibration <= MIN_CALIBRATION}
+                hitSlop={8}
+                style={({ pressed }) => [
+                  styles.stepperBtn,
+                  pressed && styles.pressed,
+                  speedCalibration <= MIN_CALIBRATION && styles.stepperBtnDisabled,
+                ]}
+              >
+                <Text style={styles.stepperBtnText}>−</Text>
+              </Pressable>
+              <Text style={styles.stepperValue}>{formatCalibration(speedCalibration)}</Text>
+              <Pressable
+                onPress={() => nudgeCalibration(CALIBRATION_STEP)}
+                disabled={speedCalibration >= MAX_CALIBRATION}
+                hitSlop={8}
+                style={({ pressed }) => [
+                  styles.stepperBtn,
+                  pressed && styles.pressed,
+                  speedCalibration >= MAX_CALIBRATION && styles.stepperBtnDisabled,
+                ]}
+              >
+                <Text style={styles.stepperBtnText}>+</Text>
+              </Pressable>
+            </View>
+          </View>
         </View>
 
         <Text style={styles.sectionLabel}>Feedback</Text>
@@ -279,6 +367,29 @@ const styles = StyleSheet.create({
   chipTextActive: { color: colors.bg },
   toggleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing(3) },
   toggleText: { flex: 1, gap: 4 },
+  stepperRow: { flexDirection: 'row', alignItems: 'center', gap: spacing(3) },
+  stepperText: { flex: 1, gap: 4 },
+  stepper: { flexDirection: 'row', alignItems: 'center', gap: spacing(2) },
+  stepperBtn: {
+    width: spacing(9),
+    height: spacing(9),
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceAlt,
+  },
+  stepperBtnDisabled: { opacity: 0.35 },
+  stepperBtnText: { color: colors.textPrimary, fontSize: fontSize.xl, fontWeight: fontWeight.heavy },
+  stepperValue: {
+    minWidth: spacing(14),
+    textAlign: 'center',
+    color: colors.textPrimary,
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.heavy,
+    fontVariant: ['tabular-nums'],
+  },
   divider: { height: 1, backgroundColor: colors.border, marginVertical: spacing(1) },
   resetBtn: {
     marginTop: spacing(6),

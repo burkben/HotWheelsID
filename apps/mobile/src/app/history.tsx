@@ -14,6 +14,8 @@ import { Link, useFocusEffect } from 'expo-router';
 
 import { getSessionRepository } from '@/store/persistence/historyAccess';
 import type { SessionSummary } from '@/store/persistence/sessionRepository';
+import { useSettingsStore } from '@/store/settingsStore';
+import { speedUnitLabel } from '@/speed/format';
 import { colors, fontSize, fontWeight, radius, spacing } from '@/theme/tokens';
 import {
   formatDuration,
@@ -103,6 +105,9 @@ export default function HistoryScreen() {
 
 function SessionRow({ session }: { session: SessionSummary }) {
   const live = session.endedAt == null;
+  const speedUnit = useSettingsStore((s) => s.speedUnit);
+  const speedCalibration = useSettingsStore((s) => s.speedCalibration);
+  const display = { unit: speedUnit, calibration: speedCalibration };
   return (
     <Link href={{ pathname: '/history/[id]', params: { id: String(session.id) } }} asChild>
       <Pressable style={({ pressed }) => [styles.row, live && styles.rowLive, pressed && styles.pressed]}>
@@ -120,8 +125,8 @@ function SessionRow({ session }: { session: SessionSummary }) {
           </Text>
         </View>
         <View style={styles.rowStats}>
-          <Text style={styles.bestMph}>{formatMphLabel(session.bestMph)}</Text>
-          <Text style={styles.bestMphUnit}>best mph</Text>
+          <Text style={styles.bestMph}>{formatMphLabel(session.bestMph, display)}</Text>
+          <Text style={styles.bestMphUnit}>best {speedUnitLabel(speedUnit)}</Text>
         </View>
       </Pressable>
     </Link>

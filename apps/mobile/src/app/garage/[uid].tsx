@@ -11,6 +11,8 @@ import * as Haptics from 'expo-haptics';
 
 import { useGarageStore } from '@/store/garageStore';
 import { usePortalStore } from '@/store/portalStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import { speedUnitLabel } from '@/speed/format';
 import { carLabel, formatLap, formatLastSeen, formatMph, shortUid } from '@/garage/format';
 import { colors, fontSize, fontWeight, radius, spacing } from '@/theme/tokens';
 
@@ -22,6 +24,9 @@ export default function CarDetailScreen() {
   const car = useGarageStore((s) => s.cars.find((c) => c.uid === uid));
   const rename = useGarageStore((s) => s.rename);
   const onPortal = usePortalStore((s) => s.car?.uid === uid);
+  const speedUnit = useSettingsStore((s) => s.speedUnit);
+  const speedCalibration = useSettingsStore((s) => s.speedCalibration);
+  const speedDisplay = { unit: speedUnit, calibration: speedCalibration };
 
   const [draft, setDraft] = useState(car?.name ?? '');
 
@@ -77,8 +82,8 @@ export default function CarDetailScreen() {
           </Text>
 
           <View style={styles.hero}>
-            <Text style={styles.heroValue}>{formatMph(car.bestMph)}</Text>
-            <Text style={styles.heroUnit}>best scale mph</Text>
+            <Text style={styles.heroValue}>{formatMph(car.bestMph, speedDisplay)}</Text>
+            <Text style={styles.heroUnit}>best scale {speedUnitLabel(speedUnit)}</Text>
           </View>
 
           <View style={styles.statsGrid}>
