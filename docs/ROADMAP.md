@@ -148,7 +148,7 @@ Pulls in the upstream roadmap's "future features" and more.
 - ⬜ Richer car identity: art, model names, rarity from the Mattel id.
 - ⬜ Multiplayer/turn-based race nights; share results.
 - ⬜ Sound design; optional "TV/host mode."
-- ⬜ Calibrate speed to real-world units.
+- ✅ Speed units (mph / km/h) + display calibration to real-world speeds (PR #24).
 - ⬜ Decode remaining protocol unknowns. The **live-telemetry gate is solved** on modern
   firmware (the encrypted auth-service stream is fully decoded — see Phase 1 / ADR-0012). What
   remains is best-effort **car identity**: the full **NDEF / Mattel-id schema** (model name, art,
