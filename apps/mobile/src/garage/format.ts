@@ -3,6 +3,7 @@
  * test under Node and stay consistent between the list and detail views.
  */
 import type { CarRecord } from '@/store/persistence/carRepository';
+import { formatBestSpeed, type SpeedDisplay } from '../speed/format';
 
 /** Last two octets of a colon-separated NFC UID, e.g. `6C:C4:5A:2B:64:81` → `64:81`. */
 export function shortUid(uid: string): string {
@@ -16,8 +17,8 @@ export function carLabel(car: Pick<CarRecord, 'name' | 'uid'>): string {
 }
 
 /** Best speed as a whole number, or an em dash when never recorded. */
-export function formatMph(bestMph: number): string {
-  return bestMph > 0 ? Math.round(bestMph).toString() : '—';
+export function formatMph(bestMph: number, display?: SpeedDisplay): string {
+  return formatBestSpeed(bestMph, display);
 }
 
 /** Best lap in seconds (2dp), or an em dash when the car has never finished a race. */

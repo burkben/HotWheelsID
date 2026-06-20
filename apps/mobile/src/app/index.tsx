@@ -15,6 +15,7 @@ import { createBlePortal, isBleAvailable } from '@/ble/blePortal';
 import type { BlePhase } from '@/ble/types';
 import { usePortalStore } from '@/store/portalStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { formatBestSpeed, speedUnitLabel, type SpeedDisplay } from '@/speed/format';
 import { colors, fontSize, fontWeight, radius, spacing, speedGauge } from '@/theme/tokens';
 
 /** How long the needle holds a pass before easing back toward zero. */
@@ -54,6 +55,9 @@ export default function SpeedometerScreen() {
   // slow), their choice wins — we never yank them back to the startup default.
   const mockModeDefault = useSettingsStore((s) => s.mockModeDefault);
   const settingsHydrated = useSettingsStore((s) => s.hydrated);
+  const speedUnit = useSettingsStore((s) => s.speedUnit);
+  const speedCalibration = useSettingsStore((s) => s.speedCalibration);
+  const speedDisplay: SpeedDisplay = { unit: speedUnit, calibration: speedCalibration };
   const appliedMockDefault = useRef(false);
   const userTouchedMode = useRef(false);
   useEffect(() => {
@@ -209,10 +213,11 @@ export default function SpeedometerScreen() {
         tickStep={speedGauge.tickStep}
         flameThreshold={speedGauge.flameThreshold}
         size={300}
+        display={speedDisplay}
       />
 
       <View style={styles.statsRow}>
-        <Stat label="Best" value={bestMph > 0 ? Math.round(bestMph).toString() : '—'} unit="mph" />
+        <Stat label="Best" value={formatBestSpeed(bestMph, speedDisplay)} unit={speedUnitLabel(speedUnit)} />
         <Stat label="Passes" value={passes.length.toString()} unit="total" />
         <Stat label="Car" value={car ? shortUid(car.uid) : '—'} unit={car?.serial ?? 'none'} />
       </View>
@@ -246,7 +251,7 @@ export default function SpeedometerScreen() {
         )}
       </View>
 
-      <RecentPasses passes={passes} bestMph={bestMph} />
+      <RecentPasses passes={passes} bestMph={bestMph} display={speedDisplay} />
 
       <Link href="/race" asChild>
         <Pressable

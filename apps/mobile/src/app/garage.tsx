@@ -11,6 +11,8 @@ import { Link } from 'expo-router';
 import { useGarageStore } from '@/store/garageStore';
 import type { CarRecord } from '@/store/persistence/carRepository';
 import { usePortalStore } from '@/store/portalStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import { speedUnitLabel } from '@/speed/format';
 import { colors, fontSize, fontWeight, radius, spacing } from '@/theme/tokens';
 import { carLabel, formatLastSeen, formatLap, formatMph } from '@/garage/format';
 
@@ -49,6 +51,9 @@ export default function GarageScreen() {
 }
 
 function CarRow({ car, onPortal }: { car: CarRecord; onPortal: boolean }) {
+  const speedUnit = useSettingsStore((s) => s.speedUnit);
+  const speedCalibration = useSettingsStore((s) => s.speedCalibration);
+  const display = { unit: speedUnit, calibration: speedCalibration };
   return (
     <Link href={{ pathname: '/garage/[uid]', params: { uid: car.uid } }} asChild>
       <Pressable style={({ pressed }) => [styles.row, onPortal && styles.rowOnPortal, pressed && styles.pressed]}>
@@ -66,8 +71,8 @@ function CarRow({ car, onPortal }: { car: CarRecord; onPortal: boolean }) {
           </Text>
         </View>
         <View style={styles.rowStats}>
-          <Text style={styles.bestMph}>{formatMph(car.bestMph)}</Text>
-          <Text style={styles.bestMphUnit}>best mph</Text>
+          <Text style={styles.bestMph}>{formatMph(car.bestMph, display)}</Text>
+          <Text style={styles.bestMphUnit}>best {speedUnitLabel(speedUnit)}</Text>
           <Text style={styles.subStat} numberOfLines={1}>
             {formatLap(car.bestLap)} · {car.races} {car.races === 1 ? 'race' : 'races'}
           </Text>

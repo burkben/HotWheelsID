@@ -23,6 +23,12 @@ import Animated, {
 import Svg, { Circle, G, Line, Path, Text as SvgText } from "react-native-svg";
 
 import { colors, fontSize, fontWeight } from "@/theme/tokens";
+import {
+  DEFAULT_SPEED_DISPLAY,
+  formatSpeedValue,
+  speedUnitLabel,
+  type SpeedDisplay,
+} from "@/speed/format";
 import { FlameField } from "./FlameField";
 import {
   GAUGE_END_ANGLE,
@@ -51,6 +57,8 @@ export interface SpeedometerProps {
   /** Past this, the gauge is "hot" (flame FX hook for Phase 2b). */
   flameThreshold: number;
   size?: number;
+  /** Unit + calibration for the readout and tick labels (needle stays canonical). */
+  display?: SpeedDisplay;
 }
 
 export function Speedometer({
@@ -61,6 +69,7 @@ export function Speedometer({
   tickStep,
   flameThreshold,
   size = 300,
+  display = DEFAULT_SPEED_DISPLAY,
 }: SpeedometerProps) {
   const stroke = 18;
   const cx = size / 2;
@@ -157,7 +166,7 @@ export function Speedometer({
               fontWeight="600"
               textAnchor="middle"
             >
-              {tick.value}
+              {formatSpeedValue(tick.value, display)}
             </SvgText>
           ))}
         </G>
@@ -185,9 +194,9 @@ export function Speedometer({
       {/* Digital readout overlay */}
       <View pointerEvents="none" style={styles.readout}>
         <Text style={[styles.readoutValue, isHot && { color: colors.accent }]}>
-          {Math.round(readoutMph)}
+          {formatSpeedValue(readoutMph, display)}
         </Text>
-        <Text style={styles.readoutUnit}>scale mph</Text>
+        <Text style={styles.readoutUnit}>scale {speedUnitLabel(display.unit)}</Text>
       </View>
     </View>
   );
