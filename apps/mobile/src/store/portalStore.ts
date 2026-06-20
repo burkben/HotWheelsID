@@ -32,8 +32,18 @@ export interface Pass {
 const MAX_PASSES = 20;
 /** Ignore noise/zero readings when recording a pass. */
 const PASS_MIN_MPH = 1;
+/**
+ * A single physical crossing can't produce two passes this fast — a car cannot
+ * cross the gate twice within a few hundred milliseconds. Real portal hardware
+ * delivers two `speed` events per crossing (a BLE notification echo / firmware
+ * double-send) within a few ms with identical readings, so a same-speed event
+ * inside this window is treated as a duplicate indication, not a new pass.
+ */
+const PASS_DEDUPE_MS = 250;
 
 let passCounter = 0;
+let lastPassAt = 0;
+let lastPassRaw = Number.NaN;
 
 export interface PortalState {
   connection: ConnectionState;
@@ -64,11 +74,14 @@ export const usePortalStore = create<PortalState>((set) => ({
   ...initialState,
 
   setConnection: (connection) =>
-    set((s) =>
-      connection === "disconnected"
-        ? { ...initialState, connection }
-        : { connection: connection === s.connection ? s.connection : connection },
-    ),
+    set((s) => {
+      if (connection === "disconnected") {
+        lastPassAt = 0;
+        lastPassRaw = Number.NaN;
+        return { ...initialState, connection };
+      }
+      return { connection: connection === s.connection ? s.connection : connection };
+    }),
 
   dispatch: (event) =>
     set((state) => {
@@ -94,12 +107,18 @@ export const usePortalStore = create<PortalState>((set) => ({
           if (event.scaleMph < PASS_MIN_MPH) {
             return { lastSpeed: sample };
           }
+          const now = Date.now();
+          if (now - lastPassAt < PASS_DEDUPE_MS && Math.abs(event.raw - lastPassRaw) < 1e-6) {
+            return { lastSpeed: sample };
+          }
+          lastPassAt = now;
+          lastPassRaw = event.raw;
           const pass: Pass = {
             id: ++passCounter,
             uid: state.car?.uid,
             raw: event.raw,
             scaleMph: event.scaleMph,
-            at: Date.now(),
+            at: now,
           };
           return {
             lastSpeed: sample,
@@ -114,5 +133,10 @@ export const usePortalStore = create<PortalState>((set) => ({
       }
     }),
 
-  reset: () => set({ ...initialState }),
+  reset: () =>
+    set(() => {
+      lastPassAt = 0;
+      lastPassRaw = Number.NaN;
+      return { ...initialState };
+    }),
 }));
