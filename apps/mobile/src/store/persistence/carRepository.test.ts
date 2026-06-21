@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import {
   applyDetection,
+  applyIdentity,
   applySpeed,
+  castingCount,
+  groupByCasting,
   InMemoryCarRepository,
   sortCars,
   type CarRecord,
@@ -52,6 +55,23 @@ describe("InMemoryCarRepository", () => {
     expect((await repo.getCars())[0].name).toBeNull();
   });
 
+  it("records casting identity on an existing car without bumping detections", async () => {
+    const repo = new InMemoryCarRepository();
+    await repo.recordDetection({ uid: "AA", at: 1 });
+    await repo.recordIdentity({ uid: "AA", mattelId: "AQBBrl5b", modelId: "41AE5E5B", at: 2 });
+
+    const [car] = await repo.getCars();
+    expect(car).toMatchObject({ mattelId: "AQBBrl5b", modelId: "41AE5E5B", detections: 1 });
+  });
+
+  it("seeds a car when identity arrives before any detection", async () => {
+    const repo = new InMemoryCarRepository();
+    await repo.recordIdentity({ uid: "BB", mattelId: "ZZ", modelId: "CAFE", at: 7 });
+
+    const [car] = await repo.getCars();
+    expect(car).toMatchObject({ uid: "BB", modelId: "CAFE", detections: 0 });
+  });
+
   it("returns cars most-recently-seen first", async () => {
     const repo = new InMemoryCarRepository();
     await repo.recordDetection({ uid: "OLD", at: 100 });
@@ -96,5 +116,36 @@ describe("pure car reducers", () => {
       { uid: "c", lastSeen: 2 },
     ] as CarRecord[];
     expect(sortCars(cars).map((c) => c.uid)).toEqual(["b", "c", "a"]);
+  });
+
+  it("applyIdentity seeds a new car when the uid is unseen", () => {
+    const after = applyIdentity([], { uid: "ZZ", mattelId: "M", modelId: "ABCD", at: 4 });
+    expect(after[0]).toMatchObject({ uid: "ZZ", modelId: "ABCD", detections: 0 });
+  });
+});
+
+describe("casting grouping", () => {
+  const cars = [
+    { uid: "a", modelId: "41AE5E5B" },
+    { uid: "b", modelId: "41AE5E5B" },
+    { uid: "c", modelId: "00FF00FF" },
+    { uid: "d", modelId: null },
+  ] as CarRecord[];
+
+  it("groups cars by modelId and omits unknown castings", () => {
+    const groups = groupByCasting(cars);
+    expect(groups.get("41AE5E5B")?.map((c) => c.uid)).toEqual(["a", "b"]);
+    expect(groups.get("00FF00FF")?.map((c) => c.uid)).toEqual(["c"]);
+    expect(groups.has("")).toBe(false); // the null-casting car isn't grouped
+    expect(groups.size).toBe(2);
+  });
+
+  it("castingCount counts copies including the car itself", () => {
+    expect(castingCount(cars, cars[0])).toBe(2); // a + b share the casting
+    expect(castingCount(cars, cars[2])).toBe(1); // c is the only copy
+  });
+
+  it("castingCount returns 1 for an unknown casting (ungroupable)", () => {
+    expect(castingCount(cars, { modelId: null })).toBe(1);
   });
 });

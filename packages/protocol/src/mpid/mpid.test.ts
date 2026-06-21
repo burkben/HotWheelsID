@@ -238,6 +238,16 @@ describe("mpidToPortalEvents bridge", () => {
     expect(events).toContainEqual({ kind: "carDetected", uid: "2A:7E:A2:F1:62:80" });
   });
 
+  it("car-on → carIdentity with the casting model id", () => {
+    const events = mpidToPortalEvents(parseMessage(CAR));
+    expect(events).toContainEqual({
+      kind: "carIdentity",
+      uid: "2A:7E:A2:F1:62:80",
+      mattelId: "AQBBrl5bAAAGAF0TKZcEKn6i8WKA",
+      modelId: "41AE5E5B",
+    });
+  });
+
   it("car-off → carRemoved", () => {
     expect(mpidToPortalEvents(parseMessage(PRESENT))).toEqual([{ kind: "carRemoved" }]);
   });

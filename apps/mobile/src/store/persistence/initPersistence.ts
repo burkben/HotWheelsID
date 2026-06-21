@@ -184,6 +184,8 @@ export async function initPersistence(injected?: Partial<PersistenceRepositories
         void repos.car.recordSerial(uid, serial).catch((e) => console.warn("[garage] serial failed", e)),
       onSpeed: (input) =>
         void repos.car.recordSpeed(input).catch((e) => console.warn("[garage] speed failed", e)),
+      onIdentity: (input) =>
+        void repos.car.recordIdentity(input).catch((e) => console.warn("[garage] identity failed", e)),
       onRename: (uid, name) =>
         void repos.car.setName(uid, name).catch((e) => console.warn("[garage] rename failed", e)),
       onClear: () =>
@@ -235,6 +237,7 @@ export async function initPersistence(injected?: Partial<PersistenceRepositories
  * **Garage** (every detected car is collected):
  *  - a new/changed car `uid` is a placement → `recordDetection`;
  *  - the same car gaining a serial is a late serial → `recordSerial`;
+ *  - the same car broadcasting a Mattel id is its casting identity → `recordIdentity`;
  *  - a new pass with a uid is a speed sample → `recordSpeed` (best-mph tracking).
  *
  * **History** (one session per BLE connection):
@@ -255,6 +258,7 @@ function wirePortalBridges(sessionRepo: SessionRepository): void {
   const seed = usePortalStore.getState();
   let lastUid: string | null = seed.car?.uid ?? null;
   let lastSerial: string | null = seed.car?.serial ?? null;
+  let lastMattelId: string | null = seed.car?.mattelId ?? null;
   let lastPassId = seed.passes[0]?.id ?? 0;
   let lastConnection = seed.connection;
   let sessionId: number | null = null;
@@ -296,6 +300,14 @@ function wirePortalBridges(sessionRepo: SessionRepository): void {
   // disconnected, so this is a no-op.
   if (lastUid) {
     garage().recordDetection({ uid: lastUid, serial: lastSerial, at: Date.now() });
+    if (seed.car?.mattelId && seed.car?.modelId) {
+      garage().recordIdentity({
+        uid: lastUid,
+        mattelId: seed.car.mattelId,
+        modelId: seed.car.modelId,
+        at: Date.now(),
+      });
+    }
   }
 
   // Likewise, open a session if we boot already connected.
@@ -321,6 +333,14 @@ function wirePortalBridges(sessionRepo: SessionRepository): void {
     }
     lastUid = uid;
     lastSerial = serial;
+
+    // --- car identity → Garage (casting id for duplicate grouping) ---
+    const mattelId = state.car?.mattelId ?? null;
+    const modelId = state.car?.modelId ?? null;
+    if (uid && mattelId && modelId && mattelId !== lastMattelId) {
+      garage().recordIdentity({ uid, mattelId, modelId, at: Date.now() });
+    }
+    lastMattelId = mattelId;
 
     // --- pass → Garage best-mph + History pass log ---
     const head = state.passes[0];

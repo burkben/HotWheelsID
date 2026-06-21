@@ -10,10 +10,19 @@ import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 
 import { useGarageStore } from '@/store/garageStore';
+import { castingCount } from '@/store/persistence/carRepository';
 import { usePortalStore } from '@/store/portalStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { speedUnitLabel } from '@/speed/format';
-import { carLabel, formatLap, formatLastSeen, formatMph, shortUid } from '@/garage/format';
+import {
+  carLabel,
+  castingLabel,
+  formatCopies,
+  formatLap,
+  formatLastSeen,
+  formatMph,
+  shortUid,
+} from '@/garage/format';
 import { colors, fontSize, fontWeight, radius, spacing } from '@/theme/tokens';
 
 export default function CarDetailScreen() {
@@ -22,11 +31,15 @@ export default function CarDetailScreen() {
   const { uid } = useLocalSearchParams<{ uid: string }>();
 
   const car = useGarageStore((s) => s.cars.find((c) => c.uid === uid));
+  const cars = useGarageStore((s) => s.cars);
   const rename = useGarageStore((s) => s.rename);
   const onPortal = usePortalStore((s) => s.car?.uid === uid);
   const speedUnit = useSettingsStore((s) => s.speedUnit);
   const speedCalibration = useSettingsStore((s) => s.speedCalibration);
   const speedDisplay = { unit: speedUnit, calibration: speedCalibration };
+
+  const casting = castingLabel(car?.modelId);
+  const copies = car ? castingCount(cars, car) : 1;
 
   const [draft, setDraft] = useState(car?.name ?? '');
 
@@ -80,6 +93,12 @@ export default function CarDetailScreen() {
           <Text style={styles.subtitle}>
             {car.serial ? `Serial #${car.serial}` : 'No serial captured'} · {car.uid}
           </Text>
+          {casting && (
+            <Text style={styles.casting}>
+              Casting {casting}
+              {copies > 1 ? ` · ${formatCopies(copies)}` : ''}
+            </Text>
+          )}
 
           <View style={styles.hero}>
             <Text style={styles.heroValue}>{formatMph(car.bestMph, speedDisplay)}</Text>
@@ -121,6 +140,9 @@ export default function CarDetailScreen() {
           <Text style={styles.note}>
             First seen {formatLastSeen(car.firstSeen)}. Best lap and race count come from finished
             races with this car; speed is its fastest pass over the portal.
+            {casting
+              ? ' Casting is the model id the car broadcasts — copies of the same model share it.'
+              : ''}
           </Text>
         </>
       )}
@@ -148,6 +170,7 @@ const styles = StyleSheet.create({
   onPortal: { color: colors.accent, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
   title: { color: colors.textPrimary, fontSize: fontSize.xl, fontWeight: fontWeight.heavy, marginTop: spacing(1) },
   subtitle: { color: colors.textSecondary, fontSize: fontSize.sm },
+  casting: { color: colors.textMuted, fontSize: fontSize.sm, fontWeight: fontWeight.medium },
   hero: {
     alignItems: 'center',
     backgroundColor: colors.surface,

@@ -15,6 +15,24 @@ export interface CarDetectedEvent {
   readonly uid: string;
 }
 
+/**
+ * The current car's casting identity, decoded from its NFC NDEF record (the
+ * `https://www.pid.mattel/<id>` URI). Delivered on its own characteristic on
+ * legacy firmware and alongside the detection on modern (MPID) firmware.
+ *
+ * - `mattelId` is the full base64url id — unique per physical car (it embeds the UID).
+ * - `modelId` is the 4-byte casting/model id as hex (e.g. `41AE5E5B`) — **shared by
+ *   every copy of the same casting**, so it's the key for grouping duplicates.
+ * - `uid` is the NFC UID embedded in the id, so consumers can attach the identity
+ *   to the right car even when this arrives before/independently of the detection.
+ */
+export interface CarIdentityEvent {
+  readonly kind: "carIdentity";
+  readonly uid: string;
+  readonly mattelId: string;
+  readonly modelId: string;
+}
+
 /** A car was removed (empty payload on the detection / serial / NDEF channels). */
 export interface CarRemovedEvent {
   readonly kind: "carRemoved";
@@ -49,6 +67,7 @@ export interface UnknownEvent {
 
 export type PortalEvent =
   | CarDetectedEvent
+  | CarIdentityEvent
   | CarRemovedEvent
   | SpeedEvent
   | SerialEvent

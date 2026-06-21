@@ -14,12 +14,14 @@ import { create } from "zustand";
 
 import {
   applyDetection,
+  applyIdentity,
   applyName,
   applySerial,
   applySpeed,
   sortCars,
   type CarRecord,
   type DetectionInput,
+  type IdentityInput,
   type SpeedInput,
 } from "./persistence/carRepository";
 
@@ -32,6 +34,7 @@ export interface GaragePersistence {
   onDetection?: (input: DetectionInput) => void;
   onSerial?: (uid: string, serial: string) => void;
   onSpeed?: (input: SpeedInput) => void;
+  onIdentity?: (input: IdentityInput) => void;
   onRename?: (uid: string, name: string | null) => void;
   onClear?: () => void;
 }
@@ -54,6 +57,8 @@ export interface GarageStore {
   recordSerial: (uid: string, serial: string) => void;
   /** A speed pass for the current car. */
   recordSpeed: (input: SpeedInput) => void;
+  /** A car broadcast its Mattel casting identity. */
+  recordIdentity: (input: IdentityInput) => void;
   /** Set or clear a car's nickname. */
   rename: (uid: string, name: string | null) => void;
   /** Forget the whole garage. */
@@ -78,6 +83,11 @@ export const useGarageStore = create<GarageStore>((set) => ({
   recordSpeed: (input) => {
     set((s) => ({ cars: sortCars(applySpeed(s.cars, input)) }));
     persistence.onSpeed?.(input);
+  },
+
+  recordIdentity: (input) => {
+    set((s) => ({ cars: sortCars(applyIdentity(s.cars, input)) }));
+    persistence.onIdentity?.(input);
   },
 
   rename: (uid, name) => {

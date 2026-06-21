@@ -4,12 +4,13 @@
  * bootstrap hydrates from SQLite and keeps in sync via the portal→garage bridge.
  * The car currently on the portal (from {@link usePortalStore}) is highlighted.
  */
+import { useMemo } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Link } from 'expo-router';
 
 import { useGarageStore } from '@/store/garageStore';
-import type { CarRecord } from '@/store/persistence/carRepository';
+import { groupByCasting, type CarRecord } from '@/store/persistence/carRepository';
 import { usePortalStore } from '@/store/portalStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { speedUnitLabel } from '@/speed/format';
@@ -20,6 +21,13 @@ export default function GarageScreen() {
   const insets = useSafeAreaInsets();
   const cars = useGarageStore((s) => s.cars);
   const onPortalUid = usePortalStore((s) => s.car?.uid ?? null);
+
+  // How many cars share each casting, so a row can flag duplicates with a ×N badge.
+  const copiesByModel = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const [modelId, group] of groupByCasting(cars)) counts.set(modelId, group.length);
+    return counts;
+  }, [cars]);
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top + spacing(2) }]}>
@@ -42,7 +50,11 @@ export default function GarageScreen() {
           cars.length === 0 && styles.listEmpty,
         ]}
         renderItem={({ item }) => (
-          <CarRow car={item} onPortal={item.uid === onPortalUid} />
+          <CarRow
+            car={item}
+            onPortal={item.uid === onPortalUid}
+            copies={item.modelId ? copiesByModel.get(item.modelId) ?? 1 : 1}
+          />
         )}
         ListEmptyComponent={<EmptyGarage />}
       />
@@ -50,7 +62,7 @@ export default function GarageScreen() {
   );
 }
 
-function CarRow({ car, onPortal }: { car: CarRecord; onPortal: boolean }) {
+function CarRow({ car, onPortal, copies }: { car: CarRecord; onPortal: boolean; copies: number }) {
   const speedUnit = useSettingsStore((s) => s.speedUnit);
   const speedCalibration = useSettingsStore((s) => s.speedCalibration);
   const display = { unit: speedUnit, calibration: speedCalibration };
@@ -62,6 +74,11 @@ function CarRow({ car, onPortal }: { car: CarRecord; onPortal: boolean }) {
             <Text style={styles.carName} numberOfLines={1}>
               {carLabel(car)}
             </Text>
+            {copies > 1 && (
+              <Text style={styles.dupeBadge} accessibilityLabel={`${copies} copies of this casting`}>
+                ×{copies}
+              </Text>
+            )}
             {onPortal && <Text style={styles.onPortal}>● on portal</Text>}
           </View>
           <Text style={styles.carMeta} numberOfLines={1}>
@@ -142,6 +159,18 @@ const styles = StyleSheet.create({
   rowMain: { flex: 1, gap: 4 },
   rowTitleLine: { flexDirection: 'row', alignItems: 'center', gap: spacing(2) },
   carName: { color: colors.textPrimary, fontSize: fontSize.md, fontWeight: fontWeight.bold, flexShrink: 1 },
+  dupeBadge: {
+    color: colors.textSecondary,
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.bold,
+    backgroundColor: colors.surfaceAlt,
+    borderColor: colors.border,
+    borderWidth: 1,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing(1.5),
+    paddingVertical: 1,
+    overflow: 'hidden',
+  },
   onPortal: { color: colors.accent, fontSize: fontSize.xs, fontWeight: fontWeight.bold },
   carMeta: { color: colors.textSecondary, fontSize: fontSize.sm },
   rowStats: { alignItems: 'flex-end', gap: 1 },

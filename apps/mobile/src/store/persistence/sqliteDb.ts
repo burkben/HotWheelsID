@@ -96,6 +96,16 @@ const MIGRATIONS: ((db: Db) => Promise<void>)[] = [
       );
     `);
   },
+  // v6 — car identity: the Mattel casting id the portal broadcasts, so duplicate
+  // copies of the same model can be grouped. `model_id` is the shared casting key;
+  // `mattel_id` is the full per-car id kept for provenance. Additive columns on the
+  // existing `cars` table; the ladder runs this exactly once.
+  async (db) => {
+    await db.execAsync(`
+      ALTER TABLE cars ADD COLUMN mattel_id TEXT;
+      ALTER TABLE cars ADD COLUMN model_id  TEXT;
+    `);
+  },
 ];
 
 /** Open the shared DB, enable WAL, and run any pending migrations. */

@@ -16,6 +16,7 @@ import {
   CHAR_EVENT_3,
   CHAR_SERIAL_NUMBER,
 } from "./uuids";
+import { bytesFromBase64 } from "./base64";
 import type { ControlStatus, PortalEvent } from "./events";
 
 /** Format bytes as uppercase hex, joined by `separator` (default `":"`). */
@@ -60,6 +61,89 @@ export function parseSerialAscii(bytes: Uint8Array): string {
   return out;
 }
 
+// ---------------------------------------------------------------------------
+// NFC NDEF car-identity record
+// ---------------------------------------------------------------------------
+/** NDEF URI-record prefix codes (the subset the portal emits). */
+const URI_PREFIXES: Record<number, string> = {
+  0x00: "",
+  0x01: "http://www.",
+  0x02: "https://www.",
+  0x03: "http://",
+  0x04: "https://",
+};
+
+export interface NdefRecord {
+  uri?: string;
+  /** The base64url Mattel car id from a `https://www.pid.mattel/<id>` URI. */
+  mattelId?: string;
+  /** Trailing signature bytes after the NDEF record, when present. */
+  signature?: Uint8Array;
+}
+
+/**
+ * Decode an NFC NDEF URI record carrying the car identity. The same record shape
+ * is used by both firmwares: it arrives raw on the legacy `CHAR_EVENT_1`
+ * characteristic and inside `CarInfo.carNdefData` on modern (MPID) firmware.
+ */
+export function decodeNdefRecord(data: Uint8Array): NdefRecord {
+  if (data.length < 10) return {};
+  const typeLen = data[1];
+  const payloadLen = data[2];
+  const recordType = data.slice(3, 3 + typeLen);
+  const result: NdefRecord = {};
+
+  if (recordType.length === 1 && recordType[0] === 0x55 /* 'U' */) {
+    const prefix = URI_PREFIXES[data[4]] ?? "";
+    const uriContent = parseSerialAscii(data.slice(5, 4 + payloadLen));
+    const fullUri = prefix + uriContent;
+    result.uri = fullUri;
+    const marker = "pid.mattel/";
+    const idx = fullUri.indexOf(marker);
+    if (idx >= 0) result.mattelId = fullUri.slice(idx + marker.length);
+  }
+
+  const ndefEnd = 4 + payloadLen;
+  if (data.length > ndefEnd) result.signature = data.slice(ndefEnd);
+  return result;
+}
+
+/** The structured contents of a decoded Mattel car id (see {@link decodeMattelCarId}). */
+export interface MattelCarId {
+  /** The original base64url id string. */
+  readonly id: string;
+  /** 4-byte casting/model id as uppercase hex (e.g. `41AE5E5B`); shared by every copy. */
+  readonly modelId: string;
+  /** NFC UID embedded in the id (last 6 bytes), colon-separated (e.g. `2A:7E:A2:F1:62:80`). */
+  readonly uid: string;
+  /** The decoded raw bytes. */
+  readonly bytes: Uint8Array;
+}
+
+/**
+ * Decode a Mattel car id (the base64url tail of `https://www.pid.mattel/<id>`)
+ * into its casting id and embedded NFC UID. Layout (21 bytes, see `PROTOCOL.md`):
+ * `[version:2][modelId:4][flags:4][extra:5][nfcUid:6]`.
+ *
+ * Returns `null` for ids that can't be decoded or are too short to carry both a
+ * casting id and a UID (matches the "degrade, don't throw" style of the decoders).
+ */
+export function decodeMattelCarId(id: string): MattelCarId | null {
+  let bytes: Uint8Array;
+  try {
+    bytes = bytesFromBase64(id);
+  } catch {
+    return null;
+  }
+  if (bytes.length < 12) return null;
+  return {
+    id,
+    modelId: bytesToHex(bytes.slice(2, 6), ""),
+    uid: bytesToHex(bytes.slice(-6)),
+    bytes,
+  };
+}
+
 const CONTROL_IDLE: readonly number[] = [0x00, 0xfe, 0x00, 0xfe, 0x00];
 const CONTROL_CAR_PRESENT: readonly number[] = [0x00, 0xfe, 0x00, 0xfe, 0x02];
 
@@ -86,8 +170,9 @@ export function parseControlStatus(bytes: Uint8Array): ControlStatus {
  * Decode a single BLE characteristic indication into a typed {@link PortalEvent},
  * dispatching on the source characteristic `uuid` (case-insensitive).
  *
- * NDEF/Mattel car-id parsing on `CHAR_EVENT_1` is not yet implemented; a
- * non-empty value is returned as an `unknown` event carrying the raw bytes.
+ * A non-empty `CHAR_EVENT_1` (NFC NDEF) value is decoded into a `carIdentity`
+ * event when it carries a recognizable Mattel car id; an empty value signals
+ * removal. Anything that can't be decoded falls back to an `unknown` event.
  */
 export function parseCharacteristicValue(uuid: string, bytes: Uint8Array): PortalEvent {
   switch (uuid.toLowerCase()) {
@@ -107,11 +192,16 @@ export function parseCharacteristicValue(uuid: string, bytes: Uint8Array): Porta
     case CHAR_CONTROL:
       return { kind: "control", status: parseControlStatus(bytes), bytes };
 
-    case CHAR_EVENT_1:
+    case CHAR_EVENT_1: {
       // NDEF car-id record; empty payload also signals removal.
-      return bytes.length === 0
-        ? { kind: "carRemoved" }
-        : { kind: "unknown", uuid, bytes };
+      if (bytes.length === 0) return { kind: "carRemoved" };
+      const ndef = decodeNdefRecord(bytes);
+      const id = ndef.mattelId ? decodeMattelCarId(ndef.mattelId) : null;
+      if (ndef.mattelId && id) {
+        return { kind: "carIdentity", uid: id.uid, mattelId: ndef.mattelId, modelId: id.modelId };
+      }
+      return { kind: "unknown", uuid, bytes };
+    }
 
     default:
       return { kind: "unknown", uuid, bytes };

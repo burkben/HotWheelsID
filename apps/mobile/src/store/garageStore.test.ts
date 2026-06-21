@@ -14,6 +14,8 @@ function car(over: Partial<CarRecord> = {}): CarRecord {
     bestMph: 0,
     bestLap: null,
     races: 0,
+    mattelId: null,
+    modelId: null,
     ...over,
   };
 }
@@ -65,6 +67,18 @@ describe("garageStore", () => {
     expect(onRename).toHaveBeenCalledWith("AA", "Bone Shaker");
   });
 
+  it("records casting identity and fires the onIdentity sink", () => {
+    const onIdentity = vi.fn();
+    setGaragePersistence({ onIdentity });
+    useGarageStore.getState().recordDetection({ uid: "AA", at: 1 });
+
+    const input = { uid: "AA", mattelId: "AQBBrl5b", modelId: "41AE5E5B", at: 2 };
+    useGarageStore.getState().recordIdentity(input);
+
+    expect(useGarageStore.getState().cars[0]).toMatchObject({ modelId: "41AE5E5B", mattelId: "AQBBrl5b" });
+    expect(onIdentity).toHaveBeenCalledWith(input);
+  });
+
   it("forgetAll clears and fires the onClear sink", () => {
     const onClear = vi.fn();
     setGaragePersistence({ onClear });
@@ -80,6 +94,7 @@ describe("garageStore", () => {
     expect(() => {
       useGarageStore.getState().recordDetection({ uid: "AA", at: 1 });
       useGarageStore.getState().recordSpeed({ uid: "AA", mph: 3, at: 2 });
+      useGarageStore.getState().recordIdentity({ uid: "AA", mattelId: "M", modelId: "ABCD", at: 3 });
       useGarageStore.getState().rename("AA", "X");
       useGarageStore.getState().forgetAll();
     }).not.toThrow();

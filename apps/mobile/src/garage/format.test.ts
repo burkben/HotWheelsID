@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { carLabel, formatLap, formatLastSeen, formatMph, shortUid } from './format';
+import { carLabel, castingLabel, formatCopies, formatLap, formatLastSeen, formatMph, shortUid } from './format';
 
 describe('garage formatters', () => {
   it('shortens a 6-octet UID to its last two octets', () => {
@@ -32,5 +32,19 @@ describe('garage formatters', () => {
     expect(formatLastSeen(now - 3 * 3_600_000, now)).toBe('3h ago');
     expect(formatLastSeen(now - 2 * 86_400_000, now)).toBe('2d ago');
     expect(formatLastSeen(now + 5_000, now)).toBe('just now'); // clock skew guard
+  });
+
+  it('formats a casting label, splitting the 8-hex key into quads', () => {
+    expect(castingLabel('41AE5E5B')).toBe('41AE·5E5B');
+    expect(castingLabel('abcd1234')).toBe('ABCD·1234'); // normalizes to uppercase
+    expect(castingLabel('ABCD')).toBe('ABCD'); // non-8-char passes through
+    expect(castingLabel(null)).toBeNull();
+    expect(castingLabel(undefined)).toBeNull();
+  });
+
+  it('pluralizes the casting copy count', () => {
+    expect(formatCopies(1)).toBe('1 copy');
+    expect(formatCopies(2)).toBe('2 copies');
+    expect(formatCopies(5)).toBe('5 copies');
   });
 });

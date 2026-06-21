@@ -86,6 +86,34 @@ describe("portalStore — car identity", () => {
     expect(s.lastSpeed).toBeNull();
     expect(s.controlStatus).toBe("idle");
   });
+
+  it("carIdentity records the casting id + model id for the current car", () => {
+    dispatch({ kind: "carDetected", uid: "2A:7E:A2:F1:62:80" });
+    dispatch({ kind: "carIdentity", uid: "2A:7E:A2:F1:62:80", mattelId: "AQBBrl5b", modelId: "41AE5E5B" });
+    expect(state().car).toEqual({
+      uid: "2A:7E:A2:F1:62:80",
+      mattelId: "AQBBrl5b",
+      modelId: "41AE5E5B",
+    });
+  });
+
+  it("preserves identity across a late serial and a same-uid re-detection", () => {
+    dispatch({ kind: "carDetected", uid: "2A:7E:A2:F1:62:80" });
+    dispatch({ kind: "carIdentity", uid: "2A:7E:A2:F1:62:80", mattelId: "M1", modelId: "41AE5E5B" });
+    dispatch({ kind: "serial", serial: "1102032557" });
+    expect(state().car).toMatchObject({ serial: "1102032557", modelId: "41AE5E5B", mattelId: "M1" });
+
+    dispatch({ kind: "carDetected", uid: "2A:7E:A2:F1:62:80" }); // same car re-detected
+    expect(state().car).toMatchObject({ modelId: "41AE5E5B", mattelId: "M1" });
+  });
+
+  it("clears identity when a different car is detected", () => {
+    dispatch({ kind: "carIdentity", uid: "2A:7E:A2:F1:62:80", mattelId: "M1", modelId: "41AE5E5B" });
+    dispatch({ kind: "carDetected", uid: "99:88:77:66:55:44" }); // a different car
+    expect(state().car?.modelId).toBeUndefined();
+    expect(state().car?.mattelId).toBeUndefined();
+    expect(state().car?.uid).toBe("99:88:77:66:55:44");
+  });
 });
 
 describe("portalStore — control status", () => {

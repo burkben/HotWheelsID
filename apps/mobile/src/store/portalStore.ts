@@ -18,6 +18,10 @@ export type ConnectionState = "disconnected" | "connecting" | "connected";
 export interface CurrentCar {
   readonly uid: string;
   readonly serial?: string;
+  /** Full Mattel casting id (base64url), once the car broadcasts it. */
+  readonly mattelId?: string;
+  /** Casting/model key (hex) shared by duplicate copies of the same model. */
+  readonly modelId?: string;
 }
 
 /** One recorded pass of a car over the portal sensor. */
@@ -73,14 +77,39 @@ export const usePortalStore = create<PortalState>((set) => ({
   dispatch: (event) =>
     set((state) => {
       switch (event.kind) {
-        case "carDetected":
+        case "carDetected": {
+          // Re-detecting the same uid keeps any identity/serial we already have;
+          // a different uid is a new car, so its identity starts empty.
+          const sameCar = state.car?.uid === event.uid;
           return {
-            car: { uid: event.uid, serial: state.car?.serial },
+            car: {
+              uid: event.uid,
+              serial: state.car?.serial,
+              mattelId: sameCar ? state.car?.mattelId : undefined,
+              modelId: sameCar ? state.car?.modelId : undefined,
+            },
+          };
+        }
+
+        case "carIdentity":
+          return {
+            car: {
+              uid: event.uid,
+              // Preserve a serial only if it belongs to this same uid.
+              serial: state.car?.uid === event.uid ? state.car?.serial : undefined,
+              mattelId: event.mattelId,
+              modelId: event.modelId,
+            },
           };
 
         case "serial":
           return {
-            car: { uid: state.car?.uid ?? "", serial: event.serial },
+            car: {
+              uid: state.car?.uid ?? "",
+              serial: event.serial,
+              mattelId: state.car?.mattelId,
+              modelId: state.car?.modelId,
+            },
           };
 
         case "carRemoved":

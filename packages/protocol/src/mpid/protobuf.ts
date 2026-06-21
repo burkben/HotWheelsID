@@ -6,9 +6,14 @@
  * `AppToPortal` command builders. Ported from `python/hwportal/mpid.py`
  * (schema: `python/HWiD.proto`).
  */
-import { parseNfcUid, parseSerialAscii } from "../decode";
+import { decodeMattelCarId, decodeNdefRecord, parseNfcUid, parseSerialAscii } from "../decode";
 import type { PortalEvent } from "../events";
 import { concatBytes } from "./bytes";
+
+// NDEF car-identity decoding lives in `../decode` (shared with the legacy-firmware
+// path). Re-exported here so existing mpid consumers keep importing it from this module.
+export { decodeNdefRecord };
+export type { NdefRecord } from "../decode";
 
 // ---------------------------------------------------------------------------
 // Wire-format reader
@@ -299,43 +304,8 @@ export function parseMessage(payload: Uint8Array): PortalMessage {
 // ---------------------------------------------------------------------------
 // NDEF car-identity record (carried inside CarInfo.carNdefData)
 // ---------------------------------------------------------------------------
-const URI_PREFIXES: Record<number, string> = {
-  0x00: "",
-  0x01: "http://www.",
-  0x02: "https://www.",
-  0x03: "http://",
-  0x04: "https://",
-};
-
-export interface NdefRecord {
-  uri?: string;
-  /** The base64url Mattel car id from a `https://www.pid.mattel/<id>` URI. */
-  mattelId?: string;
-  signature?: Uint8Array;
-}
-
-/** Decode an NFC NDEF URI record carrying the car identity. */
-export function decodeNdefRecord(data: Uint8Array): NdefRecord {
-  if (data.length < 10) return {};
-  const typeLen = data[1];
-  const payloadLen = data[2];
-  const recordType = data.slice(3, 3 + typeLen);
-  const result: NdefRecord = {};
-
-  if (recordType.length === 1 && recordType[0] === 0x55 /* 'U' */) {
-    const prefix = URI_PREFIXES[data[4]] ?? "";
-    const uriContent = parseSerialAscii(data.slice(5, 4 + payloadLen));
-    const fullUri = prefix + uriContent;
-    result.uri = fullUri;
-    const marker = "pid.mattel/";
-    const idx = fullUri.indexOf(marker);
-    if (idx >= 0) result.mattelId = fullUri.slice(idx + marker.length);
-  }
-
-  const ndefEnd = 4 + payloadLen;
-  if (data.length > ndefEnd) result.signature = data.slice(ndefEnd);
-  return result;
-}
+// `decodeNdefRecord` / `NdefRecord` are defined in `../decode` and re-exported at
+// the top of this module (shared with the legacy `parseCharacteristicValue` path).
 
 // ---------------------------------------------------------------------------
 // Bridge: a structured PortalMessage → the app's PortalEvent[] stream
@@ -343,9 +313,10 @@ export function decodeNdefRecord(data: Uint8Array): NdefRecord {
 /**
  * Map a decrypted message to the app's {@link PortalEvent} union (the same
  * stream the legacy-firmware decoders feed), so the UI is transport-agnostic.
- * Car-off → `carRemoved`; car-on → `carDetected`; a speed measurement →
- * `speed` (falling back to the gate-times reconstruction when the portal omits
- * its own speed, e.g. a non-chipped pass).
+ * Car-off → `carRemoved`; car-on → `carDetected` (plus a `carIdentity` when the
+ * NDEF record carries a Mattel car id); a speed measurement → `speed` (falling
+ * back to the gate-times reconstruction when the portal omits its own speed,
+ * e.g. a non-chipped pass).
  */
 export function mpidToPortalEvents(msg: PortalMessage): PortalEvent[] {
   const events: PortalEvent[] = [];
@@ -355,7 +326,13 @@ export function mpidToPortalEvents(msg: PortalMessage): PortalEvent[] {
   if (ev.type === EventType.CAR_OFF_PORTAL) {
     events.push({ kind: "carRemoved" });
   } else if (ev.carInfo && ev.carInfo.tagUid.length >= 7) {
-    events.push({ kind: "carDetected", uid: parseNfcUid(ev.carInfo.tagUid) });
+    const uid = parseNfcUid(ev.carInfo.tagUid);
+    events.push({ kind: "carDetected", uid });
+    const ndef = decodeNdefRecord(ev.carInfo.carNdefData);
+    const id = ndef.mattelId ? decodeMattelCarId(ndef.mattelId) : null;
+    if (ndef.mattelId && id) {
+      events.push({ kind: "carIdentity", uid: id.uid || uid, mattelId: ndef.mattelId, modelId: id.modelId });
+    }
   }
 
   const sm = ev.speedMeasurement;

@@ -28,6 +28,10 @@ export interface CarRecord {
   readonly bestLap: number | null;
   /** Number of finished races with this car (derived from race_results). */
   readonly races: number;
+  /** Full Mattel casting id (base64url) last broadcast by this car, if any. */
+  readonly mattelId: string | null;
+  /** Casting/model key (hex) shared by every physical copy of the same model. */
+  readonly modelId: string | null;
 }
 
 export interface DetectionInput {
@@ -40,6 +44,15 @@ export interface DetectionInput {
 export interface SpeedInput {
   readonly uid: string;
   readonly mph: number;
+  readonly at: number;
+}
+
+/** A car broadcast its Mattel casting identity (full id + derived model key). */
+export interface IdentityInput {
+  readonly uid: string;
+  readonly mattelId: string;
+  readonly modelId: string;
+  /** Timestamp (ms) of the identifying detection. */
   readonly at: number;
 }
 
@@ -56,6 +69,8 @@ export interface CarRepository {
   recordSpeed(input: SpeedInput): Promise<void>;
   /** Set or clear the user-assigned nickname. */
   setName(uid: string, name: string | null): Promise<void>;
+  /** A car broadcast its Mattel casting id; store it for grouping duplicates. */
+  recordIdentity(input: IdentityInput): Promise<void>;
   /** Forget the whole garage. */
   clear(): Promise<void>;
 }
@@ -71,6 +86,8 @@ function blankCar(uid: string, at: number): CarRecord {
     bestMph: 0,
     bestLap: null,
     races: 0,
+    mattelId: null,
+    modelId: null,
   };
 }
 
@@ -116,6 +133,54 @@ export function applyName(cars: readonly CarRecord[], uid: string, name: string 
   return cars.map((c) => (c.uid === uid ? { ...c, name } : { ...c }));
 }
 
+/**
+ * Record the Mattel casting identity for a car (full id + derived model key),
+ * creating the car if this identity arrives before any detection. The `modelId`
+ * is what makes duplicate castings groupable; the full `mattelId` is retained for
+ * provenance/debugging.
+ */
+export function applyIdentity(cars: readonly CarRecord[], input: IdentityInput): CarRecord[] {
+  const next = cars.map((c) => ({ ...c }));
+  const existing = next.find((c) => c.uid === input.uid);
+  if (existing) {
+    existing.mattelId = input.mattelId;
+    existing.modelId = input.modelId;
+    existing.lastSeen = Math.max(existing.lastSeen, input.at);
+  } else {
+    next.push({
+      ...blankCar(input.uid, input.at),
+      mattelId: input.mattelId,
+      modelId: input.modelId,
+    });
+  }
+  return next;
+}
+
+/**
+ * Group cars by their casting `modelId`. Cars whose casting is unknown (`null`
+ * modelId) are omitted — an unidentified car can't be proven to share a casting
+ * with any other. Insertion order within each group follows `cars`.
+ */
+export function groupByCasting(cars: readonly CarRecord[]): Map<string, CarRecord[]> {
+  const groups = new Map<string, CarRecord[]>();
+  for (const car of cars) {
+    if (!car.modelId) continue;
+    const group = groups.get(car.modelId);
+    if (group) group.push(car);
+    else groups.set(car.modelId, [car]);
+  }
+  return groups;
+}
+
+/**
+ * How many cars in the collection share this car's casting, counting the car
+ * itself (≥1). Returns 1 when the casting is unknown, since it can't be grouped.
+ */
+export function castingCount(cars: readonly CarRecord[], car: Pick<CarRecord, "modelId">): number {
+  if (!car.modelId) return 1;
+  return cars.reduce((n, c) => (c.modelId === car.modelId ? n + 1 : n), 0);
+}
+
 /** Most-recently-seen first; a stable, sensible default for the Garage list. */
 export function sortCars(cars: readonly CarRecord[]): CarRecord[] {
   return [...cars].sort((a, b) => b.lastSeen - a.lastSeen);
@@ -149,6 +214,10 @@ export class InMemoryCarRepository implements CarRepository {
 
   async setName(uid: string, name: string | null): Promise<void> {
     this.cars = applyName(this.cars, uid, name);
+  }
+
+  async recordIdentity(input: IdentityInput): Promise<void> {
+    this.cars = applyIdentity(this.cars, input);
   }
 
   async clear(): Promise<void> {

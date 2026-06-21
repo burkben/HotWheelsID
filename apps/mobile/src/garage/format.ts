@@ -40,3 +40,18 @@ export function formatLastSeen(at: number, now: number = Date.now()): string {
   if (day < 7) return `${day}d ago`;
   return new Date(at).toLocaleDateString();
 }
+
+/**
+ * A casting/model id formatted for display, or `null` when the casting is unknown.
+ * The 8-hex-char key is split into two quads for readability: `41AE5E5B` → `41AE·5E5B`.
+ */
+export function castingLabel(modelId: string | null | undefined): string | null {
+  if (!modelId) return null;
+  const hex = modelId.toUpperCase();
+  return hex.length === 8 ? `${hex.slice(0, 4)}·${hex.slice(4)}` : hex;
+}
+
+/** "N copies" phrasing for a casting group; the count includes the car itself. */
+export function formatCopies(count: number): string {
+  return count === 1 ? '1 copy' : `${count} copies`;
+}

@@ -156,6 +156,32 @@ describe("initPersistence", () => {
     expect((await car.getCars())[0]).toMatchObject({ uid: "6C:C4", bestMph: 18 });
   });
 
+  it("bridges a portal carIdentity into the garage casting fields", async () => {
+    const car = new InMemoryCarRepository();
+    await initPersistence({ car });
+
+    const portal = usePortalStore.getState();
+    portal.setConnection("connected");
+    portal.dispatch({ kind: "carDetected", uid: "2A:7E:A2:F1:62:80" });
+    portal.dispatch({
+      kind: "carIdentity",
+      uid: "2A:7E:A2:F1:62:80",
+      mattelId: "AQBBrl5bAAAGAF0TKZcEKn6i8WKA",
+      modelId: "41AE5E5B",
+    });
+    await Promise.resolve();
+
+    // One car, identified, not double-counted as a second detection.
+    const cars = await car.getCars();
+    expect(cars).toHaveLength(1);
+    expect(cars[0]).toMatchObject({
+      uid: "2A:7E:A2:F1:62:80",
+      modelId: "41AE5E5B",
+      mattelId: "AQBBrl5bAAAGAF0TKZcEKn6i8WKA",
+      detections: 1,
+    });
+  });
+
   it("backfills a car already on the portal at init, without double-counting", async () => {
     // A car is present before the bridge subscribes (init ran after connect):
     // subscribe only sees future changes, so the bridge must seed it once.

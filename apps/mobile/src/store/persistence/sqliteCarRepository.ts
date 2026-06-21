@@ -15,6 +15,7 @@ import type {
   CarRecord,
   CarRepository,
   DetectionInput,
+  IdentityInput,
   SpeedInput,
 } from "./carRepository";
 
@@ -28,6 +29,8 @@ interface CarRow {
   best_mph: number;
   best_lap: number | null;
   races: number;
+  mattel_id: string | null;
+  model_id: string | null;
 }
 
 function rowToCar(row: CarRow): CarRecord {
@@ -41,6 +44,8 @@ function rowToCar(row: CarRow): CarRecord {
     bestMph: row.best_mph,
     bestLap: row.best_lap,
     races: row.races,
+    mattelId: row.mattel_id,
+    modelId: row.model_id,
   };
 }
 
@@ -54,7 +59,7 @@ export class SqliteCarRepository implements CarRepository {
   async getCars(): Promise<CarRecord[]> {
     const rows = await this.db.getAllAsync<CarRow>(
       `SELECT c.uid, c.name, c.serial, c.first_seen, c.last_seen,
-              c.detections, c.best_mph,
+              c.detections, c.best_mph, c.mattel_id, c.model_id,
               MIN(r.best_lap) AS best_lap,
               COUNT(r.id)     AS races
          FROM cars c
@@ -100,6 +105,22 @@ export class SqliteCarRepository implements CarRepository {
 
   async setName(uid: string, name: string | null): Promise<void> {
     await this.db.runAsync(`UPDATE cars SET name = ? WHERE uid = ?`, name, uid);
+  }
+
+  async recordIdentity(input: IdentityInput): Promise<void> {
+    await this.db.runAsync(
+      `INSERT INTO cars (uid, first_seen, last_seen, detections, best_mph, mattel_id, model_id)
+       VALUES (?, ?, ?, 0, 0, ?, ?)
+       ON CONFLICT(uid) DO UPDATE SET
+         mattel_id = excluded.mattel_id,
+         model_id  = excluded.model_id,
+         last_seen = MAX(last_seen, excluded.last_seen)`,
+      input.uid,
+      input.at,
+      input.at,
+      input.mattelId,
+      input.modelId,
+    );
   }
 
   async clear(): Promise<void> {

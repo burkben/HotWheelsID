@@ -19,6 +19,8 @@ function car(uid: string, bestMph: number): CarRecord {
     bestMph,
     bestLap: null,
     races: 0,
+    mattelId: null,
+    modelId: null,
   };
 }
 
