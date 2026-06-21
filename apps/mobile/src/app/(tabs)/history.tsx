@@ -69,11 +69,6 @@ export default function HistoryScreen() {
   return (
     <View style={[styles.screen, { paddingTop: insets.top + spacing(2) }]}>
       <View style={styles.header}>
-        <Link href="/" asChild>
-          <Pressable hitSlop={12} style={({ pressed }) => [styles.back, pressed && styles.pressed]}>
-            <Text style={styles.backText}>‹ Home</Text>
-          </Pressable>
-        </Link>
         <Text style={styles.title}>History</Text>
         {hasSessions ? (
           <Pressable
@@ -142,11 +137,6 @@ function EmptyHistory() {
         Connect to your race portal and every car pass is logged here, grouped by session — so
         you can look back at a whole afternoon of racing.
       </Text>
-      <Link href="/" asChild>
-        <Pressable style={({ pressed }) => [styles.emptyButton, pressed && styles.pressed]}>
-          <Text style={styles.emptyButtonText}>‹ Back to Home</Text>
-        </Pressable>
-      </Link>
     </View>
   );
 }
@@ -160,8 +150,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing(5),
     paddingBottom: spacing(3),
   },
-  back: { paddingVertical: spacing(1), paddingRight: spacing(1) },
-  backText: { color: colors.accentBlue, fontSize: fontSize.md, fontWeight: fontWeight.medium },
   title: { color: colors.textPrimary, fontSize: fontSize.xl, fontWeight: fontWeight.heavy, flex: 1 },
   clear: {
     paddingVertical: spacing(1),
@@ -198,15 +186,5 @@ const styles = StyleSheet.create({
   emptyEmoji: { fontSize: 44 },
   emptyTitle: { color: colors.textPrimary, fontSize: fontSize.lg, fontWeight: fontWeight.bold },
   emptyBody: { color: colors.textSecondary, fontSize: fontSize.sm, textAlign: 'center', lineHeight: 19 },
-  emptyButton: {
-    marginTop: spacing(2),
-    backgroundColor: colors.surface,
-    borderColor: colors.accentBlue,
-    borderWidth: 1,
-    borderRadius: radius.md,
-    paddingVertical: spacing(2.5),
-    paddingHorizontal: spacing(5),
-  },
-  emptyButtonText: { color: colors.accentBlue, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
   pressed: { opacity: 0.7 },
 });

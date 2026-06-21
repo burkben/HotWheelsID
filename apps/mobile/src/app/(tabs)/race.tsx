@@ -194,11 +194,6 @@ export default function RaceScreen() {
       ]}
     >
       <View style={styles.header}>
-        <Link href="/" asChild>
-          <Pressable hitSlop={12} style={({ pressed }) => [styles.back, pressed && styles.pressed]}>
-            <Text style={styles.backText}>‹ Home</Text>
-          </Pressable>
-        </Link>
         <Text style={styles.title}>Race Mode</Text>
         <ConnDot connection={connection} />
       </View>
@@ -248,7 +243,7 @@ export default function RaceScreen() {
             <Text style={styles.hint}>
               Connect your portal on the{' '}
               <Link href="/" style={styles.hintLink}>
-                Home screen
+                Speed tab
               </Link>{' '}
               (or switch it to Demo), then come back — passes will drive the race
               automatically.
@@ -464,8 +459,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  back: { paddingVertical: spacing(1), paddingRight: spacing(2) },
-  backText: { color: colors.accentBlue, fontSize: fontSize.md, fontWeight: fontWeight.medium },
   title: { color: colors.textPrimary, fontSize: fontSize.lg, fontWeight: fontWeight.heavy },
   connDot: { width: 11, height: 11, borderRadius: radius.pill },
 

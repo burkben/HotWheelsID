@@ -4,6 +4,8 @@ This document describes the **target architecture** for HotWheelsID: a cross-pla
 React Native (Expo) app, installable on iOS, that talks to the Hot Wheels id Race Portal
 over BLE. For the *why* behind these choices, see the [ADRs](../adr/). For the byte-level
 protocol, see [`PROTOCOL.md`](../../PROTOCOL.md) and [BLE & Protocol](ble-and-protocol.md).
+For how the app looks and feels, see [UI & Design](ui-and-design.md) (screen intent) and the
+[Design Language](design-language.md) (colors, type, components, navigation, connection UX).
 
 > **Status:** planning. The Python tools exist today; the mobile app and shared protocol
 > package are being scaffolded per the [Roadmap](../ROADMAP.md).
@@ -99,7 +101,7 @@ HotWheelsID/
 ├── python/                 # existing Python reference tools (moved in Phase 0)
 ├── docs/
 │   ├── adr/                # architecture decision records
-│   ├── architecture/       # this overview + BLE/protocol + UI design
+│   ├── architecture/       # this overview + BLE/protocol + UI design + design language
 │   └── ROADMAP.md
 ├── PROTOCOL.md             # canonical protocol spec
 └── README.md

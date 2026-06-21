@@ -4,6 +4,11 @@ Design intent and component plan for the "more attractive UI" goal. Stack ration
 [ADR-0005](../adr/0005-ui-stack-reanimated-skia-expo-router.md). This is a living
 document; treat specifics (colors, exact screens) as a starting point.
 
+> **See also:** the [**Design Language**](design-language.md) is the canonical reference for
+> the visual + interaction system (color/type/spacing tokens, navigation model, core
+> components, motion/haptics, connection UX). This doc covers *what each screen is for*; the
+> design language covers *how it should look and feel*.
+
 ## 1. Design principles
 
 - **Kid-friendly, arcade racing energy.** Big numbers, bold color, motion, sound/haptics —
@@ -15,6 +20,10 @@ document; treat specifics (colors, exact screens) as a starting point.
   pairing the portal.
 
 ## 2. Screen map (Expo Router)
+
+> **Status:** this bottom-tabs map is the **target** (design "Proposal A"). v1.0 shipped an
+> interim home "hub" — the speedometer plus a vertical stack of mode buttons — and is being
+> realigned to these tabs in epic **#28**. See [Design Language §6](design-language.md#6-navigation-model).
 
 ```mermaid
 flowchart TD
