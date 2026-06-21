@@ -141,6 +141,24 @@ Each tester installs the **TestFlight** app from the App Store, accepts the invi
 Redline ID. Remind them: **Bluetooth + a physical portal** are required for live telemetry —
 without a portal they'll see the demo/mock mode.
 
+### App metadata URLs
+
+For the TestFlight **Test Information** page (and a future App Store listing), the project
+ships a small public site (source in [`site/`](../../site)), served by GitHub Pages from the
+`gh-pages` branch:
+
+- **Privacy Policy URL:** <https://burkben.github.io/HotWheelsID/privacy/>
+- **Marketing URL:** <https://burkben.github.io/HotWheelsID/>
+
+Both are optional for TestFlight but required for a public App Store release. Edit the page
+content under `site/` (the canonical policy text lives in
+[`docs/legal/privacy-policy.md`](../legal/privacy-policy.md)); publish changes by pushing the
+`site/` subtree to the `gh-pages` branch root:
+
+```bash
+git push origin "$(git subtree split --prefix site main):refs/heads/gh-pages" --force
+```
+
 ---
 
 ## Step 5 — Android parity (optional)
