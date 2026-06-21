@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ControlStatus, PortalEvent } from "@redlineid/protocol";
 
 import { usePortalStore } from "./portalStore";
@@ -135,5 +135,40 @@ describe("portalStore — speed & passes", () => {
     dispatch({ kind: "carDetected", uid: "6C:C4:5A:2B:64:81" });
     dispatch(speed(99));
     expect(state().passes[0].uid).toBe("6C:C4:5A:2B:64:81");
+  });
+});
+
+describe("portalStore — duplicate crossing dedupe", () => {
+  it("collapses a duplicate speed event from one crossing into a single pass", () => {
+    const now = vi.spyOn(Date, "now");
+    now.mockReturnValue(1000);
+    dispatch(speed(120));
+    now.mockReturnValue(1003);
+    dispatch(speed(120));
+    const s = state();
+    expect(s.passes.length).toBe(1);
+    expect(s.passes[0].scaleMph).toBe(120);
+    expect(s.bestMph).toBe(120);
+    now.mockRestore();
+  });
+
+  it("records a same-speed pass on a later lap (outside the dedupe window)", () => {
+    const now = vi.spyOn(Date, "now");
+    now.mockReturnValue(1000);
+    dispatch(speed(120));
+    now.mockReturnValue(4000);
+    dispatch(speed(120));
+    expect(state().passes.length).toBe(2);
+    now.mockRestore();
+  });
+
+  it("does not dedupe back-to-back passes with different speeds", () => {
+    const now = vi.spyOn(Date, "now");
+    now.mockReturnValue(1000);
+    dispatch(speed(120));
+    now.mockReturnValue(1003);
+    dispatch(speed(200));
+    expect(state().passes.length).toBe(2);
+    now.mockRestore();
   });
 });
