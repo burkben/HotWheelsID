@@ -120,22 +120,27 @@ captions "BEST", "PASSES"); `numberOfLines` clamp on values so cards never reflo
 
 ## 5. Iconography
 
-The app currently uses **emoji** as lightweight, instantly-legible icons. Keep a consistent
-vocabulary so a glyph always means the same thing:
+Navigation icons use **MaterialCommunityIcons** (`@expo/vector-icons`), tinted with the
+theme so they pick up the active/inactive tab color. Keep a consistent vocabulary so an
+icon always means the same thing:
 
-| Glyph | Meaning |
+| Icon (MaterialCommunityIcons) | Meaning |
 |-------|---------|
-| 🏠 | Speed / Home |
-| 🏁 | Race |
-| 🏎️ | Garage |
-| 🕘 | History |
-| 🏆 | Achievements |
-| 📡 | Live portal (raw BLE) |
-| ⚙️ | Settings |
-| ☰ | More |
+| `speedometer` | Speed / Home |
+| `flag-checkered` | Race |
+| `garage` | Garage |
+| `history` | History |
+| `trophy` | Achievements |
+| `access-point` | Live portal (raw BLE) |
+| `cog` | Settings |
+| `dots-horizontal` | More |
 
-If we later adopt a vector icon set, it should preserve these meanings and the chunky,
-high-contrast feel. (Tracked as a possible follow-up, not part of #28.)
+Tab-bar icons inherit their color from `tabBarActiveTintColor` (flame `accent`) /
+`tabBarInactiveTintColor` (`textMuted`); the **More** list rows render in `accent`.
+
+Emoji are still used as oversized **empty-state illustrations** (e.g. the empty Garage and
+History screens) and as **achievement badges** (`src/achievements/catalog.ts`), where their
+color and personality are a feature rather than a chrome icon.
 
 ---
 

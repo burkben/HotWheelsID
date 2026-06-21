@@ -4,16 +4,20 @@
  * Achievements, the Live portal event log, and Settings. Each row pushes its
  * screen over the tabs from the root stack (see {@link RootLayout}).
  *
- * Rows follow the design-language "mode list" pattern: emoji icon · title ·
- * stat subtitle · chevron, on `surface` cards. See docs/architecture/design-language.md.
+ * Rows follow the design-language "mode list" pattern: vector icon · title ·
+ * stat subtitle · chevron, on `surface` cards. See docs/architecture/design-language.md §5.
  */
+import type { ComponentProps } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Link } from 'expo-router';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 import { summarize } from '@/achievements/engine';
 import { useAchievementsStore } from '@/store/achievementsStore';
 import { colors, fontSize, fontWeight, radius, spacing } from '@/theme/tokens';
+
+type IconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
 
 export default function MoreScreen() {
   const insets = useSafeAreaInsets();
@@ -31,19 +35,19 @@ export default function MoreScreen() {
       >
         <MoreRow
           href="/achievements"
-          icon="🏆"
+          icon="trophy"
           title="Achievements"
           subtitle={`${unlockedCount}/${total} unlocked`}
         />
         <MoreRow
           href="/live"
-          icon="📡"
+          icon="access-point"
           title="Live portal"
           subtitle="Raw decoded BLE event log"
         />
         <MoreRow
           href="/settings"
-          icon="⚙️"
+          icon="cog"
           title="Settings"
           subtitle="Units · haptics · player profile"
         />
@@ -59,14 +63,14 @@ function MoreRow({
   subtitle,
 }: {
   href: '/achievements' | '/live' | '/settings';
-  icon: string;
+  icon: IconName;
   title: string;
   subtitle: string;
 }) {
   return (
     <Link href={href} asChild>
       <Pressable style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
-        <Text style={styles.rowIcon}>{icon}</Text>
+        <MaterialCommunityIcons name={icon} size={26} color={colors.accent} />
         <View style={styles.rowMain}>
           <Text style={styles.rowTitle}>{title}</Text>
           <Text style={styles.rowSubtitle} numberOfLines={1}>
@@ -98,7 +102,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing(4),
     paddingHorizontal: spacing(4),
   },
-  rowIcon: { fontSize: 24 },
   rowMain: { flex: 1, gap: 2 },
   rowTitle: { color: colors.textPrimary, fontSize: fontSize.md, fontWeight: fontWeight.bold },
   rowSubtitle: { color: colors.textSecondary, fontSize: fontSize.sm },
