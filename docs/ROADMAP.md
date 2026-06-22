@@ -145,10 +145,14 @@ race end-to-end.
 Pulls in the upstream roadmap's "future features" and more.
 
 - ✅ Achievements (top speed, lap streaks, collection milestones) (PR #23).
-- ⬜ Richer car identity: art, model names, rarity from the Mattel id. *(Groundwork landed —
-  the **casting/model id** is now decoded from the broadcast NDEF record and persisted per car,
-  so duplicate copies of the same casting are grouped in the Garage. Mapping that id to model
-  **names, art, and rarity** stays blocked on a catalog Mattel never published — see below.)*
+- 🟡 Richer car identity: art, model names, rarity from the Mattel id. *(Slices A + B landed —
+  the **casting/model id** is decoded from the broadcast NDEF record and persisted per car, so
+  duplicate copies are grouped in the Garage, and you can now **name a casting once and have it
+  label every copy you own** (offline, keyed by the model id). A bundled `modelId → name` catalog
+  is wired as a fallback but ships empty: the public Hot Wheels id catalogs are keyed by the
+  printed packaging SKU, not the binary model id the portal emits, and the correlation isn't
+  published. Seeding that catalog — plus art and rarity — stays blocked on data Mattel never
+  published; see below.)*
 - ⬜ Multiplayer/turn-based race nights.
 - ✅ Share race & session results to the native share sheet (PR #26).
 - ⬜ Sound design; optional "TV/host mode."

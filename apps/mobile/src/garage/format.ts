@@ -3,7 +3,9 @@
  * test under Node and stay consistent between the list and detail views.
  */
 import type { CarRecord } from '@/store/persistence/carRepository';
+import type { CastingNames } from '@/store/persistence/castingRepository';
 import { formatBestSpeed, type SpeedDisplay } from '../speed/format';
+import { lookupCatalogName } from './castingCatalog';
 
 /** Last two octets of a colon-separated NFC UID, e.g. `6C:C4:5A:2B:64:81` → `64:81`. */
 export function shortUid(uid: string): string {
@@ -14,6 +16,38 @@ export function shortUid(uid: string): string {
 /** A car's display name: its nickname if set, else the shortened UID. */
 export function carLabel(car: Pick<CarRecord, 'name' | 'uid'>): string {
   return car.name?.trim() ? car.name.trim() : shortUid(car.uid);
+}
+
+/**
+ * The human name for a casting `modelId`, in priority order: the user-assigned
+ * name, else the bundled catalog name, else `null` (unknown — render the hex
+ * label instead). `catalog` is injectable so the resolution logic unit-tests
+ * without depending on the bundled data.
+ */
+export function resolveCastingName(
+  modelId: string | null | undefined,
+  userNames: Readonly<CastingNames>,
+  catalog: (modelId: string | null | undefined) => string | null = lookupCatalogName,
+): string | null {
+  if (!modelId) return null;
+  const user = userNames[modelId.toUpperCase()]?.trim();
+  if (user) return user;
+  return catalog(modelId);
+}
+
+/**
+ * A car's display label across the Garage: its own nickname wins (most specific),
+ * else the casting name (shared by every copy), else the shortened UID. Pass the
+ * already-resolved `castingName` from {@link resolveCastingName}.
+ */
+export function carDisplayName(
+  car: Pick<CarRecord, 'name' | 'uid'>,
+  castingName: string | null,
+): string {
+  const nick = car.name?.trim();
+  if (nick) return nick;
+  if (castingName?.trim()) return castingName.trim();
+  return shortUid(car.uid);
 }
 
 /** Best speed as a whole number, or an em dash when never recorded. */

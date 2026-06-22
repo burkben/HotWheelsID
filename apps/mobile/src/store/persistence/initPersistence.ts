@@ -37,6 +37,7 @@ import {
   type AchievementsRepository,
 } from "./achievementsRepository";
 import { InMemoryCarRepository, type CarRepository } from "./carRepository";
+import { InMemoryCastingRepository, type CastingRepository } from "./castingRepository";
 import { InMemoryRaceRepository, type RaceRepository } from "./raceRepository";
 import { setSessionRepository } from "./historyAccess";
 import { InMemorySessionRepository, type SessionRepository } from "./sessionRepository";
@@ -46,6 +47,7 @@ import { InMemorySettingsRepository, type SettingsRepository } from "./settingsR
 export interface PersistenceRepositories {
   race: RaceRepository;
   car: CarRepository;
+  casting: CastingRepository;
   session: SessionRepository;
   settings: SettingsRepository;
   achievements: AchievementsRepository;
@@ -83,6 +85,7 @@ async function resolveRepositories(
   if (
     injected?.race ||
     injected?.car ||
+    injected?.casting ||
     injected?.session ||
     injected?.settings ||
     injected?.achievements
@@ -90,6 +93,7 @@ async function resolveRepositories(
     return {
       race: injected.race ?? new InMemoryRaceRepository(),
       car: injected.car ?? new InMemoryCarRepository(),
+      casting: injected.casting ?? new InMemoryCastingRepository(),
       session: injected.session ?? new InMemorySessionRepository(),
       settings: injected.settings ?? new InMemorySettingsRepository(),
       achievements: injected.achievements ?? new InMemoryAchievementsRepository(),
@@ -103,6 +107,8 @@ async function resolveRepositories(
     require("./sqliteRaceRepository") as typeof import("./sqliteRaceRepository");
   const { SqliteCarRepository } =
     require("./sqliteCarRepository") as typeof import("./sqliteCarRepository");
+  const { SqliteCastingRepository } =
+    require("./sqliteCastingRepository") as typeof import("./sqliteCastingRepository");
   const { SqliteSessionRepository } =
     require("./sqliteSessionRepository") as typeof import("./sqliteSessionRepository");
   const { SqliteSettingsRepository } =
@@ -114,6 +120,7 @@ async function resolveRepositories(
   return {
     race: new SqliteRaceRepository(db),
     car: new SqliteCarRepository(db),
+    casting: new SqliteCastingRepository(db),
     session: new SqliteSessionRepository(db),
     settings: new SqliteSettingsRepository(db),
     achievements: new SqliteAchievementsRepository(db),
@@ -138,6 +145,7 @@ export async function initPersistence(injected?: Partial<PersistenceRepositories
 
     await repos.race.init();
     await repos.car.init();
+    await repos.casting.init();
     await repos.session.init();
     await repos.settings.init();
     await repos.achievements.init();
@@ -145,6 +153,7 @@ export async function initPersistence(injected?: Partial<PersistenceRepositories
     // Hydrate the render stores from durable storage.
     useRaceStore.getState().hydrate(await repos.race.loadResults());
     useGarageStore.getState().hydrate(await repos.car.getCars());
+    useGarageStore.getState().hydrateCastingNames(await repos.casting.getCastingNames());
     useSettingsStore.getState().hydrate(await repos.settings.load());
     useAchievementsStore.getState().hydrate(await repos.achievements.loadUnlocked());
 
@@ -188,6 +197,10 @@ export async function initPersistence(injected?: Partial<PersistenceRepositories
         void repos.car.recordIdentity(input).catch((e) => console.warn("[garage] identity failed", e)),
       onRename: (uid, name) =>
         void repos.car.setName(uid, name).catch((e) => console.warn("[garage] rename failed", e)),
+      onNameCasting: (modelId, name) =>
+        void repos.casting
+          .setCastingName(modelId, name)
+          .catch((e) => console.warn("[garage] casting name failed", e)),
       onClear: () =>
         void repos.car.clear().catch((e) => console.warn("[garage] clear failed", e)),
     });

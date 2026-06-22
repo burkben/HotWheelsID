@@ -15,14 +15,16 @@ import { usePortalStore } from '@/store/portalStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { speedUnitLabel } from '@/speed/format';
 import {
-  carLabel,
+  carDisplayName,
   castingLabel,
   formatCopies,
   formatLap,
   formatLastSeen,
   formatMph,
+  resolveCastingName,
   shortUid,
 } from '@/garage/format';
+import { lookupCatalogName } from '@/garage/castingCatalog';
 import { colors, fontSize, fontWeight, radius, spacing } from '@/theme/tokens';
 
 export default function CarDetailScreen() {
@@ -33,6 +35,8 @@ export default function CarDetailScreen() {
   const car = useGarageStore((s) => s.cars.find((c) => c.uid === uid));
   const cars = useGarageStore((s) => s.cars);
   const rename = useGarageStore((s) => s.rename);
+  const castingNames = useGarageStore((s) => s.castingNames);
+  const nameCasting = useGarageStore((s) => s.nameCasting);
   const onPortal = usePortalStore((s) => s.car?.uid === uid);
   const speedUnit = useSettingsStore((s) => s.speedUnit);
   const speedCalibration = useSettingsStore((s) => s.speedCalibration);
@@ -40,8 +44,12 @@ export default function CarDetailScreen() {
 
   const casting = castingLabel(car?.modelId);
   const copies = car ? castingCount(cars, car) : 1;
+  const castingName = resolveCastingName(car?.modelId, castingNames);
+  const catalogSuggestion = lookupCatalogName(car?.modelId);
+  const savedCastingName = car?.modelId ? castingNames[car.modelId.toUpperCase()] ?? '' : '';
 
   const [draft, setDraft] = useState(car?.name ?? '');
+  const [castingDraft, setCastingDraft] = useState(savedCastingName);
 
   const saveName = () => {
     const trimmed = draft.trim();
@@ -51,7 +59,17 @@ export default function CarDetailScreen() {
     if (Platform.OS !== 'web') Haptics.selectionAsync().catch(() => {});
   };
 
+  const saveCasting = () => {
+    if (!car?.modelId) return;
+    const trimmed = castingDraft.trim();
+    const next = trimmed.length > 0 ? trimmed : null;
+    if (next === (savedCastingName || null)) return;
+    nameCasting(car.modelId, next);
+    if (Platform.OS !== 'web') Haptics.selectionAsync().catch(() => {});
+  };
+
   const dirty = draft.trim() !== (car?.name ?? '');
+  const castingDirty = castingDraft.trim() !== savedCastingName;
 
   return (
     <ScrollView
@@ -88,7 +106,7 @@ export default function CarDetailScreen() {
       ) : (
         <>
           <Text style={styles.title} numberOfLines={1}>
-            {carLabel(car)}
+            {carDisplayName(car, castingName)}
           </Text>
           <Text style={styles.subtitle}>
             {car.serial ? `Serial #${car.serial}` : 'No serial captured'} · {car.uid}
@@ -111,6 +129,38 @@ export default function CarDetailScreen() {
             <Stat label="Detections" value={car.detections.toString()} />
             <Stat label="Last seen" value={formatLastSeen(car.lastSeen)} />
           </View>
+
+          {car.modelId && (
+            <>
+              <Text style={styles.sectionLabel}>Casting name</Text>
+              <TextInput
+                value={castingDraft}
+                onChangeText={setCastingDraft}
+                onBlur={saveCasting}
+                placeholder={catalogSuggestion ?? 'Name this casting'}
+                placeholderTextColor={colors.textMuted}
+                style={styles.input}
+                maxLength={32}
+                returnKeyType="done"
+                onSubmitEditing={saveCasting}
+                autoCorrect={false}
+              />
+              <Pressable
+                onPress={saveCasting}
+                disabled={!castingDirty}
+                style={({ pressed }) => [
+                  styles.saveBtn,
+                  !castingDirty && styles.saveBtnDisabled,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <Text style={styles.saveBtnText}>{castingDirty ? 'Save casting name' : 'Saved'}</Text>
+              </Pressable>
+              <Text style={styles.castingHint}>
+                Naming a casting labels every copy you own{casting ? ` · ${casting}` : ''}.
+              </Text>
+            </>
+          )}
 
           <Text style={styles.sectionLabel}>Nickname</Text>
           <TextInput
@@ -221,6 +271,7 @@ const styles = StyleSheet.create({
   saveBtnDisabled: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 },
   saveBtnText: { color: colors.bg, fontSize: fontSize.md, fontWeight: fontWeight.heavy },
   note: { color: colors.textMuted, fontSize: fontSize.xs, lineHeight: 18, marginTop: spacing(1) },
+  castingHint: { color: colors.textMuted, fontSize: fontSize.xs, lineHeight: 18, marginTop: -spacing(1) },
   missing: { alignItems: 'center', gap: spacing(2), paddingVertical: spacing(10) },
   missingTitle: { color: colors.textPrimary, fontSize: fontSize.lg, fontWeight: fontWeight.bold },
   missingBody: { color: colors.textSecondary, fontSize: fontSize.sm, textAlign: 'center' },

@@ -24,6 +24,7 @@ import {
   type IdentityInput,
   type SpeedInput,
 } from "./persistence/carRepository";
+import { applyCastingName, type CastingNames } from "./persistence/castingRepository";
 
 /**
  * Optional durability hooks, set by the app bootstrap so collection changes are
@@ -36,6 +37,7 @@ export interface GaragePersistence {
   onSpeed?: (input: SpeedInput) => void;
   onIdentity?: (input: IdentityInput) => void;
   onRename?: (uid: string, name: string | null) => void;
+  onNameCasting?: (modelId: string, name: string | null) => void;
   onClear?: () => void;
 }
 
@@ -48,9 +50,13 @@ export function setGaragePersistence(next: GaragePersistence | null): void {
 export interface GarageStore {
   /** The collection, most-recently-seen first. */
   cars: CarRecord[];
+  /** User-assigned casting names, keyed by `modelId` (uppercase hex). */
+  castingNames: CastingNames;
 
   /** Replace the collection from durable storage (called once on startup). */
   hydrate: (cars: CarRecord[]) => void;
+  /** Replace the casting-name map from durable storage (called once on startup). */
+  hydrateCastingNames: (names: CastingNames) => void;
   /** A car was placed on the portal. */
   recordDetection: (input: DetectionInput) => void;
   /** A late serial arrived for an already-detected car. */
@@ -61,14 +67,19 @@ export interface GarageStore {
   recordIdentity: (input: IdentityInput) => void;
   /** Set or clear a car's nickname. */
   rename: (uid: string, name: string | null) => void;
+  /** Set or clear a casting's name; applies to every copy sharing the `modelId`. */
+  nameCasting: (modelId: string, name: string | null) => void;
   /** Forget the whole garage. */
   forgetAll: () => void;
 }
 
 export const useGarageStore = create<GarageStore>((set) => ({
   cars: [],
+  castingNames: {},
 
   hydrate: (cars) => set({ cars: sortCars(cars) }),
+
+  hydrateCastingNames: (names) => set({ castingNames: { ...names } }),
 
   recordDetection: (input) => {
     set((s) => ({ cars: sortCars(applyDetection(s.cars, input)) }));
@@ -93,6 +104,11 @@ export const useGarageStore = create<GarageStore>((set) => ({
   rename: (uid, name) => {
     set((s) => ({ cars: sortCars(applyName(s.cars, uid, name)) }));
     persistence.onRename?.(uid, name);
+  },
+
+  nameCasting: (modelId, name) => {
+    set((s) => ({ castingNames: applyCastingName(s.castingNames, modelId, name) }));
+    persistence.onNameCasting?.(modelId, name);
   },
 
   forgetAll: () => {

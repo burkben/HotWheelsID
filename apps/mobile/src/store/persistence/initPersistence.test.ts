@@ -8,6 +8,7 @@ import { useRaceStore } from "../raceStore";
 import { DEFAULT_SETTINGS, useSettingsStore } from "../settingsStore";
 import { InMemoryAchievementsRepository } from "./achievementsRepository";
 import { InMemoryCarRepository } from "./carRepository";
+import { InMemoryCastingRepository } from "./castingRepository";
 import { getSessionRepository } from "./historyAccess";
 import { initPersistence, resetPersistenceForTests } from "./initPersistence";
 import { InMemoryRaceRepository, type RaceRepository } from "./raceRepository";
@@ -38,7 +39,7 @@ function makeResult(over: Partial<RaceResult> = {}): RaceResult {
 beforeEach(() => {
   resetPersistenceForTests();
   useRaceStore.setState({ race: createRace(), leaderboard: [] });
-  useGarageStore.setState({ cars: [] });
+  useGarageStore.setState({ cars: [], castingNames: {} });
   useSettingsStore.setState({ ...DEFAULT_SETTINGS, hydrated: false });
   useAchievementsStore.setState({ unlocked: {}, stats: emptyStats(), hydrated: false });
   usePortalStore.getState().reset();
@@ -138,6 +139,25 @@ describe("initPersistence", () => {
     await Promise.resolve();
 
     expect((await car.getCars())[0].name).toBe("Twin Mill");
+  });
+
+  it("hydrates casting names from the injected casting repository", async () => {
+    const casting = new InMemoryCastingRepository();
+    await casting.setCastingName("41AE5E5B", "Twin Mill");
+
+    await initPersistence({ casting });
+
+    expect(useGarageStore.getState().castingNames).toEqual({ "41AE5E5B": "Twin Mill" });
+  });
+
+  it("wires the casting-name sink so naming a casting persists through the repository", async () => {
+    const casting = new InMemoryCastingRepository();
+    await initPersistence({ casting });
+
+    useGarageStore.getState().nameCasting("41ae5e5b", "Twin Mill");
+    await Promise.resolve();
+
+    expect(await casting.getCastingNames()).toEqual({ "41AE5E5B": "Twin Mill" });
   });
 
   it("bridges portal car detections and passes into the garage", async () => {

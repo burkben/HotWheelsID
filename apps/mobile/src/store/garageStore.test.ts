@@ -22,7 +22,7 @@ function car(over: Partial<CarRecord> = {}): CarRecord {
 
 beforeEach(() => {
   setGaragePersistence(null);
-  useGarageStore.setState({ cars: [] });
+  useGarageStore.setState({ cars: [], castingNames: {} });
 });
 
 describe("garageStore", () => {
@@ -79,6 +79,28 @@ describe("garageStore", () => {
     expect(onIdentity).toHaveBeenCalledWith(input);
   });
 
+  it("names a casting (trimmed, uppercased key) and fires the onNameCasting sink", () => {
+    const onNameCasting = vi.fn();
+    setGaragePersistence({ onNameCasting });
+
+    useGarageStore.getState().nameCasting("41ae5e5b", "  Twin Mill ");
+
+    expect(useGarageStore.getState().castingNames).toEqual({ "41AE5E5B": "Twin Mill" });
+    expect(onNameCasting).toHaveBeenCalledWith("41ae5e5b", "  Twin Mill "); // sink gets raw input; repo normalizes
+  });
+
+  it("clears a casting name when set to null or blank", () => {
+    useGarageStore.setState({ castingNames: { "41AE5E5B": "Twin Mill" } });
+    useGarageStore.getState().nameCasting("41AE5E5B", null);
+    expect(useGarageStore.getState().castingNames).toEqual({});
+  });
+
+  it("hydrateCastingNames replaces the whole map", () => {
+    useGarageStore.setState({ castingNames: { "41AE5E5B": "Twin Mill" } });
+    useGarageStore.getState().hydrateCastingNames({ "00FF00FF": "Bone Shaker" });
+    expect(useGarageStore.getState().castingNames).toEqual({ "00FF00FF": "Bone Shaker" });
+  });
+
   it("forgetAll clears and fires the onClear sink", () => {
     const onClear = vi.fn();
     setGaragePersistence({ onClear });
@@ -96,6 +118,7 @@ describe("garageStore", () => {
       useGarageStore.getState().recordSpeed({ uid: "AA", mph: 3, at: 2 });
       useGarageStore.getState().recordIdentity({ uid: "AA", mattelId: "M", modelId: "ABCD", at: 3 });
       useGarageStore.getState().rename("AA", "X");
+      useGarageStore.getState().nameCasting("ABCD", "Y");
       useGarageStore.getState().forgetAll();
     }).not.toThrow();
   });

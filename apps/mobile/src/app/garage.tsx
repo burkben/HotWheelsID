@@ -15,11 +15,12 @@ import { usePortalStore } from '@/store/portalStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { speedUnitLabel } from '@/speed/format';
 import { colors, fontSize, fontWeight, radius, spacing } from '@/theme/tokens';
-import { carLabel, formatLastSeen, formatLap, formatMph } from '@/garage/format';
+import { carDisplayName, formatLastSeen, formatLap, formatMph, resolveCastingName } from '@/garage/format';
 
 export default function GarageScreen() {
   const insets = useSafeAreaInsets();
   const cars = useGarageStore((s) => s.cars);
+  const castingNames = useGarageStore((s) => s.castingNames);
   const onPortalUid = usePortalStore((s) => s.car?.uid ?? null);
 
   // How many cars share each casting, so a row can flag duplicates with a ×N badge.
@@ -52,6 +53,7 @@ export default function GarageScreen() {
         renderItem={({ item }) => (
           <CarRow
             car={item}
+            label={carDisplayName(item, resolveCastingName(item.modelId, castingNames))}
             onPortal={item.uid === onPortalUid}
             copies={item.modelId ? copiesByModel.get(item.modelId) ?? 1 : 1}
           />
@@ -62,7 +64,17 @@ export default function GarageScreen() {
   );
 }
 
-function CarRow({ car, onPortal, copies }: { car: CarRecord; onPortal: boolean; copies: number }) {
+function CarRow({
+  car,
+  label,
+  onPortal,
+  copies,
+}: {
+  car: CarRecord;
+  label: string;
+  onPortal: boolean;
+  copies: number;
+}) {
   const speedUnit = useSettingsStore((s) => s.speedUnit);
   const speedCalibration = useSettingsStore((s) => s.speedCalibration);
   const display = { unit: speedUnit, calibration: speedCalibration };
@@ -72,7 +84,7 @@ function CarRow({ car, onPortal, copies }: { car: CarRecord; onPortal: boolean; 
         <View style={styles.rowMain}>
           <View style={styles.rowTitleLine}>
             <Text style={styles.carName} numberOfLines={1}>
-              {carLabel(car)}
+              {label}
             </Text>
             {copies > 1 && (
               <Text style={styles.dupeBadge} accessibilityLabel={`${copies} copies of this casting`}>

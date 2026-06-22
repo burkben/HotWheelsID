@@ -106,6 +106,18 @@ const MIGRATIONS: ((db: Db) => Promise<void>)[] = [
       ALTER TABLE cars ADD COLUMN model_id  TEXT;
     `);
   },
+  // v7 — casting names: a user-assigned label per casting (`model_id`), shared by
+  // every physical copy. Decoupled from `cars` (keyed by uid) so one name serves all
+  // duplicates and survives a car being forgotten. `named_at` is provenance only.
+  async (db) => {
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS castings (
+        model_id  TEXT    PRIMARY KEY,
+        name      TEXT    NOT NULL,
+        named_at  INTEGER NOT NULL
+      );
+    `);
+  },
 ];
 
 /** Open the shared DB, enable WAL, and run any pending migrations. */

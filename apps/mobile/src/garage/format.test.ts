@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { carLabel, castingLabel, formatCopies, formatLap, formatLastSeen, formatMph, shortUid } from './format';
+import { carDisplayName, carLabel, castingLabel, formatCopies, formatLap, formatLastSeen, formatMph, resolveCastingName, shortUid } from './format';
 
 describe('garage formatters', () => {
   it('shortens a 6-octet UID to its last two octets', () => {
@@ -46,5 +46,29 @@ describe('garage formatters', () => {
     expect(formatCopies(1)).toBe('1 copy');
     expect(formatCopies(2)).toBe('2 copies');
     expect(formatCopies(5)).toBe('5 copies');
+  });
+
+  it('resolves a casting name: user name wins, else catalog, else null', () => {
+    const userNames = { '41AE5E5B': 'My Twin Mill' };
+    const catalog = (id: string | null | undefined) => (id === '00FF00FF' ? 'Bone Shaker' : null);
+    expect(resolveCastingName('41ae5e5b', userNames, catalog)).toBe('My Twin Mill'); // user, case-insensitive key
+    expect(resolveCastingName('  41AE5E5B', { '41AE5E5B': '   ' }, catalog)).toBeNull(); // blank user name ⇒ no override here
+    expect(resolveCastingName('00FF00FF', userNames, catalog)).toBe('Bone Shaker'); // catalog fallback
+    expect(resolveCastingName('DEADBEEF', userNames, catalog)).toBeNull(); // unknown to both
+    expect(resolveCastingName(null, userNames, catalog)).toBeNull();
+    expect(resolveCastingName(undefined, {}, catalog)).toBeNull();
+  });
+
+  it('defaults resolveCastingName to the bundled (empty) catalog', () => {
+    expect(resolveCastingName('41AE5E5B', {})).toBeNull(); // no user name, empty catalog
+    expect(resolveCastingName('41AE5E5B', { '41AE5E5B': 'Twin Mill' })).toBe('Twin Mill');
+  });
+
+  it('labels a car: nickname > casting name > short UID', () => {
+    const uid = '6C:C4:5A:2B:64:81';
+    expect(carDisplayName({ name: 'Lucky', uid }, 'Twin Mill')).toBe('Lucky'); // nickname wins
+    expect(carDisplayName({ name: null, uid }, 'Twin Mill')).toBe('Twin Mill'); // casting name when no nickname
+    expect(carDisplayName({ name: null, uid }, null)).toBe('64:81'); // short UID when neither
+    expect(carDisplayName({ name: '  ', uid }, '  ')).toBe('64:81'); // blanks ignored
   });
 });
