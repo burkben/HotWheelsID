@@ -3,12 +3,20 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import * as Device from 'expo-device';
 
+import { prewarmBle } from '@/ble/blePortal';
 import { initPersistence } from '@/store/persistence/initPersistence';
 
 export default function RootLayout() {
   useEffect(() => {
     initPersistence();
+    // Trigger the iOS Bluetooth permission / power prompts now, on the home
+    // screen, rather than mid-race inside Guided Access (where iOS hides them and
+    // a pending prompt can block Guided Access from starting). Device-only: the
+    // Simulator has no radio and web has no native module. See
+    // docs/guides/ios-guided-access.md.
+    if (Device.isDevice) prewarmBle();
   }, []);
 
   return (

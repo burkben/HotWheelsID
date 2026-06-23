@@ -86,6 +86,11 @@ Flip the home screen to **Demo**, or run `npx expo start --web`, to explore the 
 passes. The full runbook — EAS cloud builds, the Simulator profile, and signing notes — is in
 **[docs/guides/ios-dev-build.md](docs/guides/ios-dev-build.md)**.
 
+> 👨‍👩‍👧 **Handing the iPad to kids?** Lock it to just this app with iOS **Guided Access**. There's
+> one Bluetooth quirk to set up first (otherwise the speedometer can go dead and iOS may refuse to
+> start Guided Access) — the one-minute fix is in the
+> **[Guided Access / kiosk guide](docs/guides/ios-guided-access.md)**.
+
 ## Protocol Documentation
 
 We've fully reverse-engineered the BLE protocol! See [PROTOCOL.md](PROTOCOL.md) for details.
