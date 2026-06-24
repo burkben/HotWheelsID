@@ -9,6 +9,7 @@ import { PORTAL_NAME } from '@redlineid/protocol';
 import { RecentPasses } from '@/components/RecentPasses';
 import { Speedometer } from '@/components/gauge/Speedometer';
 import { StatusPill } from '@/components/StatusPill';
+import { BleStatusBanner } from '@/components/BleStatusBanner';
 import { createMockPortal } from '@/mock/mockPortal';
 import { createBlePortal, isBleAvailable } from '@/ble/blePortal';
 import type { BlePhase } from '@/ble/types';
@@ -186,6 +187,8 @@ export default function SpeedometerScreen() {
           </Pressable>
         </View>
       )}
+
+      {useBle && <BleStatusBanner phase={blePhase} />}
 
       {useBle && blePhase === 'locked' && (
         <View style={styles.lockedBanner}>

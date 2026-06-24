@@ -89,6 +89,27 @@ export function isBleAvailable(): boolean {
 }
 
 /**
+ * Warm up CoreBluetooth at app launch so iOS surfaces the one-time Bluetooth
+ * **permission** prompt (and the "Bluetooth is off" power alert) up front, on the
+ * normal home screen — *not* mid-session inside iOS **Guided Access**, where iOS
+ * suppresses those system dialogs and a still-pending one can even block Guided
+ * Access from starting. Simply constructing the shared `BleManager` is enough to
+ * trigger CoreBluetooth's authorization flow; we deliberately do **not** start a
+ * scan here, so it never fabricates a connection or shows activity. No-op on web
+ * (the native module is never required) and harmless on the iOS Simulator.
+ *
+ * See `docs/guides/ios-guided-access.md`.
+ */
+export function prewarmBle(): void {
+  if (!isBleAvailable()) return;
+  try {
+    getManager();
+  } catch {
+    /* best-effort — on failure the prompts simply defer to the first Connect. */
+  }
+}
+
+/**
  * Create a BLE transport. Returns the shared {@link PortalTransport} contract
  * (`start`/`stop`) plus nothing else — all event delivery happens through the
  * `dispatch`/`onLog` callbacks supplied in `options`.

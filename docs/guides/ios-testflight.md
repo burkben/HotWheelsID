@@ -11,6 +11,10 @@ family and friends over **TestFlight**, then (optionally) the App Store. It pick
 > dev-build guide) is the only way onto a physical iPhone, and it only covers *your* device,
 > not other testers'. Everything below assumes you've decided the $99 is worth it.
 
+> 👨‍👩‍👧 **Putting it on a kid's iPad?** Once a tester has the app, lock the device to it with iOS
+> Guided Access — see the **[Guided Access / kiosk guide](ios-guided-access.md)** for the Bluetooth
+> setup that keeps the speedometer live under the lock.
+
 ---
 
 ## The distribution ladder
