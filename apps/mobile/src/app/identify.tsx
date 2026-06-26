@@ -17,11 +17,12 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 
 import { CarPhoto } from "@/catalog/CarPhoto";
 import { searchCatalog, type CatalogCar } from "@/catalog/catalog";
 import { useCarIdentity, useIdentifyCar } from "@/catalog/useCarIdentity";
-import { colors, fontSize, fontWeight, radius, spacing } from "@/theme/tokens";
+import { colors, elevation, fontSize, fontWeight, radius, spacing } from "@/theme/tokens";
 
 export default function IdentifyScreen() {
   const insets = useSafeAreaInsets();
@@ -57,17 +58,25 @@ export default function IdentifyScreen() {
         </Pressable>
       </View>
 
-      <TextInput
-        value={query}
-        onChangeText={setQuery}
-        placeholder="Search name, series, toy # or year"
-        placeholderTextColor={colors.textMuted}
-        style={styles.search}
-        autoCorrect={false}
-        autoCapitalize="none"
-        returnKeyType="search"
-        clearButtonMode="while-editing"
-      />
+      <View style={styles.searchRow}>
+        <MaterialCommunityIcons
+          name="magnify"
+          size={20}
+          color={colors.textMuted}
+          style={styles.searchIcon}
+        />
+        <TextInput
+          value={query}
+          onChangeText={setQuery}
+          placeholder="Search name, series, toy # or year"
+          placeholderTextColor={colors.textMuted}
+          style={styles.search}
+          autoCorrect={false}
+          autoCapitalize="none"
+          returnKeyType="search"
+          clearButtonMode="while-editing"
+        />
+      </View>
 
       <FlatList
         data={results}
@@ -106,7 +115,14 @@ function CarCard({
       onPress={onPress}
       style={({ pressed }) => [styles.card, selected && styles.cardSelected, pressed && styles.pressed]}
     >
-      <CarPhoto uri={car.image} size={CARD_PHOTO} rounded={radius.sm} />
+      <View style={styles.cardPhotoWrap}>
+        <CarPhoto uri={car.image} width="100%" aspectRatio={1} rounded={radius.sm} ring={selected} />
+        {selected ? (
+          <View style={styles.checkBadge}>
+            <MaterialCommunityIcons name="check" size={15} color={colors.bg} />
+          </View>
+        ) : null}
+      </View>
       <Text style={styles.cardName} numberOfLines={2}>
         {car.name}
       </Text>
@@ -115,12 +131,9 @@ function CarCard({
           {meta}
         </Text>
       ) : null}
-      {selected && <Text style={styles.cardBadge}>● identified</Text>}
     </Pressable>
   );
 }
-
-const CARD_PHOTO = 132;
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
@@ -136,7 +149,9 @@ const styles = StyleSheet.create({
   subtitle: { color: colors.textSecondary, fontSize: fontSize.sm },
   close: { paddingVertical: spacing(1), paddingHorizontal: spacing(2) },
   closeText: { color: colors.accentBlue, fontSize: fontSize.md, fontWeight: fontWeight.bold },
-  search: {
+  searchRow: {
+    flexDirection: "row",
+    alignItems: "center",
     marginHorizontal: spacing(5),
     marginBottom: spacing(3),
     backgroundColor: colors.surfaceAlt,
@@ -144,6 +159,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: radius.md,
     paddingHorizontal: spacing(3.5),
+  },
+  searchIcon: { marginRight: spacing(2) },
+  search: {
+    flex: 1,
     paddingVertical: spacing(3),
     color: colors.textPrimary,
     fontSize: fontSize.md,
@@ -160,10 +179,21 @@ const styles = StyleSheet.create({
     padding: spacing(3),
     gap: spacing(2),
   },
-  cardSelected: { borderColor: colors.accent },
+  cardSelected: { borderColor: colors.accent, backgroundColor: colors.surfaceRaised, ...elevation.accentGlow },
+  cardPhotoWrap: { width: "100%" },
+  checkBadge: {
+    position: "absolute",
+    top: spacing(2),
+    right: spacing(2),
+    width: 24,
+    height: 24,
+    borderRadius: radius.pill,
+    backgroundColor: colors.accent,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   cardName: { color: colors.textPrimary, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
   cardMeta: { color: colors.textSecondary, fontSize: fontSize.xs },
-  cardBadge: { color: colors.accent, fontSize: fontSize.xs, fontWeight: fontWeight.bold },
   noResults: { color: colors.textSecondary, fontSize: fontSize.sm, textAlign: "center" },
   pressed: { opacity: 0.7 },
 });

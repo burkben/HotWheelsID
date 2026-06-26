@@ -12,8 +12,9 @@ import { useGarageStore } from '@/store/garageStore';
 import type { CarRecord } from '@/store/persistence/carRepository';
 import { usePortalStore } from '@/store/portalStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { catalogIdForUid, useIdentityStore } from '@/store/identityStore';
 import { speedUnitLabel } from '@/speed/format';
-import { colors, fontSize, fontWeight, radius, spacing } from '@/theme/tokens';
+import { colors, elevation, fontSize, fontWeight, radius, spacing } from '@/theme/tokens';
 import { carLabel, formatLastSeen, formatLap, formatMph } from '@/garage/format';
 import { CarPhoto } from '@/catalog/CarPhoto';
 import { useCarIdentity } from '@/catalog/useCarIdentity';
@@ -23,10 +24,31 @@ export default function GarageScreen() {
   const cars = useGarageStore((s) => s.cars);
   const onPortalUid = usePortalStore((s) => s.car?.uid ?? null);
 
+  // Count identified cars off a single identity snapshot (uid → casting → catalog).
+  const links = useIdentityStore((s) => s.links);
+  const identifications = useIdentityStore((s) => s.identifications);
+  const identifiedCount = cars.reduce(
+    (n, c) => (catalogIdForUid({ links, identifications }, c.uid) ? n + 1 : n),
+    0,
+  );
+  const onPortalHere = onPortalUid != null && cars.some((c) => c.uid === onPortalUid);
+
+  const summary =
+    cars.length === 0
+      ? 'Your collection lives here'
+      : [identifiedCount > 0 ? `${identifiedCount} identified` : null, onPortalHere ? '1 on portal' : null]
+          .filter(Boolean)
+          .join('  ·  ') || 'Tap a car to identify it';
+
   return (
     <View style={[styles.screen, { paddingTop: insets.top + spacing(2) }]}>
       <View style={styles.header}>
-        <Text style={styles.title}>Garage</Text>
+        <View style={styles.headerText}>
+          <Text style={styles.title}>Garage</Text>
+          <Text style={styles.subtitle} numberOfLines={1}>
+            {summary}
+          </Text>
+        </View>
         <Text style={styles.count}>{cars.length}</Text>
       </View>
 
@@ -56,7 +78,7 @@ function CarRow({ car, onPortal }: { car: CarRecord; onPortal: boolean }) {
   return (
     <Link href={{ pathname: '/garage/[uid]', params: { uid: car.uid } }} asChild>
       <Pressable style={({ pressed }) => [styles.row, onPortal && styles.rowOnPortal, pressed && styles.pressed]}>
-        <CarPhoto uri={identity?.image} size={48} rounded={radius.sm} />
+        <CarPhoto uri={identity?.image} size={56} rounded={radius.md} ring={!!identity} />
         <View style={styles.rowMain}>
           <View style={styles.rowTitleLine}>
             <Text style={styles.carName} numberOfLines={1}>
@@ -65,7 +87,7 @@ function CarRow({ car, onPortal }: { car: CarRecord; onPortal: boolean }) {
             {onPortal && <Text style={styles.onPortal}>● on portal</Text>}
           </View>
           <Text style={styles.carMeta} numberOfLines={1}>
-            {car.serial ? `#${car.serial}` : car.uid}
+            {identity?.series ?? (car.serial ? `#${car.serial}` : car.uid)}
             {'  ·  '}
             {formatLastSeen(car.lastSeen)}
           </Text>
@@ -104,7 +126,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing(5),
     paddingBottom: spacing(3),
   },
-  title: { color: colors.textPrimary, fontSize: fontSize.xl, fontWeight: fontWeight.heavy, flex: 1 },
+  headerText: { flex: 1, gap: 2 },
+  title: { color: colors.textPrimary, fontSize: fontSize.xl, fontWeight: fontWeight.heavy },
+  subtitle: { color: colors.textSecondary, fontSize: fontSize.sm },
   count: {
     color: colors.textSecondary,
     fontSize: fontSize.md,
@@ -130,8 +154,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: radius.md,
     padding: spacing(4),
+    ...elevation.card,
   },
-  rowOnPortal: { borderColor: colors.accent },
+  rowOnPortal: { borderColor: colors.accent, backgroundColor: colors.surfaceRaised, ...elevation.accentGlow },
   rowMain: { flex: 1, gap: 4 },
   rowTitleLine: { flexDirection: 'row', alignItems: 'center', gap: spacing(2) },
   carName: { color: colors.textPrimary, fontSize: fontSize.md, fontWeight: fontWeight.bold, flexShrink: 1 },
