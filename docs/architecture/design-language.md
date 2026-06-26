@@ -114,7 +114,12 @@ captions "BEST", "PASSES"); `numberOfLines` clamp on values so cards never reflo
   (toggles, status pill, FAB).
 - **Elevation & glow** — depth comes from `surface` + 1px `border`, not heavy shadows. Use a
   soft **accent glow** to signal "active/alive" (e.g. a new best, the connected pill, a
-  hero CTA) rather than drop shadows everywhere.
+  hero CTA) rather than drop shadows everywhere. Reusable presets live in `theme/tokens.ts`
+  as `elevation`: `card` (a subtle ambient lift so a card reads as its own object above the
+  night-track bg), `accentGlow` (flame-orange "alive" halo — the on-portal car, a best-speed
+  hero, a selected casting), and `blueGlow` (electric-blue, for secondary emphasis). For a
+  raised/showcase surface, pair a glow with `colors.surfaceRaised`; for a soft selected fill
+  use the translucent `colors.accentSoft` / `accentBlueSoft` washes.
 
 ---
 

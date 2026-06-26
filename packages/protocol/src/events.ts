@@ -13,6 +13,8 @@ export type ControlStatus = "idle" | "carPresent" | "transitional";
 export interface CarDetectedEvent {
   readonly kind: "carDetected";
   readonly uid: string;
+  /** The base64url Mattel car id from the NFC NDEF record, when present. */
+  readonly mattelId?: string;
 }
 
 /** A car was removed (empty payload on the detection / serial / NDEF channels). */

@@ -14,7 +14,9 @@ import { usePortalStore } from '@/store/portalStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { speedUnitLabel } from '@/speed/format';
 import { carLabel, formatLap, formatLastSeen, formatMph, shortUid } from '@/garage/format';
-import { colors, fontSize, fontWeight, radius, spacing } from '@/theme/tokens';
+import { colors, elevation, fontSize, fontWeight, radius, spacing } from '@/theme/tokens';
+import { CarPhoto } from '@/catalog/CarPhoto';
+import { useCarIdentity } from '@/catalog/useCarIdentity';
 
 export default function CarDetailScreen() {
   const insets = useSafeAreaInsets();
@@ -24,6 +26,7 @@ export default function CarDetailScreen() {
   const car = useGarageStore((s) => s.cars.find((c) => c.uid === uid));
   const rename = useGarageStore((s) => s.rename);
   const onPortal = usePortalStore((s) => s.car?.uid === uid);
+  const identity = useCarIdentity(uid);
   const speedUnit = useSettingsStore((s) => s.speedUnit);
   const speedCalibration = useSettingsStore((s) => s.speedCalibration);
   const speedDisplay = { unit: speedUnit, calibration: speedCalibration };
@@ -74,12 +77,50 @@ export default function CarDetailScreen() {
         </View>
       ) : (
         <>
-          <Text style={styles.title} numberOfLines={1}>
-            {carLabel(car)}
+          {identity ? (
+            <Link href={{ pathname: '/identify', params: { uid } }} asChild>
+              <Pressable style={({ pressed }) => [styles.heroPhoto, pressed && styles.pressed]}>
+                <CarPhoto
+                  uri={identity.image}
+                  width="100%"
+                  aspectRatio={16 / 10}
+                  rounded={radius.lg}
+                  ring
+                />
+                <View style={styles.changeBadge}>
+                  <Text style={styles.changeBadgeText}>Change</Text>
+                </View>
+              </Pressable>
+            </Link>
+          ) : null}
+
+          <Text style={styles.title} numberOfLines={2}>
+            {identity?.name ?? carLabel(car)}
           </Text>
-          <Text style={styles.subtitle}>
-            {car.serial ? `Serial #${car.serial}` : 'No serial captured'} · {car.uid}
+          <Text style={styles.subtitle} numberOfLines={1}>
+            {identity
+              ? [identity.series, identity.year ? String(identity.year) : null, identity.toyNumber]
+                  .filter(Boolean)
+                  .join('  ·  ') || 'Hot Wheels id'
+              : `${car.serial ? `Serial #${car.serial}` : 'No serial captured'} · ${car.uid}`}
           </Text>
+
+          {!identity ? (
+            <Link href={{ pathname: '/identify', params: { uid } }} asChild>
+              <Pressable style={({ pressed }) => [styles.identityCard, pressed && styles.pressed]}>
+                <CarPhoto uri={null} size={64} rounded={radius.md} />
+                <View style={styles.identityText}>
+                  <Text style={styles.identityName} numberOfLines={1}>
+                    Unidentified car
+                  </Text>
+                  <Text style={styles.identityMeta} numberOfLines={2}>
+                    Tap to match this tag to a real casting
+                  </Text>
+                </View>
+                <Text style={styles.identityCta}>Identify</Text>
+              </Pressable>
+            </Link>
+          ) : null}
 
           <View style={styles.hero}>
             <Text style={styles.heroValue}>{formatMph(car.bestMph, speedDisplay)}</Text>
@@ -148,14 +189,59 @@ const styles = StyleSheet.create({
   onPortal: { color: colors.accent, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
   title: { color: colors.textPrimary, fontSize: fontSize.xl, fontWeight: fontWeight.heavy, marginTop: spacing(1) },
   subtitle: { color: colors.textSecondary, fontSize: fontSize.sm },
-  hero: {
+  heroPhoto: {
+    marginTop: spacing(1),
+    borderRadius: radius.lg,
+    ...elevation.card,
+  },
+  changeBadge: {
+    position: 'absolute',
+    top: spacing(2),
+    right: spacing(2),
+    backgroundColor: 'rgba(11,15,26,0.78)',
+    borderColor: colors.accent,
+    borderWidth: 1,
+    borderRadius: radius.pill,
+    paddingVertical: 4,
+    paddingHorizontal: spacing(3),
+  },
+  changeBadgeText: {
+    color: colors.accent,
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.heavy,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  identityCard: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing(3),
     backgroundColor: colors.surface,
     borderColor: colors.border,
     borderWidth: 1,
     borderRadius: radius.lg,
+    padding: spacing(3),
+    marginTop: spacing(2),
+  },
+  identityText: { flex: 1, gap: 2 },
+  identityName: { color: colors.textPrimary, fontSize: fontSize.md, fontWeight: fontWeight.bold },
+  identityMeta: { color: colors.textSecondary, fontSize: fontSize.sm },
+  identityCta: {
+    color: colors.accent,
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.heavy,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  hero: {
+    alignItems: 'center',
+    backgroundColor: colors.surfaceRaised,
+    borderColor: colors.accent,
+    borderWidth: 1,
+    borderRadius: radius.lg,
     paddingVertical: spacing(5),
     marginTop: spacing(2),
+    ...elevation.accentGlow,
   },
   heroValue: { color: colors.accent, fontSize: fontSize.display, fontWeight: fontWeight.heavy },
   heroUnit: { color: colors.textMuted, fontSize: fontSize.xs, textTransform: 'uppercase', letterSpacing: 1 },
@@ -170,6 +256,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing(3),
     paddingHorizontal: spacing(4),
     gap: 2,
+    ...elevation.card,
   },
   statLabel: { color: colors.textMuted, fontSize: fontSize.xs, textTransform: 'uppercase', letterSpacing: 1 },
   statValue: { color: colors.textPrimary, fontSize: fontSize.lg, fontWeight: fontWeight.bold },

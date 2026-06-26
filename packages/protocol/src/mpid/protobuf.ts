@@ -355,7 +355,15 @@ export function mpidToPortalEvents(msg: PortalMessage): PortalEvent[] {
   if (ev.type === EventType.CAR_OFF_PORTAL) {
     events.push({ kind: "carRemoved" });
   } else if (ev.carInfo && ev.carInfo.tagUid.length >= 7) {
-    events.push({ kind: "carDetected", uid: parseNfcUid(ev.carInfo.tagUid) });
+    const detected: { kind: "carDetected"; uid: string; mattelId?: string } = {
+      kind: "carDetected",
+      uid: parseNfcUid(ev.carInfo.tagUid),
+    };
+    if (ev.carInfo.carNdefData.length > 0) {
+      const mattelId = decodeNdefRecord(ev.carInfo.carNdefData).mattelId;
+      if (mattelId) detected.mattelId = mattelId;
+    }
+    events.push(detected);
   }
 
   const sm = ev.speedMeasurement;
