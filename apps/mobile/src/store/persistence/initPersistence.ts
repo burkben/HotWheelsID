@@ -27,8 +27,10 @@
  * an app rebuild, which restarts the runtime anyway), so we never retry.
  */
 import { combineStats, garageAggregate } from "../../achievements/stats";
+import { castingKeyFromMattelId } from "@redlineid/protocol";
 import { setAchievementsPersistence, useAchievementsStore } from "../achievementsStore";
 import { setGaragePersistence, useGarageStore } from "../garageStore";
+import { setIdentityPersistence, useIdentityStore } from "../identityStore";
 import { usePortalStore } from "../portalStore";
 import { setRacePersistence, useRaceStore } from "../raceStore";
 import { setSettingsPersistence, useSettingsStore } from "../settingsStore";
@@ -37,6 +39,7 @@ import {
   type AchievementsRepository,
 } from "./achievementsRepository";
 import { InMemoryCarRepository, type CarRepository } from "./carRepository";
+import { InMemoryIdentityRepository, type IdentityRepository } from "./identityRepository";
 import { InMemoryRaceRepository, type RaceRepository } from "./raceRepository";
 import { setSessionRepository } from "./historyAccess";
 import { InMemorySessionRepository, type SessionRepository } from "./sessionRepository";
@@ -49,6 +52,7 @@ export interface PersistenceRepositories {
   session: SessionRepository;
   settings: SettingsRepository;
   achievements: AchievementsRepository;
+  identity: IdentityRepository;
 }
 
 let started = false;
@@ -85,7 +89,8 @@ async function resolveRepositories(
     injected?.car ||
     injected?.session ||
     injected?.settings ||
-    injected?.achievements
+    injected?.achievements ||
+    injected?.identity
   ) {
     return {
       race: injected.race ?? new InMemoryRaceRepository(),
@@ -93,6 +98,7 @@ async function resolveRepositories(
       session: injected.session ?? new InMemorySessionRepository(),
       settings: injected.settings ?? new InMemorySettingsRepository(),
       achievements: injected.achievements ?? new InMemoryAchievementsRepository(),
+      identity: injected.identity ?? new InMemoryIdentityRepository(),
     };
   }
 
@@ -109,6 +115,8 @@ async function resolveRepositories(
     require("./sqliteSettingsRepository") as typeof import("./sqliteSettingsRepository");
   const { SqliteAchievementsRepository } =
     require("./sqliteAchievementsRepository") as typeof import("./sqliteAchievementsRepository");
+  const { SqliteIdentityRepository } =
+    require("./sqliteIdentityRepository") as typeof import("./sqliteIdentityRepository");
 
   const db = await openRedlineDb();
   return {
@@ -117,6 +125,7 @@ async function resolveRepositories(
     session: new SqliteSessionRepository(db),
     settings: new SqliteSettingsRepository(db),
     achievements: new SqliteAchievementsRepository(db),
+    identity: new SqliteIdentityRepository(db),
   };
 }
 
@@ -141,12 +150,14 @@ export async function initPersistence(injected?: Partial<PersistenceRepositories
     await repos.session.init();
     await repos.settings.init();
     await repos.achievements.init();
+    await repos.identity.init();
 
     // Hydrate the render stores from durable storage.
     useRaceStore.getState().hydrate(await repos.race.loadResults());
     useGarageStore.getState().hydrate(await repos.car.getCars());
     useSettingsStore.getState().hydrate(await repos.settings.load());
     useAchievementsStore.getState().hydrate(await repos.achievements.loadUnlocked());
+    useIdentityStore.getState().hydrate(await repos.identity.load());
 
     // History has no render store — publish the repo so screens read it on focus.
     setSessionRepository(repos.session);
@@ -201,6 +212,18 @@ export async function initPersistence(injected?: Partial<PersistenceRepositories
       onClear: () =>
         void repos.achievements.clear().catch((e) => console.warn("[achievements] clear failed", e)),
     });
+    setIdentityPersistence({
+      onLink: (uid, castingKey) =>
+        void repos.identity
+          .saveLink(uid, castingKey)
+          .catch((e) => console.warn("[identity] link failed", e)),
+      onIdentify: (castingKey, catalogId) =>
+        void repos.identity
+          .saveIdentification(castingKey, catalogId)
+          .catch((e) => console.warn("[identity] identify failed", e)),
+      onClear: () =>
+        void repos.identity.clear().catch((e) => console.warn("[identity] clear failed", e)),
+    });
 
     // Garage changes (new car, faster pass) move collection/speed achievements;
     // refresh off the in-memory store snapshot. Race achievements refresh via the
@@ -253,6 +276,16 @@ function wirePortalBridges(sessionRepo: SessionRepository): void {
   const garage = () => useGarageStore.getState();
   const warn = (label: string) => (e: unknown) => console.warn(`[history] ${label} failed`, e);
   const seed = usePortalStore.getState();
+
+  // Learn which casting a tag is whenever a decoded detection carries a Mattel id.
+  // This is the only coupling identity adds to the portal path — a pure read of
+  // `car.mattelId` → castingKey → identity store (which persists via its sink).
+  const learnIdentity = (uid: string | null, mattelId: string | undefined): void => {
+    if (!uid || !mattelId) return;
+    const castingKey = castingKeyFromMattelId(mattelId);
+    if (castingKey) useIdentityStore.getState().linkCar(uid, castingKey);
+  };
+
   let lastUid: string | null = seed.car?.uid ?? null;
   let lastSerial: string | null = seed.car?.serial ?? null;
   let lastPassId = seed.passes[0]?.id ?? 0;
@@ -296,6 +329,7 @@ function wirePortalBridges(sessionRepo: SessionRepository): void {
   // disconnected, so this is a no-op.
   if (lastUid) {
     garage().recordDetection({ uid: lastUid, serial: lastSerial, at: Date.now() });
+    learnIdentity(lastUid, seed.car?.mattelId);
   }
 
   // Likewise, open a session if we boot already connected.
@@ -316,6 +350,7 @@ function wirePortalBridges(sessionRepo: SessionRepository): void {
     const serial = state.car?.serial ?? null;
     if (uid && uid !== lastUid) {
       garage().recordDetection({ uid, serial, at: Date.now() });
+      learnIdentity(uid, state.car?.mattelId);
     } else if (uid && uid === lastUid && serial && serial !== lastSerial) {
       garage().recordSerial(uid, serial);
     }
@@ -350,6 +385,7 @@ export function resetPersistenceForTests(): void {
   setSessionRepository(null);
   setSettingsPersistence(null);
   setAchievementsPersistence(null);
+  setIdentityPersistence(null);
   if (unsubscribePortal) {
     unsubscribePortal();
     unsubscribePortal = null;

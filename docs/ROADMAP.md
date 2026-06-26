@@ -145,7 +145,10 @@ race end-to-end.
 Pulls in the upstream roadmap's "future features" and more.
 
 - ✅ Achievements (top speed, lap streaks, collection milestones) (PR #23).
-- ⬜ Richer car identity: art, model names, rarity from the Mattel id.
+- 🟡 Richer car identity: art, model names, rarity from the Mattel id. **Prototype landed** — a
+  bundled Hot Wheels Fandom wiki catalog (146 cars + photos) plus a manual casting picker keyed off
+  the decoded `mattelId`, isolated from the garage schema (see
+  [ADR-0013](adr/0013-car-identity-catalog.md)).
 - ⬜ Multiplayer/turn-based race nights.
 - ✅ Share race & session results to the native share sheet (PR #26).
 - ⬜ Sound design; optional "TV/host mode."

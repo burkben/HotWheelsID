@@ -21,4 +21,5 @@ export { CHAR_FACTORY, CHAR_SESSION, CHAR_TXRX, MPID_SERVICE } from "./constants
 export { MpidToken, MpidTokenError } from "./token";
 export { MpidSession } from "./session";
 export type { MpidSessionOptions } from "./session";
+export { castingKeyFromMattelId } from "./casting";
 export * from "./protobuf";

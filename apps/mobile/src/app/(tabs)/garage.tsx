@@ -15,6 +15,8 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { speedUnitLabel } from '@/speed/format';
 import { colors, fontSize, fontWeight, radius, spacing } from '@/theme/tokens';
 import { carLabel, formatLastSeen, formatLap, formatMph } from '@/garage/format';
+import { CarPhoto } from '@/catalog/CarPhoto';
+import { useCarIdentity } from '@/catalog/useCarIdentity';
 
 export default function GarageScreen() {
   const insets = useSafeAreaInsets();
@@ -49,13 +51,16 @@ function CarRow({ car, onPortal }: { car: CarRecord; onPortal: boolean }) {
   const speedUnit = useSettingsStore((s) => s.speedUnit);
   const speedCalibration = useSettingsStore((s) => s.speedCalibration);
   const display = { unit: speedUnit, calibration: speedCalibration };
+  const identity = useCarIdentity(car.uid);
+  const title = identity?.name ?? carLabel(car);
   return (
     <Link href={{ pathname: '/garage/[uid]', params: { uid: car.uid } }} asChild>
       <Pressable style={({ pressed }) => [styles.row, onPortal && styles.rowOnPortal, pressed && styles.pressed]}>
+        <CarPhoto uri={identity?.image} size={48} rounded={radius.sm} />
         <View style={styles.rowMain}>
           <View style={styles.rowTitleLine}>
             <Text style={styles.carName} numberOfLines={1}>
-              {carLabel(car)}
+              {title}
             </Text>
             {onPortal && <Text style={styles.onPortal}>● on portal</Text>}
           </View>

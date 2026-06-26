@@ -96,6 +96,20 @@ const MIGRATIONS: ((db: Db) => Promise<void>)[] = [
       );
     `);
   },
+  // v6 — car identity (catalog prototype): a tag→casting link map and a
+  // casting→catalog identification map, kept separate from the `cars` garage.
+  async (db) => {
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS car_links (
+        uid         TEXT PRIMARY KEY,
+        casting_key TEXT NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS car_identifications (
+        casting_key TEXT PRIMARY KEY,
+        catalog_id  TEXT NOT NULL
+      );
+    `);
+  },
 ];
 
 /** Open the shared DB, enable WAL, and run any pending migrations. */

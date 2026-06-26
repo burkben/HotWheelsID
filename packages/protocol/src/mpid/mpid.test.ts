@@ -233,9 +233,13 @@ describe("protobuf parse_message (real captured packets)", () => {
 });
 
 describe("mpidToPortalEvents bridge", () => {
-  it("car-on → carDetected", () => {
+  it("car-on → carDetected with uid + mattel id", () => {
     const events = mpidToPortalEvents(parseMessage(CAR));
-    expect(events).toContainEqual({ kind: "carDetected", uid: "2A:7E:A2:F1:62:80" });
+    expect(events).toContainEqual({
+      kind: "carDetected",
+      uid: "2A:7E:A2:F1:62:80",
+      mattelId: "AQBBrl5bAAAGAF0TKZcEKn6i8WKA",
+    });
   });
 
   it("car-off → carRemoved", () => {

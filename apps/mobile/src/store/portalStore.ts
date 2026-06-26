@@ -18,6 +18,8 @@ export type ConnectionState = "disconnected" | "connecting" | "connected";
 export interface CurrentCar {
   readonly uid: string;
   readonly serial?: string;
+  /** The on-portal car's base64url Mattel id (when the NFC record decoded one). */
+  readonly mattelId?: string;
 }
 
 /** One recorded pass of a car over the portal sensor. */
@@ -88,7 +90,7 @@ export const usePortalStore = create<PortalState>((set) => ({
       switch (event.kind) {
         case "carDetected":
           return {
-            car: { uid: event.uid, serial: state.car?.serial },
+            car: { uid: event.uid, serial: state.car?.serial, mattelId: event.mattelId },
           };
 
         case "serial":

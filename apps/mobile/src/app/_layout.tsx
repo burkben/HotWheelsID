@@ -28,6 +28,7 @@ export default function RootLayout() {
           {/* Secondary screens push over the tabs — reached from the More tab
               or from a tab's detail links. */}
           <Stack.Screen name="garage/[uid]" />
+          <Stack.Screen name="identify" options={{ presentation: 'modal' }} />
           <Stack.Screen name="history/[id]" />
           <Stack.Screen name="achievements" />
           <Stack.Screen name="live" />

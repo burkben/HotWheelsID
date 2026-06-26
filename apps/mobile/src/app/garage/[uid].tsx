@@ -15,6 +15,8 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { speedUnitLabel } from '@/speed/format';
 import { carLabel, formatLap, formatLastSeen, formatMph, shortUid } from '@/garage/format';
 import { colors, fontSize, fontWeight, radius, spacing } from '@/theme/tokens';
+import { CarPhoto } from '@/catalog/CarPhoto';
+import { useCarIdentity } from '@/catalog/useCarIdentity';
 
 export default function CarDetailScreen() {
   const insets = useSafeAreaInsets();
@@ -24,6 +26,7 @@ export default function CarDetailScreen() {
   const car = useGarageStore((s) => s.cars.find((c) => c.uid === uid));
   const rename = useGarageStore((s) => s.rename);
   const onPortal = usePortalStore((s) => s.car?.uid === uid);
+  const identity = useCarIdentity(uid);
   const speedUnit = useSettingsStore((s) => s.speedUnit);
   const speedCalibration = useSettingsStore((s) => s.speedCalibration);
   const speedDisplay = { unit: speedUnit, calibration: speedCalibration };
@@ -75,11 +78,30 @@ export default function CarDetailScreen() {
       ) : (
         <>
           <Text style={styles.title} numberOfLines={1}>
-            {carLabel(car)}
+            {identity?.name ?? carLabel(car)}
           </Text>
           <Text style={styles.subtitle}>
             {car.serial ? `Serial #${car.serial}` : 'No serial captured'} · {car.uid}
           </Text>
+
+          <Link href={{ pathname: '/identify', params: { uid } }} asChild>
+            <Pressable style={({ pressed }) => [styles.identityCard, pressed && styles.pressed]}>
+              <CarPhoto uri={identity?.image} size={64} rounded={radius.sm} />
+              <View style={styles.identityText}>
+                <Text style={styles.identityName} numberOfLines={1}>
+                  {identity?.name ?? 'Unidentified car'}
+                </Text>
+                <Text style={styles.identityMeta} numberOfLines={1}>
+                  {identity
+                    ? [identity.series, identity.year ? String(identity.year) : null]
+                        .filter(Boolean)
+                        .join(' · ') || 'Hot Wheels id'
+                    : 'Tap to match this tag to a real casting'}
+                </Text>
+              </View>
+              <Text style={styles.identityCta}>{identity ? 'Change' : 'Identify'}</Text>
+            </Pressable>
+          </Link>
 
           <View style={styles.hero}>
             <Text style={styles.heroValue}>{formatMph(car.bestMph, speedDisplay)}</Text>
@@ -148,6 +170,27 @@ const styles = StyleSheet.create({
   onPortal: { color: colors.accent, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
   title: { color: colors.textPrimary, fontSize: fontSize.xl, fontWeight: fontWeight.heavy, marginTop: spacing(1) },
   subtitle: { color: colors.textSecondary, fontSize: fontSize.sm },
+  identityCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing(3),
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderWidth: 1,
+    borderRadius: radius.lg,
+    padding: spacing(3),
+    marginTop: spacing(2),
+  },
+  identityText: { flex: 1, gap: 2 },
+  identityName: { color: colors.textPrimary, fontSize: fontSize.md, fontWeight: fontWeight.bold },
+  identityMeta: { color: colors.textSecondary, fontSize: fontSize.sm },
+  identityCta: {
+    color: colors.accent,
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.heavy,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
   hero: {
     alignItems: 'center',
     backgroundColor: colors.surface,
