@@ -10,7 +10,7 @@ direction set in the [ADRs](adr/) (React Native + Expo, shared TS protocol packa
 
 ---
 
-## Status at a glance (updated 2026-06-17)
+## Status at a glance (updated 2026-07-02)
 
 | Phase | Status | Notes |
 |---|---|---|
@@ -18,13 +18,12 @@ direction set in the [ADRs](adr/) (React Native + Expo, shared TS protocol packa
 | 1 — Protocol port + first BLE connection | ✅ Done | **Live car + speed hardware-validated on iPhone.** The modern-firmware auth gate is decoded (PR #9, [ADR-0012](adr/0012-modern-mpid-protocol-and-transport.md)). |
 | 2 — Attractive UI | ✅ Done | Skia speedometer, flames, haptics, reduce-motion, mock generator, recent passes. |
 | 3 — Persistence: garage, history, races | ✅ Done | **Race Mode, Garage, History, and Settings all durable** on a shared `expo-sqlite` db (PRs #15/#16/#18/#19). Restart-safe and device-validated. |
-| 4 — iOS distribution | 🔜 Next | EAS profiles, TestFlight, Android parity. |
-| 5 — Delight & depth | ⬜ Backlog | Achievements, richer car identity, multiplayer, sound. |
+| 4 — iOS distribution | ✅ Done | Installed through TestFlight and race-validated end-to-end on iPhone. |
+| 5 — Delight & depth | 🟡 In progress | Achievements shipped; richer car identity underway; multiplayer and sound remain. |
 
-> The headline goal — a polished, hardware-validated live speedometer on iOS — is **achieved**,
-> and **Phase 3 persistence is complete**: garage, race results, history, and settings all
-> survive restarts (device-validated).
-> Current focus: **Phase 4 — iOS distribution** (get it installable for the family via TestFlight).
+> The headline goal — a polished, hardware-validated live speedometer on iOS — is **achieved**.
+> The app is now **installed through TestFlight and race-validated end-to-end on iPhone**,
+> and the focus has moved to **Phase 5 — Delight & depth**, especially richer car identity.
 
 ---
 
@@ -124,23 +123,24 @@ one open best-effort item, tracked under Phase 5.)*
 
 ---
 
-## Phase 4 — iOS distribution 🔜
+## Phase 4 — iOS distribution ✅
 
 Make it genuinely installable for the family.
 
-- ⬜ `eas.json` with `development` / `preview` / `production` profiles
+- ✅ `eas.json` with `development` / `preview` / `production` profiles
   ([ADR-0008](adr/0008-ios-distribution-with-eas-and-testflight.md)).
-- ⬜ Enroll in the Apple Developer Program; configure signing.
-- ⬜ Ship a **TestFlight** build to the developer + a few testers.
-- ⬜ (Free-ID 7-day dev build documented as the no-cost stop-gap.)
-- ⬜ Android `preview` build for parity.
+- ✅ Enroll in the Apple Developer Program; configure signing.
+- ✅ Ship a **TestFlight** build to the developer + testers.
+- ✅ (Free-ID 7-day dev build documented as the no-cost stop-gap.)
+- ⬜ Android `preview` build for parity — **shelved to backlog** until Android test hardware is
+  available.
 
-**Exit criteria:** A tester installs HotWheelsID on their iPhone via TestFlight and runs a
-race end-to-end.
+**Exit criteria:** ✅ **Met.** HotWheelsID has been installed on iPhone through TestFlight and
+run through a race end-to-end.
 
 ---
 
-## Phase 5 — Delight & depth (backlog) ⬜
+## Phase 5 — Delight & depth 🟡
 
 Pulls in the upstream roadmap's "future features" and more.
 
@@ -153,6 +153,8 @@ Pulls in the upstream roadmap's "future features" and more.
 - ✅ Share race & session results to the native share sheet (PR #26).
 - ⬜ Sound design; optional "TV/host mode."
 - ✅ Speed units (mph / km/h) + display calibration to real-world speeds (PR #25).
+- ⬜ Android `preview` build / parity. **Backlogged** until there is an Android device available
+  for real testing.
 - ⬜ Decode remaining protocol unknowns. The **live-telemetry gate is solved** on modern
   firmware (the encrypted auth-service stream is fully decoded — see Phase 1 / ADR-0012). What
   remains is best-effort **car identity**: the full **NDEF / Mattel-id schema** (model name, art,
@@ -176,8 +178,8 @@ flowchart LR
     P0 --> P2["Phase 2 ✅<br/>attractive UI"]
     P1 --> P3["Phase 3 ✅<br/>persistence + races"]
     P2 --> P3
-    P3 --> P4["Phase 4 🔜<br/>iOS distribution"]
-    P4 --> P5["Phase 5 ⬜<br/>delight & depth"]
+    P3 --> P4["Phase 4 ✅<br/>iOS distribution"]
+    P4 --> P5["Phase 5 🟡<br/>delight & depth"]
 ```
 
 > Phases 1 and 2 can run **in parallel** — the UI builds against mocked events while the

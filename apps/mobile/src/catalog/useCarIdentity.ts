@@ -10,7 +10,9 @@
  */
 import { useCallback, useMemo } from "react";
 
-import { catalogIdForUid, useIdentityStore } from "@/store/identityStore";
+import { useGarageStore } from "../store/garageStore";
+import { catalogIdForUid, useIdentityStore } from "../store/identityStore";
+import type { CarRecord } from "../store/persistence/carRepository";
 import { findCatalogCar, type CatalogCar } from "./catalog";
 
 /** The catalog car a tag is currently identified as, or `undefined`. Reactive. */
@@ -21,6 +23,47 @@ export function useCarIdentity(uid: string | undefined | null): CatalogCar | und
     () => findCatalogCar(catalogIdForUid({ links, identifications }, uid)),
     [links, identifications, uid],
   );
+}
+
+export interface CastingCoverage {
+  readonly castingKey: string;
+  readonly totalCars: number;
+  readonly otherCars: number;
+  readonly synthetic: boolean;
+}
+
+/**
+ * Figure out how many garage cars share the same casting key as `uid`. This is
+ * the UX payoff of keying identifications on `castingKey`: one pick can label
+ * every copy of that casting in the collection.
+ */
+export function castingCoverageForUid(
+  uid: string | undefined | null,
+  links: Record<string, string>,
+  garageCars: readonly Pick<CarRecord, "uid">[],
+): CastingCoverage | undefined {
+  if (!uid) return undefined;
+  const castingKey = links[uid];
+  if (!castingKey) return undefined;
+
+  const matched = new Set<string>();
+  for (const car of garageCars) {
+    if (links[car.uid] === castingKey) matched.add(car.uid);
+  }
+  if (matched.size === 0) matched.add(uid);
+
+  return {
+    castingKey,
+    totalCars: matched.size,
+    otherCars: Math.max(matched.size - 1, 0),
+    synthetic: castingKey.startsWith("uid:"),
+  };
+}
+
+export function useCastingCoverage(uid: string | undefined | null): CastingCoverage | undefined {
+  const garageCars = useGarageStore((s) => s.cars);
+  const links = useIdentityStore((s) => s.links);
+  return useMemo(() => castingCoverageForUid(uid, links, garageCars), [garageCars, links, uid]);
 }
 
 /**

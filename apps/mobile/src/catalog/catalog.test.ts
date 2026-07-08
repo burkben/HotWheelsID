@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import { CATALOG, findCatalogCar, searchCatalog } from "./catalog";
+import { CATALOG, catalogMeta, findCatalogCar, searchCatalog } from "./catalog";
 
 describe("catalog data", () => {
   it("ships a non-trivial catalog", () => {
@@ -33,6 +33,29 @@ describe("findCatalogCar", () => {
   });
 });
 
+describe("catalogMeta", () => {
+  it("returns the non-empty metadata in display order", () => {
+    const meta = catalogMeta({
+      id: "car",
+      name: "Car",
+      toyNumber: "FXB03",
+      series: "Speed Demons",
+      year: 2020,
+      wave: "2020 Series 2",
+      bodyColor: "Blue",
+      image: null,
+      wikiPage: null,
+    });
+    expect(meta).toEqual([
+      "Speed Demons",
+      "2020 Series 2",
+      "Blue body",
+      "2020",
+      "FXB03",
+    ]);
+  });
+});
+
 describe("searchCatalog", () => {
   it("returns the whole catalog (name-sorted) for an empty query", () => {
     const all = searchCatalog("");
@@ -58,6 +81,21 @@ describe("searchCatalog", () => {
     if (withToy?.toyNumber) {
       const hits = searchCatalog(withToy.toyNumber);
       expect(hits.some((c) => c.id === withToy.id)).toBe(true);
+    }
+  });
+
+  it("matches on wave or body color metadata", () => {
+    const withWave = CATALOG.find((c) => c.wave);
+    if (withWave?.wave) {
+      const waveTerm = withWave.wave.split(/\s+/)[0];
+      const waveHits = searchCatalog(waveTerm);
+      expect(waveHits.some((c) => c.id === withWave.id)).toBe(true);
+    }
+
+    const withColor = CATALOG.find((c) => c.bodyColor);
+    if (withColor?.bodyColor) {
+      const colorHits = searchCatalog(withColor.bodyColor);
+      expect(colorHits.some((c) => c.id === withColor.id)).toBe(true);
     }
   });
 });

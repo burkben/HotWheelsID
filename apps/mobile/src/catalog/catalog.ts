@@ -50,6 +50,24 @@ function norm(s: string): string {
   return s.toLowerCase().trim();
 }
 
+function includesNormalized(value: string | null, query: string): boolean {
+  return value != null && norm(value).includes(query);
+}
+
+/**
+ * Human-facing catalog metadata in priority order, with empty values removed.
+ * Keeps the UI consistent between the identify picker and car detail screen.
+ */
+export function catalogMeta(car: CatalogCar): string[] {
+  return [
+    car.series,
+    car.wave,
+    car.bodyColor ? `${car.bodyColor} body` : null,
+    car.year ? String(car.year) : null,
+    car.toyNumber,
+  ].filter((value): value is string => Boolean(value));
+}
+
 /**
  * Rank a car against a normalised query. Higher is better; `null` excludes it.
  * Name matches outrank series/toy-number matches, and a prefix beats a midword
@@ -60,8 +78,10 @@ function score(car: CatalogCar, q: string): number | null {
   if (name === q) return 100;
   if (name.startsWith(q)) return 80;
   if (name.includes(q)) return 60;
-  if (car.toyNumber && norm(car.toyNumber).includes(q)) return 40;
-  if (car.series && norm(car.series).includes(q)) return 30;
+  if (includesNormalized(car.toyNumber, q)) return 40;
+  if (includesNormalized(car.series, q)) return 30;
+  if (includesNormalized(car.wave, q)) return 25;
+  if (includesNormalized(car.bodyColor, q)) return 22;
   if (car.year && String(car.year) === q) return 20;
   return null;
 }

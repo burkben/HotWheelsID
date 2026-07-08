@@ -17,11 +17,12 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
+import * as WebBrowser from "expo-web-browser";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 
 import { CarPhoto } from "@/catalog/CarPhoto";
-import { searchCatalog, type CatalogCar } from "@/catalog/catalog";
-import { useCarIdentity, useIdentifyCar } from "@/catalog/useCarIdentity";
+import { catalogMeta, searchCatalog, type CatalogCar } from "@/catalog/catalog";
+import { useCarIdentity, useCastingCoverage, useIdentifyCar } from "@/catalog/useCarIdentity";
 import { colors, elevation, fontSize, fontWeight, radius, spacing } from "@/theme/tokens";
 
 export default function IdentifyScreen() {
@@ -32,6 +33,7 @@ export default function IdentifyScreen() {
   const [query, setQuery] = useState("");
   const results = useMemo(() => searchCatalog(query), [query]);
   const current = useCarIdentity(uid);
+  const coverage = useCastingCoverage(uid);
   const identify = useIdentifyCar();
 
   const pick = (car: CatalogCar) => {
@@ -46,7 +48,11 @@ export default function IdentifyScreen() {
         <View style={styles.headerText}>
           <Text style={styles.title}>Identify car</Text>
           <Text style={styles.subtitle} numberOfLines={1}>
-            {current ? `Currently: ${current.name}` : "Match this tag to a real casting"}
+            {current
+              ? `Currently: ${current.name}`
+              : coverage && coverage.otherCars > 0
+                ? `Match once to label this car + ${coverage.otherCars} other ${coverage.otherCars === 1 ? "copy" : "copies"}`
+                : "Match this tag to a real casting"}
           </Text>
         </View>
         <Pressable
@@ -68,7 +74,7 @@ export default function IdentifyScreen() {
         <TextInput
           value={query}
           onChangeText={setQuery}
-          placeholder="Search name, series, toy # or year"
+          placeholder="Search name, series, toy #, wave, color, or year"
           placeholderTextColor={colors.textMuted}
           style={styles.search}
           autoCorrect={false}
@@ -109,7 +115,8 @@ function CarCard({
   selected: boolean;
   onPress: () => void;
 }) {
-  const meta = [car.series, car.year ? String(car.year) : null].filter(Boolean).join(" · ");
+  const primaryMeta = catalogMeta(car).slice(0, 2).join(" · ");
+  const secondaryMeta = catalogMeta(car).slice(2).join(" · ");
   return (
     <Pressable
       onPress={onPress}
@@ -126,10 +133,27 @@ function CarCard({
       <Text style={styles.cardName} numberOfLines={2}>
         {car.name}
       </Text>
-      {meta ? (
+      {primaryMeta ? (
         <Text style={styles.cardMeta} numberOfLines={1}>
-          {meta}
+          {primaryMeta}
         </Text>
+      ) : null}
+      {secondaryMeta ? (
+        <Text style={styles.cardMetaSecondary} numberOfLines={1}>
+          {secondaryMeta}
+        </Text>
+      ) : null}
+      {car.wikiPage ? (
+        <Pressable
+          onPress={(event) => {
+            event.stopPropagation();
+            void WebBrowser.openBrowserAsync(car.wikiPage!);
+          }}
+          hitSlop={8}
+          style={({ pressed }) => [styles.wikiLink, pressed && styles.pressed]}
+        >
+          <Text style={styles.wikiLinkText}>View wiki</Text>
+        </Pressable>
       ) : null}
     </Pressable>
   );
@@ -194,6 +218,9 @@ const styles = StyleSheet.create({
   },
   cardName: { color: colors.textPrimary, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
   cardMeta: { color: colors.textSecondary, fontSize: fontSize.xs },
+  cardMetaSecondary: { color: colors.textMuted, fontSize: fontSize.xs },
+  wikiLink: { marginTop: "auto", alignSelf: "flex-start", paddingTop: spacing(1) },
+  wikiLinkText: { color: colors.accentBlue, fontSize: fontSize.xs, fontWeight: fontWeight.bold },
   noResults: { color: colors.textSecondary, fontSize: fontSize.sm, textAlign: "center" },
   pressed: { opacity: 0.7 },
 });

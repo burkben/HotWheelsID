@@ -204,14 +204,16 @@ The full, phased plan toward the attractive UI and the installable iOS app lives
 - [x] Speed tracking
 - [x] Live dashboard with speedometer
 - [x] Lap race game mode with leaderboard
-- [ ] Persistent car database
-- [ ] Car collection/garage view
-- [ ] Achievement system
-- [ ] Car name lookup from Mattel ID
+- [x] Persistent car database
+- [x] Car collection/garage view
+- [x] Achievement system
+- [ ] Car identity enrichment from Mattel ID / catalog data (in progress)
 
 The iOS app is **already running on-device** — a live BLE speedometer, **Race Mode**, and a raw
-event log (see [📱 iOS App](#ios-app)). The remaining polish and TestFlight distribution are
-tracked in the [Roadmap](docs/ROADMAP.md) and [ADRs](docs/adr/).
+event log (see [📱 iOS App](#ios-app)). It is also **installed through TestFlight** and has been
+used to run a full race end-to-end. The remaining work is tracked in the
+[Roadmap](docs/ROADMAP.md) and [ADRs](docs/adr/), with current focus on richer car identity and
+other Phase 5 depth work; Android parity is explicitly backlogged until test hardware exists.
 
 ## Contributing
 

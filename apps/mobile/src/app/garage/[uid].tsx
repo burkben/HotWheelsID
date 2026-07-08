@@ -8,7 +8,9 @@ import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } fr
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import * as WebBrowser from 'expo-web-browser';
 
+import { catalogMeta } from '@/catalog/catalog';
 import { useGarageStore } from '@/store/garageStore';
 import { usePortalStore } from '@/store/portalStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -16,7 +18,7 @@ import { speedUnitLabel } from '@/speed/format';
 import { carLabel, formatLap, formatLastSeen, formatMph, shortUid } from '@/garage/format';
 import { colors, elevation, fontSize, fontWeight, radius, spacing } from '@/theme/tokens';
 import { CarPhoto } from '@/catalog/CarPhoto';
-import { useCarIdentity } from '@/catalog/useCarIdentity';
+import { useCarIdentity, useCastingCoverage } from '@/catalog/useCarIdentity';
 
 export default function CarDetailScreen() {
   const insets = useSafeAreaInsets();
@@ -27,6 +29,7 @@ export default function CarDetailScreen() {
   const rename = useGarageStore((s) => s.rename);
   const onPortal = usePortalStore((s) => s.car?.uid === uid);
   const identity = useCarIdentity(uid);
+  const coverage = useCastingCoverage(uid);
   const speedUnit = useSettingsStore((s) => s.speedUnit);
   const speedCalibration = useSettingsStore((s) => s.speedCalibration);
   const speedDisplay = { unit: speedUnit, calibration: speedCalibration };
@@ -98,11 +101,7 @@ export default function CarDetailScreen() {
             {identity?.name ?? carLabel(car)}
           </Text>
           <Text style={styles.subtitle} numberOfLines={1}>
-            {identity
-              ? [identity.series, identity.year ? String(identity.year) : null, identity.toyNumber]
-                  .filter(Boolean)
-                  .join('  ·  ') || 'Hot Wheels id'
-              : `${car.serial ? `Serial #${car.serial}` : 'No serial captured'} · ${car.uid}`}
+            {identity ? catalogMeta(identity).slice(0, 3).join('  ·  ') || 'Hot Wheels id' : `${car.serial ? `Serial #${car.serial}` : 'No serial captured'} · ${car.uid}`}
           </Text>
 
           {!identity ? (
@@ -114,12 +113,42 @@ export default function CarDetailScreen() {
                     Unidentified car
                   </Text>
                   <Text style={styles.identityMeta} numberOfLines={2}>
-                    Tap to match this tag to a real casting
+                    {coverage && coverage.otherCars > 0
+                      ? `Tap once to label this car + ${coverage.otherCars} other ${coverage.otherCars === 1 ? 'copy' : 'copies'}`
+                      : 'Tap to match this tag to a real casting'}
                   </Text>
                 </View>
                 <Text style={styles.identityCta}>Identify</Text>
               </Pressable>
             </Link>
+          ) : null}
+
+          {identity ? (
+            <View style={styles.identityPanel}>
+              <Text style={styles.sectionLabel}>Catalog details</Text>
+              <Text style={styles.identitySummary}>
+                {coverage && coverage.totalCars > 1
+                  ? `This identification applies to ${coverage.totalCars} cars in your garage.`
+                  : 'This identification applies to this car only.'}
+              </Text>
+              <View style={styles.metaWrap}>
+                {catalogMeta(identity).map((item) => (
+                  <View key={item} style={styles.metaChip}>
+                    <Text style={styles.metaChipText}>{item}</Text>
+                  </View>
+                ))}
+              </View>
+              {identity.wikiPage ? (
+                <Pressable
+                  onPress={() => {
+                    void WebBrowser.openBrowserAsync(identity.wikiPage!);
+                  }}
+                  style={({ pressed }) => [styles.wikiButton, pressed && styles.pressed]}
+                >
+                  <Text style={styles.wikiButtonText}>Open catalog source</Text>
+                </Pressable>
+              ) : null}
+            </View>
           ) : null}
 
           <View style={styles.hero}>
@@ -233,6 +262,28 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
+  identityPanel: { gap: spacing(2), marginTop: spacing(2) },
+  identitySummary: { color: colors.textSecondary, fontSize: fontSize.sm },
+  metaWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing(2) },
+  metaChip: {
+    backgroundColor: colors.surfaceAlt,
+    borderColor: colors.border,
+    borderWidth: 1,
+    borderRadius: radius.pill,
+    paddingVertical: 6,
+    paddingHorizontal: spacing(3),
+  },
+  metaChipText: { color: colors.textSecondary, fontSize: fontSize.xs, fontWeight: fontWeight.medium },
+  wikiButton: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.surface,
+    borderColor: colors.accentBlue,
+    borderWidth: 1,
+    borderRadius: radius.md,
+    paddingVertical: spacing(2),
+    paddingHorizontal: spacing(3),
+  },
+  wikiButtonText: { color: colors.accentBlue, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
   hero: {
     alignItems: 'center',
     backgroundColor: colors.surfaceRaised,
