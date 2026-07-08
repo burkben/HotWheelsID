@@ -19,7 +19,7 @@ direction set in the [ADRs](adr/) (React Native + Expo, shared TS protocol packa
 | 2 — Attractive UI | ✅ Done | Skia speedometer, flames, haptics, reduce-motion, mock generator, recent passes. |
 | 3 — Persistence: garage, history, races | ✅ Done | **Race Mode, Garage, History, and Settings all durable** on a shared `expo-sqlite` db (PRs #15/#16/#18/#19). Restart-safe and device-validated. |
 | 4 — iOS distribution | ✅ Done | Installed through TestFlight and race-validated end-to-end on iPhone. |
-| 5 — Delight & depth | 🟡 In progress | Achievements shipped; richer car identity underway; multiplayer and sound remain. |
+| 5 — Delight & depth | 🟡 In progress | Achievements shipped; richer car identity underway; the initial race-night lineup is landing; multiplayer and sound remain. |
 
 > The headline goal — a polished, hardware-validated live speedometer on iOS — is **achieved**.
 > The app is now **installed through TestFlight and race-validated end-to-end on iPhone**,
@@ -149,7 +149,7 @@ Pulls in the upstream roadmap's "future features" and more.
   bundled Hot Wheels Fandom wiki catalog (146 cars + photos) plus a manual casting picker keyed off
   the decoded `mattelId`, isolated from the garage schema (see
   [ADR-0013](adr/0013-car-identity-catalog.md)).
-- ⬜ Multiplayer/turn-based race nights.
+- 🟡 Multiplayer/turn-based race nights. **Initial race-night lineup landed** in Race Mode: add racers to a queue, reorder who is up next, and rotate turns between heats.
 - ✅ Share race & session results to the native share sheet (PR #26).
 - ⬜ Sound design; optional "TV/host mode."
 - ✅ Speed units (mph / km/h) + display calibration to real-world speeds (PR #25).

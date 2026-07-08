@@ -33,6 +33,15 @@ import * as Haptics from 'expo-haptics';
 import { useReducedMotion } from 'react-native-reanimated';
 
 import { LAP_OPTIONS, currentLapElapsed, type RaceResult } from '@/race/raceEngine';
+import {
+  addRacer,
+  advanceLineup,
+  chooseNextRacer,
+  currentRacerName,
+  nextUpRacer,
+  removeRacer,
+  type RaceNightLineup,
+} from '@/race/raceNight';
 import { useRaceStore } from '@/store/raceStore';
 import { useGarageStore } from '@/store/garageStore';
 import { usePortalStore } from '@/store/portalStore';
@@ -88,6 +97,7 @@ export default function RaceScreen() {
   // --- Setup form state (seeded from Settings defaults) ---
   const [laps, setLaps] = useState<number>(() => useSettingsStore.getState().defaultLaps);
   const [player, setPlayer] = useState<string>(() => useSettingsStore.getState().playerName);
+  const [lineup, setLineup] = useState<RaceNightLineup>([]);
 
   // --- Gate wiring: fold each *new* portal pass into the race -----------------
   // Track the newest pass id we've already consumed. Reset it when the race arms
@@ -173,8 +183,30 @@ export default function RaceScreen() {
   }, [phase]);
 
   // --- Actions ----------------------------------------------------------------
+  const canAddRacer = player.trim().length > 0;
+  const currentRacer = currentRacerName(lineup, player);
+  const nextRacer = nextUpRacer(lineup);
+
+  const onAddRacer = () => {
+    setLineup((current) => addRacer(current, player));
+    setPlayer('');
+  };
+
+  const onChooseNextRacer = (racerId: string) => {
+    setLineup((current) => chooseNextRacer(current, racerId));
+  };
+
+  const onRemoveRacer = (racerId: string) => {
+    setLineup((current) => removeRacer(current, racerId));
+  };
+
+  const onAdvanceLineup = () => {
+    setLineup((current) => advanceLineup(current));
+    abort();
+  };
+
   const onStart = () => {
-    configure({ targetLaps: laps, player: player.trim() || 'Player 1', carUid: car?.uid ?? null });
+    configure({ targetLaps: laps, player: currentRacer, carUid: car?.uid ?? null });
     startCountdown();
   };
 
@@ -192,6 +224,7 @@ export default function RaceScreen() {
         styles.content,
         { paddingTop: insets.top + spacing(3), paddingBottom: insets.bottom + spacing(8) },
       ]}
+      keyboardShouldPersistTaps="handled"
     >
       <View style={styles.header}>
         <Text style={styles.title}>Race Mode</Text>
@@ -217,15 +250,16 @@ export default function RaceScreen() {
             })}
           </View>
 
-          <Text style={styles.sectionLabel}>Player</Text>
+          <Text style={styles.sectionLabel}>{lineup.length > 0 ? 'Add racer' : 'Player'}</Text>
           <TextInput
             value={player}
             onChangeText={setPlayer}
-            placeholder="Player 1"
+            placeholder={lineup.length > 0 ? 'Add another racer' : 'Player 1'}
             placeholderTextColor={colors.textMuted}
             style={styles.input}
             maxLength={24}
             returnKeyType="done"
+            autoCorrect={false}
           />
 
           <View style={styles.metaRow}>
@@ -239,6 +273,13 @@ export default function RaceScreen() {
             </Text>
           </View>
 
+          <LineupCard
+            lineup={lineup}
+            draftName={player}
+            onChooseNext={onChooseNextRacer}
+            onRemove={onRemoveRacer}
+          />
+
           {connection !== 'connected' && (
             <Text style={styles.hint}>
               Connect your portal on the{' '}
@@ -250,12 +291,27 @@ export default function RaceScreen() {
             </Text>
           )}
 
-          <Pressable
-            onPress={onStart}
-            style={({ pressed }) => [styles.primaryBtn, pressed && styles.pressed]}
-          >
-            <Text style={styles.primaryBtnText}>Start race</Text>
-          </Pressable>
+          <View style={styles.actionRow}>
+            <Pressable
+              onPress={onAddRacer}
+              disabled={!canAddRacer}
+              style={({ pressed }) => [
+                styles.ghostBtn,
+                styles.flex1,
+                !canAddRacer && styles.btnDisabled,
+                pressed && canAddRacer && styles.pressed,
+              ]}
+            >
+              <Text style={[styles.ghostBtnText, !canAddRacer && styles.btnDisabledText]}>Add to lineup</Text>
+            </Pressable>
+
+            <Pressable
+              onPress={onStart}
+              style={({ pressed }) => [styles.primaryBtn, styles.flex1, pressed && styles.pressed]}
+            >
+              <Text style={styles.primaryBtnText}>Start race</Text>
+            </Pressable>
+          </View>
         </View>
       )}
 
@@ -311,7 +367,12 @@ export default function RaceScreen() {
       )}
 
       {phase === 'finished' && race.result && (
-        <Results result={race.result} onAgain={abort} />
+        <Results
+          result={race.result}
+          nextRacerName={nextRacer?.name ?? null}
+          onPrimaryAction={lineup.length > 1 ? onAdvanceLineup : abort}
+          primaryActionLabel={lineup.length > 1 ? 'Next racer' : 'Race again'}
+        />
       )}
 
       {(phase === 'idle' || phase === 'finished') && (
@@ -366,7 +427,88 @@ function LapList({ lapTimes, bestLap }: { lapTimes: readonly number[]; bestLap: 
   );
 }
 
-function Results({ result, onAgain }: { result: RaceResult; onAgain: () => void }) {
+function LineupCard({
+  lineup,
+  draftName,
+  onChooseNext,
+  onRemove,
+}: {
+  lineup: RaceNightLineup;
+  draftName: string;
+  onChooseNext: (racerId: string) => void;
+  onRemove: (racerId: string) => void;
+}) {
+  const current = currentRacerName(lineup, draftName);
+  const currentEntry = lineup[0] ?? null;
+  const queued = lineup.slice(1);
+
+  return (
+    <View style={styles.card}>
+      <Text style={styles.cardHeading}>Race-night lineup</Text>
+
+      <View style={styles.lineupCurrentRow}>
+        <View style={styles.lineupBody}>
+          <Text style={styles.lineupLabel}>Current racer</Text>
+          <Text style={styles.lineupName} numberOfLines={1}>
+            {current}
+          </Text>
+        </View>
+
+        {currentEntry ? (
+          <Pressable onPress={() => onRemove(currentEntry.id)} hitSlop={8}>
+            <Text style={styles.lineupRemoveText}>Remove</Text>
+          </Pressable>
+        ) : (
+          <Text style={styles.lineupHintText}>From input</Text>
+        )}
+      </View>
+
+      {queued.length === 0 ? (
+        <Text style={styles.empty}>
+          {lineup.length === 0
+            ? 'Add racers above to build a turn order, or start a solo race from the player field.'
+            : 'No one is queued yet — add more racers above to build a rotation.'}
+        </Text>
+      ) : (
+        queued.map((racer, index) => (
+          <View key={racer.id} style={styles.lineupRow}>
+            <View style={styles.lineupBody}>
+              <Text style={styles.lineupLabel}>{index === 0 ? 'Up next' : `Queue ${index + 2}`}</Text>
+              <Text style={styles.lineupName} numberOfLines={1}>
+                {racer.name}
+              </Text>
+            </View>
+
+            <View style={styles.lineupActions}>
+              {index === 0 ? (
+                <Text style={styles.lineupHintText}>Up next</Text>
+              ) : (
+                <Pressable onPress={() => onChooseNext(racer.id)} hitSlop={8}>
+                  <Text style={styles.lineupActionText}>Make next</Text>
+                </Pressable>
+              )}
+              <Pressable onPress={() => onRemove(racer.id)} hitSlop={8}>
+                <Text style={styles.lineupRemoveText}>Remove</Text>
+              </Pressable>
+            </View>
+          </View>
+        ))
+      )}
+    </View>
+  );
+}
+
+function Results({
+  result,
+  nextRacerName,
+  onPrimaryAction,
+  primaryActionLabel,
+}: {
+  result: RaceResult;
+  nextRacerName: string | null;
+  onPrimaryAction: () => void;
+  primaryActionLabel: string;
+}) {
   const carName = useGarageStore((s) => s.cars.find((c) => c.uid === result.carUid)?.name ?? null);
 
   const onShare = () => {
@@ -382,6 +524,7 @@ function Results({ result, onAgain }: { result: RaceResult; onAgain: () => void 
         <Text style={styles.resultHeroSub}>
           {result.player} · {result.lapCount} laps · {shortUid(result.carUid)}
         </Text>
+        {nextRacerName ? <Text style={styles.nextUpText}>Up next: {nextRacerName}</Text> : null}
       </View>
 
       <View style={styles.liveRow}>
@@ -401,10 +544,10 @@ function Results({ result, onAgain }: { result: RaceResult; onAgain: () => void 
 
       <View style={styles.actionRow}>
         <Pressable
-          onPress={onAgain}
+          onPress={onPrimaryAction}
           style={({ pressed }) => [styles.primaryBtn, styles.flex1, pressed && styles.pressed]}
         >
-          <Text style={styles.primaryBtnText}>Race again</Text>
+          <Text style={styles.primaryBtnText}>{primaryActionLabel}</Text>
         </Pressable>
         <Link href="/" asChild>
           <Pressable style={({ pressed }) => [styles.ghostBtn, styles.flex1, pressed && styles.pressed]}>
@@ -606,6 +749,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   ghostBtnText: { color: colors.textPrimary, fontSize: fontSize.md, fontWeight: fontWeight.bold },
+  btnDisabled: { opacity: 0.55 },
+  btnDisabledText: { color: colors.textMuted },
   dangerBtn: {
     backgroundColor: colors.surface,
     borderColor: colors.danger,
@@ -637,6 +782,36 @@ const styles = StyleSheet.create({
   lbMeta: { color: colors.textMuted, fontSize: fontSize.xs },
   lbTime: { color: colors.textPrimary, fontSize: fontSize.md, fontWeight: fontWeight.bold, fontVariant: ['tabular-nums'] },
   lbTimeTop: { color: colors.accent },
+  lineupCurrentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing(3),
+    paddingBottom: spacing(2),
+  },
+  lineupRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing(3),
+    paddingVertical: spacing(2),
+    borderTopWidth: 1,
+    borderTopColor: colors.surfaceAlt,
+  },
+  lineupBody: { flex: 1, gap: 2 },
+  lineupLabel: {
+    color: colors.textMuted,
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.bold,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  lineupName: { color: colors.textPrimary, fontSize: fontSize.md, fontWeight: fontWeight.bold },
+  lineupActions: { flexDirection: 'row', alignItems: 'center', gap: spacing(3) },
+  lineupActionText: { color: colors.accentBlue, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
+  lineupHintText: { color: colors.textMuted, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
+  lineupRemoveText: { color: colors.danger, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
+  nextUpText: { color: colors.accentBlue, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
 
   pressed: { opacity: 0.7 },
 });
