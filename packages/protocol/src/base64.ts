@@ -14,19 +14,26 @@
 
 const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-/** Reverse lookup: char code → 6-bit value (-1 for non-alphabet chars). */
+/**
+ * Reverse lookup: char code → 6-bit value (-1 for non-alphabet chars). Both the
+ * standard (`+`/`/`) and URL-safe (`-`/`_`) alphabets decode to the same values,
+ * so URL-safe inputs like the Mattel car ids in `https://www.pid.mattel/<id>`
+ * decode without a separate normalization pass.
+ */
 const DECODE_TABLE: Int8Array = (() => {
   const table = new Int8Array(128).fill(-1);
   for (let i = 0; i < ALPHABET.length; i++) {
     table[ALPHABET.charCodeAt(i)] = i;
   }
+  table["-".charCodeAt(0)] = 62; // URL-safe alias for '+'
+  table["_".charCodeAt(0)] = 63; // URL-safe alias for '/'
   return table;
 })();
 
 /**
- * Decode a standard Base64 string into bytes. Whitespace is ignored and the
- * trailing `=` padding is optional, so values produced by either padded or
- * unpadded encoders decode correctly. Characters outside the Base64 alphabet
+ * Decode a standard or URL-safe Base64 string into bytes. Whitespace is ignored
+ * and the trailing `=` padding is optional, so values produced by either padded
+ * or unpadded encoders decode correctly. Characters outside the Base64 alphabet
  * (other than `=`/whitespace) throw.
  */
 export function bytesFromBase64(input: string): Uint8Array {
