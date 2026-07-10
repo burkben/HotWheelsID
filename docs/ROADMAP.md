@@ -10,7 +10,7 @@ direction set in the [ADRs](adr/) (React Native + Expo, shared TS protocol packa
 
 ---
 
-## Status at a glance (updated 2026-07-02)
+## Status at a glance (updated 2026-07-09)
 
 | Phase | Status | Notes |
 |---|---|---|
@@ -19,11 +19,11 @@ direction set in the [ADRs](adr/) (React Native + Expo, shared TS protocol packa
 | 2 — Attractive UI | ✅ Done | Skia speedometer, flames, haptics, reduce-motion, mock generator, recent passes. |
 | 3 — Persistence: garage, history, races | ✅ Done | **Race Mode, Garage, History, and Settings all durable** on a shared `expo-sqlite` db (PRs #15/#16/#18/#19). Restart-safe and device-validated. |
 | 4 — iOS distribution | ✅ Done | Installed through TestFlight and race-validated end-to-end on iPhone. |
-| 5 — Delight & depth | 🟡 In progress | Achievements shipped; richer car identity underway; the initial race-night lineup is landing; multiplayer and sound remain. |
+| 5 — Delight & depth | 🟡 In progress | Achievements shipped; richer car identity and initial race-night lineup shipped; sound/advanced multiplayer remain. |
 
 > The headline goal — a polished, hardware-validated live speedometer on iOS — is **achieved**.
 > The app is now **installed through TestFlight and race-validated end-to-end on iPhone**,
-> and the focus has moved to **Phase 5 — Delight & depth**, especially richer car identity.
+> and the focus has moved to **Phase 5 — Delight & depth**, especially richer car identity and race-night depth.
 
 ---
 
@@ -145,11 +145,14 @@ run through a race end-to-end.
 Pulls in the upstream roadmap's "future features" and more.
 
 - ✅ Achievements (top speed, lap streaks, collection milestones) (PR #23).
-- 🟡 Richer car identity: art, model names, rarity from the Mattel id. **Prototype landed** — a
-  bundled Hot Wheels Fandom wiki catalog (146 cars + photos) plus a manual casting picker keyed off
-  the decoded `mattelId`, isolated from the garage schema (see
+- 🟡 Richer car identity: art, model names, rarity from the Mattel id. **Initial catalog flow
+  shipped** — bundled Hot Wheels Fandom catalog (146 cars + photos), richer search/meta, manual
+  casting picker keyed off decoded `mattelId`, and casting coverage UX in identify/garage
+  (identify once, label matching copies), isolated from the garage schema (see
   [ADR-0013](adr/0013-car-identity-catalog.md)).
-- 🟡 Multiplayer/turn-based race nights. **Initial race-night lineup landed** in Race Mode: add racers to a queue, reorder who is up next, and rotate turns between heats.
+- 🟡 Multiplayer/turn-based race nights. **Initial race-night lineup shipped** — queue racers,
+  choose who is up next, rotate turns after each heat. Next slice is per-lineup car assignment and
+  deeper multi-racer race semantics.
 - ✅ Share race & session results to the native share sheet (PR #26).
 - ⬜ Sound design; optional "TV/host mode."
 - ✅ Speed units (mph / km/h) + display calibration to real-world speeds (PR #25).
