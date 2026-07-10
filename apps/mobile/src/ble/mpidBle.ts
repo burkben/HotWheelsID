@@ -31,6 +31,7 @@ import {
   parseNfcUid,
   parseMessage,
   mpidToPortalEvents,
+  mattelIdMatchesUid,
   BatteryStatus,
   DeviceMode,
   EventType,
@@ -175,6 +176,15 @@ function decodeAndDispatch(payload: Uint8Array, deps: MpidDeps): void {
   }
 
   for (const portalEvent of mpidToPortalEvents(msg)) {
+    if (__DEV__ && portalEvent.kind === "carDetected" && portalEvent.mattelId) {
+      const match = mattelIdMatchesUid(portalEvent.mattelId, portalEvent.uid);
+      if (match === false) {
+        deps.log(
+          "event",
+          `⚠︎ mattel-id UID tail ≠ reported UID ${portalEvent.uid} — byte layout may be off for this car`,
+        );
+      }
+    }
     deps.dispatch(portalEvent);
   }
 }
