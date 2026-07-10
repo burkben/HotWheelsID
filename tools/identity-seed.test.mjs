@@ -1,9 +1,14 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import test from "node:test";
 
 import {
   analyzeObservations,
   catalogIndex,
+  contributionFingerprint,
+  readContributions,
   serializeSeed,
   validateContribution,
 } from "./identity-seed.mjs";
@@ -29,6 +34,34 @@ function payload(overrides = {}) {
     ],
     ...overrides,
   };
+}
+
+function reviewed(source, sourceId, reviewNumber) {
+  return {
+    ...source,
+    sourceId,
+    review: `https://github.com/burkben/HotWheelsID/pull/${reviewNumber}`,
+  };
+}
+
+function contributionDirectory(entries) {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "identity-seed-"));
+  fs.writeFileSync(
+    path.join(directory, "sources.json"),
+    JSON.stringify({
+      schema: "redlineid.identity-sources/1",
+      sources: entries.map(({ file, sourceId, review, verifiedCastingKeys }) => ({
+        file,
+        sourceId,
+        review,
+        verifiedCastingKeys,
+      })),
+    }),
+  );
+  for (const entry of entries) {
+    fs.writeFileSync(path.join(directory, entry.file), JSON.stringify(entry.payload));
+  }
+  return directory;
 }
 
 test("validates a privacy-safe exported payload", () => {
@@ -75,20 +108,53 @@ test("rejects unknown or stale catalog facts", () => {
   assert.throws(() => validateContribution(stale, "bad.json", CATALOG), /do not match/);
 });
 
-test("requires two distinct agreeing files before promotion", () => {
-  const one = validateContribution(payload(), "one.json", CATALOG);
+test("requires two independently reviewed sources before promotion", () => {
+  const one = validateContribution(payload(), "one.json", CATALOG).map((observation) =>
+    reviewed(observation, "source-a", 101),
+  );
   const pending = analyzeObservations(one);
   assert.deepEqual(pending.seed, {});
   assert.equal(pending.pending.length, 1);
 
-  const two = validateContribution(payload(), "two.json", CATALOG);
+  const secondPayload = payload({
+    count: 2,
+    identifications: [
+      ...payload().identifications,
+      {
+        castingKey: "deadbeef",
+        productId: 0xdeadbeef,
+        catalogId: "car-b",
+        name: "Car B",
+        toyNumber: null,
+      },
+    ],
+  });
+  const two = validateContribution(secondPayload, "two.json", CATALOG).map((observation) =>
+    reviewed(observation, "source-b", 102),
+  );
   const agreed = analyzeObservations([...one, ...two]);
   assert.deepEqual(agreed.seed, { "41ae5e5b": "car-a" });
   assert.deepEqual(agreed.conflicts, []);
 });
 
+test("multiple payloads from the same reviewed source count as one vote", () => {
+  const one = validateContribution(payload(), "one.json", CATALOG).map((observation) =>
+    reviewed(observation, "source-a", 101),
+  );
+  const two = validateContribution(payload(), "two.json", CATALOG).map((observation) =>
+    reviewed(observation, "source-a", 102),
+  );
+
+  const analysis = analyzeObservations([...one, ...two]);
+
+  assert.deepEqual(analysis.seed, {});
+  assert.equal(analysis.pending[0].sources.length, 1);
+});
+
 test("reports conflicting catalog mappings instead of promoting a plurality", () => {
-  const one = validateContribution(payload(), "one.json", CATALOG);
+  const one = validateContribution(payload(), "one.json", CATALOG).map((observation) =>
+    reviewed(observation, "source-a", 101),
+  );
   const conflictPayload = payload();
   conflictPayload.identifications[0] = {
     ...conflictPayload.identifications[0],
@@ -96,7 +162,9 @@ test("reports conflicting catalog mappings instead of promoting a plurality", ()
     name: "Car B",
     toyNumber: null,
   };
-  const two = validateContribution(conflictPayload, "two.json", CATALOG);
+  const two = validateContribution(conflictPayload, "two.json", CATALOG).map((observation) =>
+    reviewed(observation, "source-b", 102),
+  );
   const analysis = analyzeObservations([...one, ...two]);
 
   assert.deepEqual(analysis.seed, {});
@@ -104,6 +172,125 @@ test("reports conflicting catalog mappings instead of promoting a plurality", ()
   assert.deepEqual(
     analysis.conflicts[0].candidates.map((candidate) => candidate.catalogId),
     ["car-a", "car-b"],
+  );
+});
+
+test("deduplicates identical payload copies under different filenames", (context) => {
+  const directory = contributionDirectory([
+    {
+      file: "one.json",
+      sourceId: "source-a",
+      review: "https://github.com/burkben/HotWheelsID/pull/101",
+      verifiedCastingKeys: ["41ae5e5b"],
+      payload: payload(),
+    },
+    {
+      file: "copy.json",
+      sourceId: "source-b",
+      review: "https://github.com/burkben/HotWheelsID/pull/102",
+      verifiedCastingKeys: ["41ae5e5b"],
+      payload: payload(),
+    },
+  ]);
+  context.after(() => fs.rmSync(directory, { recursive: true, force: true }));
+
+  const loaded = readContributions(directory, CATALOG);
+  const analysis = analyzeObservations(loaded.observations);
+
+  assert.equal(loaded.duplicates.length, 1);
+  assert.equal(loaded.observations.length, 1);
+  assert.deepEqual(analysis.seed, {});
+});
+
+test("deduplicates copies changed only by generatedAt and filename", (context) => {
+  const later = payload({ generatedAt: "2026-07-11T00:00:00.000Z" });
+  const directory = contributionDirectory([
+    {
+      file: "original.json",
+      sourceId: "source-a",
+      review: "https://github.com/burkben/HotWheelsID/pull/101",
+      verifiedCastingKeys: ["41ae5e5b"],
+      payload: payload(),
+    },
+    {
+      file: "renamed.json",
+      sourceId: "source-b",
+      review: "https://github.com/burkben/HotWheelsID/pull/102",
+      verifiedCastingKeys: ["41ae5e5b"],
+      payload: later,
+    },
+  ]);
+  context.after(() => fs.rmSync(directory, { recursive: true, force: true }));
+
+  const loaded = readContributions(directory, CATALOG);
+
+  assert.equal(loaded.duplicates.length, 1);
+  assert.equal(
+    contributionFingerprint(
+      validateContribution(payload(), "original.json", CATALOG),
+    ),
+    contributionFingerprint(validateContribution(later, "renamed.json", CATALOG)),
+  );
+});
+
+test("copied rows appended to a new export cannot vote without per-casting PR review", (context) => {
+  const appended = payload({
+    count: 2,
+    identifications: [
+      ...payload().identifications,
+      {
+        castingKey: "deadbeef",
+        productId: 0xdeadbeef,
+        catalogId: "car-b",
+        name: "Car B",
+        toyNumber: null,
+      },
+    ],
+  });
+  const directory = contributionDirectory([
+    {
+      file: "original.json",
+      sourceId: "source-a",
+      review: "https://github.com/burkben/HotWheelsID/pull/101",
+      verifiedCastingKeys: ["41ae5e5b"],
+      payload: payload(),
+    },
+    {
+      file: "copy-plus-new.json",
+      sourceId: "source-b",
+      review: "https://github.com/burkben/HotWheelsID/pull/102",
+      verifiedCastingKeys: ["deadbeef"],
+      payload: appended,
+    },
+  ]);
+  context.after(() => fs.rmSync(directory, { recursive: true, force: true }));
+
+  const loaded = readContributions(directory, CATALOG);
+  const analysis = analyzeObservations(loaded.observations);
+
+  assert.deepEqual(analysis.seed, {});
+  assert.equal(analysis.pending.length, 2);
+  assert.deepEqual(
+    loaded.unreviewed.map((item) => item.castingKey),
+    ["41ae5e5b"],
+  );
+});
+
+test("rejects issue URLs as review provenance", (context) => {
+  const directory = contributionDirectory([
+    {
+      file: "one.json",
+      sourceId: "source-a",
+      review: "https://github.com/burkben/HotWheelsID/issues/101",
+      verifiedCastingKeys: ["41ae5e5b"],
+      payload: payload(),
+    },
+  ]);
+  context.after(() => fs.rmSync(directory, { recursive: true, force: true }));
+
+  assert.throws(
+    () => readContributions(directory, CATALOG),
+    /review must be a HotWheelsID pull request URL/,
   );
 });
 

@@ -157,7 +157,8 @@ Pulls in the upstream roadmap's "future features" and more.
   or collection), a bundled seed merges at bootstrap so scanned cars auto-name with zero taps, and
   the user's own pick always wins over the seed (see
   [ADR-0014](adr/0014-crowd-sourced-car-identity-seed.md)). The repository contribution loop now has
-  a strict privacy/schema validator, source-aware conflict report, two-file agreement threshold, and
+  a strict privacy/schema validator, repository-reviewed source provenance, semantic payload
+  deduplication, source-aware conflict report, two-independent-source agreement threshold, and
   deterministic generation check. Its current state is explicit: **0 observations and 0 promoted
   rows**, so the bundled seed remains empty.
 - 🟡 Multiplayer/turn-based race nights. **Initial race-night lineup shipped** — queue racers,
