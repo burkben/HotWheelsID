@@ -33,39 +33,38 @@ An open-source tool to connect to the Hot Wheels id Race Portal after Mattel dis
 
 ## 📱 iOS App
 
-The Hot Wheels id portal, reborn as a native iPhone app. Connect over Bluetooth and watch real
-speeds fly across a custom speedometer, then jump into **Race Mode** to time laps and battle for
-the top of the leaderboard.
+The Hot Wheels id portal, reborn as a native iPhone app. The current build ships a full tabbed
+experience (Speed, Race, Garage, History, More), plus car-identify and detail flows on top.
 
 <table>
   <tr>
     <td align="center" width="50%">
-      <img src="docs/screenshots/ios-home.png" alt="Live speedometer reading a real portal pass over Bluetooth" width="280"><br>
-      <strong>Live speedometer</strong><br>
-      Real BLE passes drive the needle, with best speed, pass count, and a recent-pass log.
+      <img src="docs/screenshots/ios-home.png" alt="Current Speed tab UI with live gauge, pass stats, and tab navigation" width="280"><br>
+      <strong>Speed tab</strong><br>
+      Live gauge, best speed, recent passes, and quick portal controls.
     </td>
     <td align="center" width="50%">
-      <img src="docs/screenshots/ios-race.png" alt="Race Mode results with per-lap times and a session leaderboard" width="280"><br>
+      <img src="docs/screenshots/ios-race.png" alt="Current Race tab setup with race-night lineup queue controls" width="280"><br>
       <strong>🏁 Race Mode</strong><br>
-      Per-lap splits, best / average / worst, and a session leaderboard.
+      Race setup, lap targets, and the new race-night lineup queue controls.
     </td>
   </tr>
 </table>
 
-<sub>Running as a development build on a physical iPhone.</sub>
+<sub>Current UI captured from the iOS Simulator (iPhone 17 Pro, July 2026).</sub>
 
-**Three screens:**
+**Current app surfaces:**
 
-- **Speedometer (home)** — Connect to a real portal over Bluetooth and the gauge tracks every
-  pass live in scale mph, keeping your best speed and recent passes. A **Live BLE / Demo** toggle
-  shows off the full experience with simulated passes when no portal is around (great for the
-  Simulator, the web preview, or a firmware-locked portal).
-- **🏁 Race Mode** — Pick a race length (5 / 10 / 15 / 20 laps), enter a player name, and a 3·2·1
-  countdown arms the race. Each car pass closes a lap; you get a live lap clock, last/best lap,
-  then a full results breakdown and a session leaderboard. It's a faithful port of the terminal
-  [`race_mode.py`](python/race_mode.py).
-- **Live portal** — A raw, decoded BLE event log (parity with the Python `monitor.py`) for
-  proving hardware and debugging the protocol.
+- **Speed tab** — Connect to a portal and track live passes with the animated gauge, best speed,
+  pass log, and demo-mode fallback.
+- **🏁 Race tab** — Run timed lap races (5 / 10 / 15 / 20), get per-lap/live stats + results, and
+  use the new race-night lineup queue for turn rotation.
+- **Garage tab** — Persistent car collection with best speed/lap/race stats and per-car detail.
+- **History tab** — Durable session history with race/pass rollups and drill-in details.
+- **More tab** — Achievements, raw Live portal event log, and Settings (units, calibration, player
+  profile, haptics, reduce motion, demo defaults).
+- **Identify flow** — Catalog-backed manual identify picker for car details, including casting
+  coverage messaging ("identify once, label matching copies").
 
 Under the hood it speaks **both portal firmwares** — the legacy open control service and the
 modern, encrypted **MPID** protocol (ECDH key exchange) — through the shared
@@ -174,9 +173,10 @@ vectors in [PROTOCOL.md](PROTOCOL.md).
 ### Mobile app
 
 [`apps/mobile`](apps/mobile/) is the Expo (Expo Router) app — see **[📱 iOS App](#ios-app)**
-above for the screen-by-screen tour and how to run it on a device. It has three screens
-(`index` speedometer, `race` Race Mode, `live` raw event log) and decodes both portal firmwares
-through [`@redlineid/protocol`](packages/protocol/).
+above for the current surface tour and how to run it on a device. It now has a five-tab shell
+(`index` speed, `race`, `garage`, `history`, `more`) plus pushed detail screens (`live`,
+`settings`, `achievements`, `identify`, and per-car/session details), and it decodes both portal
+firmwares through [`@redlineid/protocol`](packages/protocol/).
 
 **Preview in a browser** (no device or Xcode needed — fastest way to see the UI):
 
@@ -207,7 +207,7 @@ The full, phased plan toward the attractive UI and the installable iOS app lives
 - [x] Persistent car database
 - [x] Car collection/garage view
 - [x] Achievement system
-- [ ] Car identity enrichment from Mattel ID / catalog data (in progress)
+- [ ] Full automatic car identity enrichment from Mattel ID / catalog data (in progress; manual catalog identify flow is shipped)
 
 The iOS app is **already running on-device** — a live BLE speedometer, **Race Mode**, and a raw
 event log (see [📱 iOS App](#ios-app)). It is also **installed through TestFlight** and has been
