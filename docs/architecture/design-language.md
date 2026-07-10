@@ -193,7 +193,7 @@ Reuse these patterns rather than inventing new ones.
 | **Speedometer** (hero) | SVG arc gauge: `track` arc, green/yellow/red zone bands, ticks, flame-orange needle that springs to each pass then eases to rest; `display`-size digital readout below. |
 | **Car hero** *(new, #31)* | Identity + art slot for the last-scanned car on the Speed screen (name when known, else short UID + serial; placeholder when none). |
 | **Status pill** | Pill on `surfaceAlt`/tinted bg with a state dot + label. **Becomes the connect/disconnect control** (#33) — see [§10](#10-connection-ux). |
-| **Stat card** | `surface` + `border`, `radius.md`; uppercase `xs` caption, `lg`/`bold` value, `xs` unit. Used in 3-up rows (Best · Passes · Car). |
+| **Stat card** | `surface` + `border`, `radius.md`; uppercase `xs` caption, `lg`/`bold` value, `xs` unit. Used in the Speed 3-up row (Best · Passes · Last); car identity lives in the dedicated hero. |
 | **Buttons** | `radius.md`, `spacing(3.5)` vertical. **Primary** = `accent` fill on `bg` text; **Secondary** = `surface` + `border`; **Ghost** = `surfaceAlt` + `border`. Pressed → `opacity 0.7`; disabled → `opacity 0.4`. |
 | **Segmented toggle** | Pill container on `surfaceAlt`; active segment filled `accent` (e.g. the Live BLE / Demo switch). |
 | **Mode list rows (More)** *(new, #30)* | Icon column · title · optional stat subtitle · chevron, on `surface` with hairline dividers. |
@@ -228,16 +228,28 @@ Haptics are off on web and respect the user setting.
 
 **Principle: the app connects itself.** Bluetooth should not require hunting for a button.
 
+- **Application-level lifecycle:** one root controller owns the active BLE/mock transport for the
+  full app session. Tabs consume the same stream, so Race and Live do not depend on Speed mounting
+  and opening diagnostics cannot steal the connection.
 - **Auto-connect on launch** (#32): on a BLE-capable device (not demo mode), the app scans
-  for `HWiD` and connects automatically, with retry/backoff. Web and the Simulator stay in
-  simulated mode.
+  for `HWiD` and connects automatically. Each scan has a finite window and retries use capped,
+  finite exponential backoff. Web and the Simulator stay in simulated mode and never load BLE.
+- **Durable Demo choice:** selecting Demo writes the existing startup preference. A device forced
+  into Demo because BLE is unavailable does not overwrite that preference.
 - **The status pill is the control** (#33): tap to (re)connect/retry; disconnect via
   tap-when-connected (confirm) or long-press. This **removes** the dedicated "Connect
   portal" button.
-- **Always communicate state** through the pill: `idle · scanning · connecting · connected ·
-  error`, using the semantic colors (`idle`/`accentBlue`/`ok`/`danger`).
+- **Always communicate state** through the pill: `idle · scanning · connecting · authenticating ·
+  connected · portal not found · error`, using semantic colors plus text.
 - **Fail gracefully:** Bluetooth-off, permission-denied, and portal-not-found each get a
-  clear state and a recovery path — never a crash or an infinite spinner.
+  clear state and a recovery path — never a crash, infinite spinner, or battery-draining scan loop.
+- **Manual disconnect is sticky:** disconnect requires confirmation and pauses automatic reconnect
+  until the user explicitly connects/retries or changes mode.
+
+When SQLite is unavailable or cannot initialize, the tab shell shows a concise session-storage
+banner. Web presents this as the expected **Browser session** behavior; a native build presents
+**Saving unavailable** with recovery copy. The app remains usable through fully wired in-memory
+repositories, but it never implies that Garage, History, or Settings will survive restart.
 
 ---
 
@@ -249,6 +261,8 @@ Haptics are off on web and respect the user setting.
   never color alone.
 - **Tap targets ≥ 44 pt** and high contrast for young users; interactive elements (incl. the
   status pill) expose a button role and a descriptive label.
+- **Dynamic state:** announce meaningful connection changes and car detections, but not internal
+  discovery steps or every speed sample.
 - **Legible defaults:** large type for primary values; clamp lines so layouts don't reflow.
 
 ---

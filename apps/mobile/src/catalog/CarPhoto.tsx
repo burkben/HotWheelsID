@@ -25,6 +25,8 @@ export function CarPhoto({
   rounded = radius.md,
   ring = false,
   contentFit = "cover",
+  reduceMotion = false,
+  accessibilityLabel,
 }: {
   uri: string | null | undefined;
   /** Square shorthand — sets both width and height. */
@@ -36,6 +38,8 @@ export function CarPhoto({
   /** Accent ring for identified/selected state. */
   ring?: boolean;
   contentFit?: "cover" | "contain";
+  reduceMotion?: boolean;
+  accessibilityLabel?: string;
 }) {
   const [failed, setFailed] = useState(false);
 
@@ -53,7 +57,7 @@ export function CarPhoto({
   if (!uri || failed) {
     const glyph = size != null ? size * 0.4 : 40;
     return (
-      <View style={[styles.placeholder, box]}>
+      <View style={[styles.placeholder, box]} accessible accessibilityLabel={accessibilityLabel}>
         <Text style={{ fontSize: glyph, opacity: 0.5 }}>🏎️</Text>
       </View>
     );
@@ -64,8 +68,10 @@ export function CarPhoto({
       source={uri}
       style={[styles.image, box]}
       contentFit={contentFit}
-      transition={200}
+      transition={reduceMotion ? 0 : 200}
       cachePolicy="disk"
+      accessible
+      accessibilityLabel={accessibilityLabel}
       onError={() => setFailed(true)}
     />
   );

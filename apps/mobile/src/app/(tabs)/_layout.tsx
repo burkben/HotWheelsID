@@ -12,10 +12,12 @@
  */
 import type { ComponentProps } from 'react';
 import type { ColorValue } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Tabs } from 'expo-router';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 import { colors, fontWeight } from '@/theme/tokens';
+import { PersistenceStatusBanner } from '@/components/PersistenceStatusBanner';
 
 type IconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
 
@@ -40,12 +42,22 @@ const screenOptions: ComponentProps<typeof Tabs>['screenOptions'] = {
 
 export default function TabsLayout() {
   return (
-    <Tabs screenOptions={screenOptions}>
-      <Tabs.Screen name="index" options={{ title: 'Speed', tabBarIcon: tabIcon('speedometer') }} />
-      <Tabs.Screen name="race" options={{ title: 'Race', tabBarIcon: tabIcon('flag-checkered') }} />
-      <Tabs.Screen name="garage" options={{ title: 'Garage', tabBarIcon: tabIcon('garage') }} />
-      <Tabs.Screen name="history" options={{ title: 'History', tabBarIcon: tabIcon('history') }} />
-      <Tabs.Screen name="more" options={{ title: 'More', tabBarIcon: tabIcon('dots-horizontal') }} />
-    </Tabs>
+    <View style={styles.layout}>
+      <PersistenceStatusBanner />
+      <Tabs screenOptions={screenOptions}>
+        <Tabs.Screen name="index" options={{ title: 'Speed', tabBarIcon: tabIcon('speedometer') }} />
+        <Tabs.Screen name="race" options={{ title: 'Race', tabBarIcon: tabIcon('flag-checkered') }} />
+        <Tabs.Screen name="garage" options={{ title: 'Garage', tabBarIcon: tabIcon('garage') }} />
+        <Tabs.Screen name="history" options={{ title: 'History', tabBarIcon: tabIcon('history') }} />
+        <Tabs.Screen name="more" options={{ title: 'More', tabBarIcon: tabIcon('dots-horizontal') }} />
+      </Tabs>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  layout: {
+    flex: 1,
+    backgroundColor: colors.bg,
+  },
+});

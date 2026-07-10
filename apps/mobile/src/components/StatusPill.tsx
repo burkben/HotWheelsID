@@ -5,42 +5,106 @@
  * should always be able to tell whether the portal is connected and whether a
  * car is on the pad.
  */
-import { StyleSheet, Text, View } from "react-native";
+import { Alert, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import * as Haptics from "expo-haptics";
 import type { ControlStatus } from "@redlineid/protocol";
 
 import { colors, fontSize, fontWeight, radius, spacing } from "@/theme/tokens";
 import type { ConnectionState } from "@/store/portalStore";
+import type { BlePhase } from "@/ble/types";
+import type { PortalMode } from "@/portal/controller";
+import { portalStatusPresentation } from "@/portal/selectors";
+import { useSettingsStore } from "@/store/settingsStore";
 
 export interface StatusPillProps {
   connection: ConnectionState;
   controlStatus: ControlStatus | null;
+  phase: BlePhase | null;
+  mode: PortalMode;
+  manuallyDisconnected: boolean;
+  onConnect: () => void;
+  onRetry: () => void;
+  onDisconnect: () => void;
 }
 
-function describe(
-  connection: ConnectionState,
-  controlStatus: ControlStatus | null,
-): { label: string; color: string } {
-  if (connection === "disconnected") return { label: "Disconnected", color: colors.idle };
-  if (connection === "connecting") return { label: "Connecting…", color: colors.warn };
+export function StatusPill({
+  connection,
+  controlStatus,
+  phase,
+  mode,
+  manuallyDisconnected,
+  onConnect,
+  onRetry,
+  onDisconnect,
+}: StatusPillProps) {
+  const status = portalStatusPresentation({
+    connection,
+    controlStatus,
+    phase,
+    mode,
+    manuallyDisconnected,
+  });
+  const color =
+    status.tone === "connected"
+      ? colors.ok
+      : status.tone === "busy"
+        ? colors.warn
+        : status.tone === "error"
+          ? colors.danger
+          : colors.idle;
 
-  switch (controlStatus) {
-    case "carPresent":
-      return { label: "Car on portal", color: colors.ok };
-    case "transitional":
-      return { label: "Reading…", color: colors.warn };
-    case "idle":
-    default:
-      return { label: "Connected", color: colors.accentBlue };
-  }
-}
+  const confirmDisconnect = () => {
+    const disconnect = () => {
+      if (Platform.OS !== "web" && useSettingsStore.getState().haptics) {
+        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      }
+      onDisconnect();
+    };
+    if (Platform.OS === "web") {
+      if (
+        typeof globalThis.confirm === "function" &&
+        globalThis.confirm("Disconnect portal? Automatic reconnect will stay paused.")
+      ) {
+        disconnect();
+      }
+      return;
+    }
+    Alert.alert("Disconnect portal?", "Automatic reconnect will stay paused until you connect again.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Disconnect",
+        style: "destructive",
+        onPress: disconnect,
+      },
+    ]);
+  };
 
-export function StatusPill({ connection, controlStatus }: StatusPillProps) {
-  const { label, color } = describe(connection, controlStatus);
+  const onPress = () => {
+    if (status.action === "none") return;
+    if (status.action === "disconnect") {
+      confirmDisconnect();
+      return;
+    }
+    if (Platform.OS !== "web" && useSettingsStore.getState().haptics) {
+      void Haptics.selectionAsync();
+    }
+    if (status.action === "retry") onRetry();
+    else onConnect();
+  };
+
   return (
-    <View style={styles.pill}>
+    <Pressable
+      onPress={onPress}
+      disabled={status.action === "none"}
+      accessibilityRole="button"
+      accessibilityLabel={status.accessibilityLabel}
+      accessibilityHint={status.accessibilityHint}
+      accessibilityState={{ disabled: status.action === "none", busy: status.busy }}
+      style={({ pressed }) => [styles.pill, pressed && styles.pressed]}
+    >
       <View style={[styles.dot, { backgroundColor: color }]} />
-      <Text style={styles.label}>{label}</Text>
-    </View>
+      <Text style={styles.label}>{status.label}</Text>
+    </Pressable>
   );
 }
 
@@ -53,7 +117,8 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderWidth: 1,
     borderRadius: radius.pill,
-    paddingVertical: spacing(1.5),
+    minHeight: 44,
+    paddingVertical: spacing(2),
     paddingHorizontal: spacing(3),
   },
   dot: {
@@ -65,5 +130,8 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontSize: fontSize.sm,
     fontWeight: fontWeight.medium,
+  },
+  pressed: {
+    opacity: 0.7,
   },
 });

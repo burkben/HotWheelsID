@@ -13,6 +13,7 @@ import { initPersistence, resetPersistenceForTests } from "./initPersistence";
 import { InMemoryRaceRepository, type RaceRepository } from "./raceRepository";
 import { InMemorySessionRepository } from "./sessionRepository";
 import { InMemorySettingsRepository } from "./settingsRepository";
+import { usePersistenceStatusStore } from "./persistenceStatusStore";
 import { emptyStats } from "../../achievements/stats";
 
 /** Flush pending micro + macro tasks so async repo writes settle. */
@@ -60,6 +61,16 @@ describe("initPersistence", () => {
     expect(useGarageStore.getState().cars).toHaveLength(0);
     // Settings still report "loaded" (at defaults) so hydration-gated UI proceeds.
     expect(useSettingsStore.getState().hydrated).toBe(true);
+    expect(usePersistenceStatusStore.getState()).toMatchObject({
+      mode: "memory",
+      reason: "unavailable",
+    });
+
+    // The fallback is fully wired, not merely a set of render-store defaults.
+    usePortalStore.getState().dispatch({ kind: "carDetected", uid: "MEM:01" });
+    await flush();
+    expect(useGarageStore.getState().cars[0]?.uid).toBe("MEM:01");
+    expect(getSessionRepository()).not.toBeNull();
 
     // No sinks registered, so finishing a race must not throw.
     const store = useRaceStore.getState();
@@ -279,6 +290,11 @@ describe("initPersistence", () => {
 
     await expect(initPersistence({ race })).resolves.toBeUndefined();
     expect(useRaceStore.getState().leaderboard).toHaveLength(0);
+    expect(useSettingsStore.getState().hydrated).toBe(true);
+    expect(usePersistenceStatusStore.getState()).toMatchObject({
+      mode: "memory",
+      reason: "initFailed",
+    });
   });
 
   it("is one-shot per runtime; a rebuilt client (guard reset) hydrates", async () => {

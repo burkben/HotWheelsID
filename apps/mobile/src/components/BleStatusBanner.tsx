@@ -21,7 +21,11 @@ export function BleStatusBanner({ phase }: { phase: BlePhase | null }) {
   const accent = banner.tone === "danger" ? colors.danger : colors.warn;
 
   return (
-    <View style={[styles.banner, { borderColor: accent }]}>
+    <View
+      style={[styles.banner, { borderColor: accent }]}
+      accessibilityRole="alert"
+      accessibilityLiveRegion="polite"
+    >
       <Text style={styles.title}>{banner.title}</Text>
       <Text style={styles.body}>{banner.body}</Text>
       {banner.openSettings && (
@@ -29,6 +33,8 @@ export function BleStatusBanner({ phase }: { phase: BlePhase | null }) {
           onPress={() => {
             Linking.openSettings().catch(() => {});
           }}
+          accessibilityRole="button"
+          accessibilityLabel="Open device settings"
           style={({ pressed }) => [
             styles.button,
             { borderColor: accent },

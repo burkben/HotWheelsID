@@ -4,15 +4,13 @@
  * The timing rules live in the pure {@link raceEngine} (a faithful port of
  * `python/race_mode.py`); this screen is the UI + wiring around the
  * {@link useRaceStore}. It is a *consumer* of the portal store: every car pass
- * the active transport records (real BLE on Home, or the mock) lands in
+ * the application-level transport records (real BLE or the mock) lands in
  * `portalStore.passes`, and we fold each new pass into the race as a gate
  * crossing. The first crossing after the countdown is the start line; each later
  * one closes a lap; the race auto-finishes at the chosen length.
  *
- * Single-connection invariant: Race never opens its own BLE transport. Connect
- * (or enable Demo) on the Home screen; that transport keeps streaming while this
- * screen is pushed on top. In demo mode the active transport also advertises a
- * `triggerPass` hook, surfaced here as a "Trigger pass" button.
+ * Single-connection invariant: Race never opens its own BLE transport. The root
+ * controller starts before any tab mounts and keeps streaming across navigation.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -51,7 +49,10 @@ import { catalogIdForUid, useIdentityStore } from '@/store/identityStore';
 import { findCatalogCar } from '@/catalog/catalog';
 import { useSettingsStore } from '@/store/settingsStore';
 import { raceShareText } from '@/share/summary';
-import { getActiveTransportControls } from '@/transport/active';
+import {
+  usePortalController,
+  usePortalControllerActions,
+} from '@/portal/PortalControllerProvider';
 import { colors, fontSize, fontWeight, radius, spacing } from '@/theme/tokens';
 
 /** Milliseconds each countdown digit is shown before the race arms. */
@@ -95,6 +96,8 @@ export default function RaceScreen() {
   const connection = usePortalStore((s) => s.connection);
   const car = usePortalStore((s) => s.car);
   const passes = usePortalStore((s) => s.passes);
+  const portalMode = usePortalController((s) => s.mode);
+  const portalController = usePortalControllerActions();
 
   const phase = race.phase;
 
@@ -237,8 +240,8 @@ export default function RaceScreen() {
     startCountdown();
   };
 
-  const triggerDemoPass = () => getActiveTransportControls().triggerPass?.();
-  const canTriggerDemo = !!getActiveTransportControls().triggerPass;
+  const triggerDemoPass = () => portalController.triggerDemoPass();
+  const canTriggerDemo = portalMode === 'demo' && connection === 'connected';
 
   const liveLap = currentLapElapsed(race, now);
   const lapsDone = race.lapTimes.length;
@@ -312,12 +315,12 @@ export default function RaceScreen() {
 
           {connection !== 'connected' && (
             <Text style={styles.hint}>
-              Connect your portal on the{' '}
+              The portal connects automatically across tabs. If it needs attention, use the status
+              pill on the{' '}
               <Link href="/" style={styles.hintLink}>
                 Speed tab
-              </Link>{' '}
-              (or switch it to Demo), then come back — passes will drive the race
-              automatically.
+              </Link>
+              .
             </Text>
           )}
 
@@ -381,6 +384,8 @@ export default function RaceScreen() {
             {canTriggerDemo && (
               <Pressable
                 onPress={triggerDemoPass}
+                accessibilityRole="button"
+                accessibilityLabel="Trigger a demo car pass"
                 style={({ pressed }) => [styles.ghostBtn, styles.flex1, pressed && styles.pressed]}
               >
                 <Text style={styles.ghostBtnText}>Trigger pass</Text>
