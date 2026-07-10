@@ -45,6 +45,14 @@ export interface DecodedMattelId {
   readonly version: string;
   /** Casting id as lowercase hex (e.g. `"41ae5e5b"`) — constant per casting. */
   readonly modelId: string;
+  /**
+   * `modelId` decoded as an unsigned 32-bit big-endian integer — the Mattel
+   * **product id**. For Hot Wheels this equals the number the portal also
+   * reports on its Serial-Number characteristic (verified: `41 af ae ad` →
+   * `1102032557`); for other Mattel PID toys it is the JSON product id. See
+   * {@link mattelIdMatchesSerial}.
+   */
+  readonly productId: number;
   /** Production/misc bytes as lowercase hex, when present. */
   readonly misc?: string;
   /**
@@ -70,6 +78,11 @@ function toHexLower(bytes: Uint8Array): string {
   return out;
 }
 
+/** Read a 4-byte big-endian unsigned integer. */
+function beUint32(bytes: Uint8Array): number {
+  return ((bytes[0] << 24) >>> 0) + (bytes[1] << 16) + (bytes[2] << 8) + bytes[3];
+}
+
 /**
  * Decode a base64url `mattelId` into its structured fields.
  *
@@ -88,14 +101,17 @@ export function decodeMattelId(mattelId: string | undefined | null): DecodedMatt
   }
   if (bytes.length < MIN_DECODABLE_LENGTH) return null;
 
+  const modelIdBytes = bytes.subarray(MODEL_ID_OFFSET, MODEL_ID_OFFSET + MODEL_ID_LENGTH);
   const decoded: {
     version: string;
     modelId: string;
+    productId: number;
     misc?: string;
     tagUid?: string;
   } = {
     version: toHexLower(bytes.subarray(VERSION_OFFSET, VERSION_OFFSET + VERSION_LENGTH)),
-    modelId: toHexLower(bytes.subarray(MODEL_ID_OFFSET, MODEL_ID_OFFSET + MODEL_ID_LENGTH)),
+    modelId: toHexLower(modelIdBytes),
+    productId: beUint32(modelIdBytes),
   };
 
   if (bytes.length >= MISC_OFFSET + MISC_LENGTH) {
@@ -124,4 +140,26 @@ export function mattelIdMatchesUid(
   const embedded = decodeMattelId(mattelId)?.tagUid;
   if (!embedded || !uid) return null;
   return embedded.toUpperCase() === uid.toUpperCase();
+}
+
+/**
+ * Cross-check the product id embedded in a `mattelId` against the serial number
+ * the portal reports separately on its Serial-Number characteristic — the two
+ * are the same value for Hot Wheels cars (e.g. `41 af ae ad` ⇒ `1102032557`).
+ *
+ * Accepts the serial as the portal's ASCII string or a number. Returns
+ * `true`/`false` when both sides are available and the serial is numeric, or
+ * `null` when the check is indeterminate (missing/undecodable id, or a
+ * missing/non-numeric serial).
+ */
+export function mattelIdMatchesSerial(
+  mattelId: string | undefined | null,
+  serial: string | number | undefined | null,
+): boolean | null {
+  const productId = decodeMattelId(mattelId)?.productId;
+  if (productId === undefined || serial === undefined || serial === null) return null;
+  if (typeof serial === "string" && serial.trim() === "") return null;
+  const serialNum = typeof serial === "number" ? serial : Number(serial.trim());
+  if (!Number.isFinite(serialNum)) return null;
+  return productId === serialNum;
 }

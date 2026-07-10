@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { decodeMattelId, mattelIdMatchesUid } from "./mattelId";
+import { decodeMattelId, mattelIdMatchesUid, mattelIdMatchesSerial } from "./mattelId";
 
 // The one hardware-captured id (python/PROTOCOL_NEW.md line 299). Its trailing
 // 6 bytes equal the separately-reported NFC UID 2A:7E:A2:F1:62:80 — the invariant
@@ -12,13 +12,19 @@ const ID_MODEL_ONLY = "AQBBrl5b"; // 6 bytes: version + modelId
 const ID_THROUGH_MISC = "AQBBrl5bAAAGAF0TKZcE"; // 15 bytes: + misc, no tag uid
 
 describe("decodeMattelId", () => {
-  it("splits the captured id into version / modelId / misc / tagUid", () => {
+  it("splits the captured id into version / modelId / productId / misc / tagUid", () => {
     expect(decodeMattelId(REAL_ID)).toEqual({
       version: "0100",
       modelId: "41ae5e5b",
+      productId: 1101946459,
       misc: "000006005d13299704",
       tagUid: REAL_UID,
     });
+  });
+
+  it("decodes modelId as the big-endian uint32 product id", () => {
+    // mtxmiller/hotwheels-portal logged this id alongside serial 1102032557.
+    expect(decodeMattelId("AQBBr66t")?.productId).toBe(1102032557);
   });
 
   it("formats the embedded tagUid like parseNfcUid (uppercase, colon-separated)", () => {
@@ -33,10 +39,15 @@ describe("decodeMattelId", () => {
   });
 
   it("omits misc/tagUid when the id is too short to carry them", () => {
-    expect(decodeMattelId(ID_MODEL_ONLY)).toEqual({ version: "0100", modelId: "41ae5e5b" });
+    expect(decodeMattelId(ID_MODEL_ONLY)).toEqual({
+      version: "0100",
+      modelId: "41ae5e5b",
+      productId: 1101946459,
+    });
     expect(decodeMattelId(ID_THROUGH_MISC)).toEqual({
       version: "0100",
       modelId: "41ae5e5b",
+      productId: 1101946459,
       misc: "000006005d13299704",
     });
   });
@@ -73,5 +84,24 @@ describe("mattelIdMatchesUid", () => {
     expect(mattelIdMatchesUid(ID_MODEL_ONLY, REAL_UID)).toBeNull(); // no embedded tail
     expect(mattelIdMatchesUid(REAL_ID, null)).toBeNull(); // no reported uid
     expect(mattelIdMatchesUid(undefined, REAL_UID)).toBeNull(); // no id
+  });
+});
+
+describe("mattelIdMatchesSerial", () => {
+  it("confirms the embedded product id matches the portal serial (string or number)", () => {
+    expect(mattelIdMatchesSerial("AQBBr66t", "1102032557")).toBe(true);
+    expect(mattelIdMatchesSerial("AQBBr66t", 1102032557)).toBe(true);
+    expect(mattelIdMatchesSerial("AQBBr66t", " 1102032557 ")).toBe(true); // trimmed
+  });
+
+  it("reports a mismatch when the serial disagrees", () => {
+    expect(mattelIdMatchesSerial("AQBBr66t", "1101783036")).toBe(false);
+  });
+
+  it("is indeterminate (null) without a decodable id and numeric serial", () => {
+    expect(mattelIdMatchesSerial(undefined, "1102032557")).toBeNull(); // no id
+    expect(mattelIdMatchesSerial("AQBBr66t", null)).toBeNull(); // no serial
+    expect(mattelIdMatchesSerial("AQBBr66t", "")).toBeNull(); // empty serial
+    expect(mattelIdMatchesSerial("AQBBr66t", "not-a-number")).toBeNull();
   });
 });
