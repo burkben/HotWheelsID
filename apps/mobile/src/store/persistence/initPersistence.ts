@@ -47,6 +47,7 @@ import { setSessionRepository } from "./historyAccess";
 import { InMemorySessionRepository, type SessionRepository } from "./sessionRepository";
 import { InMemorySettingsRepository, type SettingsRepository } from "./settingsRepository";
 import {
+  PERSISTENCE_DOMAINS,
   usePersistenceStatusStore,
   type PersistenceDegradedReason,
   type PersistenceDomain,
@@ -349,6 +350,9 @@ export async function initPersistence(injected?: Partial<PersistenceRepositories
           : "[persist] SQLite could not open — using in-memory repositories.",
       );
       usePersistenceStatusStore.getState().setMemory(resolution.degradedReason);
+    } else if (degradedDomains.length === PERSISTENCE_DOMAINS.length) {
+      console.log("[persist] Every repository fell back to in-memory storage.");
+      usePersistenceStatusStore.getState().setMemory("initFailed");
     } else if (degradedDomains.length > 0) {
       console.log(`[persist] In-memory fallback: ${degradedDomains.join(", ")}.`);
       usePersistenceStatusStore.getState().setPartial(degradedDomains);

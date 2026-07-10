@@ -10,7 +10,7 @@ import { DEFAULT_SETTINGS, useSettingsStore } from "../settingsStore";
 import { InMemoryAchievementsRepository } from "./achievementsRepository";
 import { InMemoryCarRepository } from "./carRepository";
 import { getSessionRepository } from "./historyAccess";
-import type { IdentityRepository } from "./identityRepository";
+import { InMemoryIdentityRepository, type IdentityRepository } from "./identityRepository";
 import { initPersistence, resetPersistenceForTests } from "./initPersistence";
 import { InMemoryRaceRepository, type RaceRepository } from "./raceRepository";
 import { InMemorySessionRepository } from "./sessionRepository";
@@ -20,6 +20,11 @@ import { emptyStats } from "../../achievements/stats";
 
 /** Flush pending micro + macro tasks so async repo writes settle. */
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+function withFailingInit<T extends { init(): Promise<void> }>(repository: T, domain: string): T {
+  repository.init = () => Promise.reject(new Error(`${domain} init failed`));
+  return repository;
+}
 
 function makeResult(over: Partial<RaceResult> = {}): RaceResult {
   return {
@@ -327,6 +332,24 @@ describe("initPersistence", () => {
       mode: "partial",
       reason: "initFailed",
       degradedDomains: ["Identity"],
+    });
+  });
+
+  it("reports full memory mode when every repository falls back individually", async () => {
+    await initPersistence({
+      race: withFailingInit(new InMemoryRaceRepository(), "Race"),
+      car: withFailingInit(new InMemoryCarRepository(), "Garage"),
+      session: withFailingInit(new InMemorySessionRepository(), "History"),
+      settings: withFailingInit(new InMemorySettingsRepository(), "Settings"),
+      achievements: withFailingInit(new InMemoryAchievementsRepository(), "Achievements"),
+      identity: withFailingInit(new InMemoryIdentityRepository(), "Identity"),
+    });
+
+    const { mode, reason, degradedDomains } = usePersistenceStatusStore.getState();
+    expect({ mode, reason, degradedDomains }).toEqual({
+      mode: "memory",
+      reason: "initFailed",
+      degradedDomains: [],
     });
   });
 

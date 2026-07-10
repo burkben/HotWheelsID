@@ -2,13 +2,15 @@ import { create } from "zustand";
 
 export type PersistenceMode = "initializing" | "durable" | "partial" | "memory";
 export type PersistenceDegradedReason = "unavailable" | "initFailed";
-export type PersistenceDomain =
-  | "Race"
-  | "Garage"
-  | "History"
-  | "Settings"
-  | "Achievements"
-  | "Identity";
+export const PERSISTENCE_DOMAINS = [
+  "Race",
+  "Garage",
+  "History",
+  "Settings",
+  "Achievements",
+  "Identity",
+] as const;
+export type PersistenceDomain = (typeof PERSISTENCE_DOMAINS)[number];
 
 interface PersistenceStatusState {
   mode: PersistenceMode;

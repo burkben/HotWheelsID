@@ -248,8 +248,8 @@ Haptics are off on web and respect the user setting.
 
 When SQLite is unavailable or cannot initialize, the tab shell shows a concise session-storage
 banner. Web presents this as the expected **Browser session** behavior; a native build presents
-**Saving unavailable** for a full fallback or **Saving limited** with the affected domain for a
-partial fallback. The app remains usable through fully wired in-memory
+**Saving unavailable** when every domain falls back or **Saving limited** with the affected domain
+when a strict subset falls back. The app remains usable through fully wired in-memory
 repositories, but it never implies that Garage, History, or Settings will survive restart. Native
 initialization is isolated by repository: if one domain fails, only that domain uses memory and
 already-hydrated data from the others remains available for the session.
