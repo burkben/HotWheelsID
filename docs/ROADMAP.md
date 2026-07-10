@@ -149,7 +149,11 @@ Pulls in the upstream roadmap's "future features" and more.
   shipped** — bundled Hot Wheels Fandom catalog (146 cars + photos), richer search/meta, manual
   casting picker keyed off decoded `mattelId`, and casting coverage UX in identify/garage
   (identify once, label matching copies), isolated from the garage schema (see
-  [ADR-0013](adr/0013-car-identity-catalog.md)).
+  [ADR-0013](adr/0013-car-identity-catalog.md)). The `mattelId` is now fully structured — model
+  id + big-endian `productId` (== the portal serial) + embedded tag UID, with runtime cross-checks
+  (PR #46). Next slice is **automatic identity via a crowd-sourced community seed**: export
+  confirmed `castingKey → catalog` identifications and bundle a merged seed so scanned cars
+  auto-name with zero taps (see [ADR-0014](adr/0014-crowd-sourced-car-identity-seed.md)).
 - 🟡 Multiplayer/turn-based race nights. **Initial race-night lineup shipped** — queue racers,
   choose who is up next, rotate turns after each heat. Next slice is per-lineup car assignment and
   deeper multi-racer race semantics.
@@ -158,11 +162,16 @@ Pulls in the upstream roadmap's "future features" and more.
 - ✅ Speed units (mph / km/h) + display calibration to real-world speeds (PR #25).
 - ⬜ Android `preview` build / parity. **Backlogged** until there is an Android device available
   for real testing.
-- ⬜ Decode remaining protocol unknowns. The **live-telemetry gate is solved** on modern
-  firmware (the encrypted auth-service stream is fully decoded — see Phase 1 / ADR-0012). What
-  remains is best-effort **car identity**: the full **NDEF / Mattel-id schema** (model name, art,
-  rarity). The Python tools + `python/diag_portal.py` stay the desktop lab bench for probing it.
-  No public catalog exists (Mattel backend, discontinued 2024), so this stays exploratory.
+- 🟡 Decode remaining protocol unknowns. The **live-telemetry gate is solved** on modern
+  firmware (the encrypted auth-service stream is fully decoded — see Phase 1 / ADR-0012). Car
+  **identity decoding is now solved too**: the `mattelId` structure (version / `productId` /
+  tag UID) is reverse-engineered and independently corroborated, and the product number is
+  recoverable offline from the tag alone (PR #46). What remains is only the **product-number → name**
+  map. Reviving the Mattel backend and scraping archived responses were both investigated and are
+  **dead ends** (host discontinued end of 2023 and now redirects to a FAQ; zero `pid.mattel` captures
+  in the Wayback index). The chosen path is the crowd-sourced community seed
+  ([ADR-0014](adr/0014-crowd-sourced-car-identity-seed.md)). The Python tools +
+  `python/diag_portal.py` stay the desktop lab bench.
 
 ---
 
