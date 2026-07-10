@@ -14,7 +14,7 @@
  * screen is pushed on top. In demo mode the active transport also advertises a
  * `triggerPass` hook, surfaced here as a "Trigger pass" button.
  */
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
@@ -36,6 +36,8 @@ import { LAP_OPTIONS, currentLapElapsed, type RaceResult } from '@/race/raceEngi
 import {
   addRacer,
   advanceLineup,
+  assignCar,
+  carForCurrentRacer,
   chooseNextRacer,
   currentRacerName,
   nextUpRacer,
@@ -45,6 +47,8 @@ import {
 import { useRaceStore } from '@/store/raceStore';
 import { useGarageStore } from '@/store/garageStore';
 import { usePortalStore } from '@/store/portalStore';
+import { catalogIdForUid, useIdentityStore } from '@/store/identityStore';
+import { findCatalogCar } from '@/catalog/catalog';
 import { useSettingsStore } from '@/store/settingsStore';
 import { raceShareText } from '@/share/summary';
 import { getActiveTransportControls } from '@/transport/active';
@@ -186,9 +190,23 @@ export default function RaceScreen() {
   const canAddRacer = player.trim().length > 0;
   const currentRacer = currentRacerName(lineup, player);
   const nextRacer = nextUpRacer(lineup);
+  const liveCarUid = car?.uid ?? null;
+
+  // Resolve a tag uid to a friendly label: the identified catalog name, else a
+  // short uid, else a hint that the heat will use whatever is on the portal.
+  const links = useIdentityStore((s) => s.links);
+  const identifications = useIdentityStore((s) => s.identifications);
+  const carLabel = useCallback(
+    (uid: string | null): string => {
+      if (!uid) return 'Car on portal';
+      const catalogCar = findCatalogCar(catalogIdForUid({ links, identifications }, uid));
+      return catalogCar?.name ?? shortUid(uid);
+    },
+    [links, identifications],
+  );
 
   const onAddRacer = () => {
-    setLineup((current) => addRacer(current, player));
+    setLineup((current) => addRacer(current, player, liveCarUid));
     setPlayer('');
   };
 
@@ -200,13 +218,21 @@ export default function RaceScreen() {
     setLineup((current) => removeRacer(current, racerId));
   };
 
+  const onAssignCar = (racerId: string) => {
+    setLineup((current) => assignCar(current, racerId, liveCarUid));
+  };
+
   const onAdvanceLineup = () => {
     setLineup((current) => advanceLineup(current));
     abort();
   };
 
   const onStart = () => {
-    configure({ targetLaps: laps, player: currentRacer, carUid: car?.uid ?? null });
+    configure({
+      targetLaps: laps,
+      player: currentRacer,
+      carUid: carForCurrentRacer(lineup, liveCarUid),
+    });
     startCountdown();
   };
 
@@ -276,8 +302,11 @@ export default function RaceScreen() {
           <LineupCard
             lineup={lineup}
             draftName={player}
+            liveCarUid={liveCarUid}
+            carLabel={carLabel}
             onChooseNext={onChooseNextRacer}
             onRemove={onRemoveRacer}
+            onAssignCar={onAssignCar}
           />
 
           {connection !== 'connected' && (
@@ -430,17 +459,27 @@ function LapList({ lapTimes, bestLap }: { lapTimes: readonly number[]; bestLap: 
 function LineupCard({
   lineup,
   draftName,
+  liveCarUid,
+  carLabel,
   onChooseNext,
   onRemove,
+  onAssignCar,
 }: {
   lineup: RaceNightLineup;
   draftName: string;
+  liveCarUid: string | null;
+  carLabel: (uid: string | null) => string;
   onChooseNext: (racerId: string) => void;
   onRemove: (racerId: string) => void;
+  onAssignCar: (racerId: string) => void;
 }) {
   const current = currentRacerName(lineup, draftName);
   const currentEntry = lineup[0] ?? null;
   const queued = lineup.slice(1);
+
+  // "Set car" only does something when a car is live on the portal, and only
+  // when it would actually change the racer's assignment.
+  const canAssign = (uid: string | null) => liveCarUid != null && liveCarUid !== uid;
 
   return (
     <View style={styles.card}>
@@ -452,12 +491,22 @@ function LineupCard({
           <Text style={styles.lineupName} numberOfLines={1}>
             {current}
           </Text>
+          <Text style={styles.lineupCar} numberOfLines={1}>
+            🏎 {currentEntry ? carLabel(currentEntry.carUid) : carLabel(liveCarUid)}
+          </Text>
         </View>
 
         {currentEntry ? (
-          <Pressable onPress={() => onRemove(currentEntry.id)} hitSlop={8}>
-            <Text style={styles.lineupRemoveText}>Remove</Text>
-          </Pressable>
+          <View style={styles.lineupActions}>
+            {canAssign(currentEntry.carUid) && (
+              <Pressable onPress={() => onAssignCar(currentEntry.id)} hitSlop={8}>
+                <Text style={styles.lineupActionText}>Set car</Text>
+              </Pressable>
+            )}
+            <Pressable onPress={() => onRemove(currentEntry.id)} hitSlop={8}>
+              <Text style={styles.lineupRemoveText}>Remove</Text>
+            </Pressable>
+          </View>
         ) : (
           <Text style={styles.lineupHintText}>From input</Text>
         )}
@@ -477,6 +526,9 @@ function LineupCard({
               <Text style={styles.lineupName} numberOfLines={1}>
                 {racer.name}
               </Text>
+              <Text style={styles.lineupCar} numberOfLines={1}>
+                🏎 {carLabel(racer.carUid)}
+              </Text>
             </View>
 
             <View style={styles.lineupActions}>
@@ -485,6 +537,11 @@ function LineupCard({
               ) : (
                 <Pressable onPress={() => onChooseNext(racer.id)} hitSlop={8}>
                   <Text style={styles.lineupActionText}>Make next</Text>
+                </Pressable>
+              )}
+              {canAssign(racer.carUid) && (
+                <Pressable onPress={() => onAssignCar(racer.id)} hitSlop={8}>
+                  <Text style={styles.lineupActionText}>Set car</Text>
                 </Pressable>
               )}
               <Pressable onPress={() => onRemove(racer.id)} hitSlop={8}>
@@ -807,6 +864,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   lineupName: { color: colors.textPrimary, fontSize: fontSize.md, fontWeight: fontWeight.bold },
+  lineupCar: { color: colors.textMuted, fontSize: fontSize.sm, marginTop: spacing(0.5) },
   lineupActions: { flexDirection: 'row', alignItems: 'center', gap: spacing(3) },
   lineupActionText: { color: colors.accentBlue, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
   lineupHintText: { color: colors.textMuted, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
