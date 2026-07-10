@@ -19,9 +19,10 @@ import { findCatalogCar, type CatalogCar } from "./catalog";
 export function useCarIdentity(uid: string | undefined | null): CatalogCar | undefined {
   const links = useIdentityStore((s) => s.links);
   const identifications = useIdentityStore((s) => s.identifications);
+  const seed = useIdentityStore((s) => s.seed);
   return useMemo(
-    () => findCatalogCar(catalogIdForUid({ links, identifications }, uid)),
-    [links, identifications, uid],
+    () => findCatalogCar(catalogIdForUid({ links, identifications, seed }, uid)),
+    [links, identifications, seed, uid],
   );
 }
 

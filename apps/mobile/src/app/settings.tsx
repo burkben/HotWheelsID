@@ -10,12 +10,13 @@
  * gates tactile feedback there and on Home, `reduceMotion` is OR'd with the OS setting
  * for race animations, and `mockModeDefault` chooses Home's initial transport.
  */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Platform,
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   Switch,
   Text,
@@ -26,8 +27,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Link } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 
+import { buildIdentityExport, exportIdentifications } from '@/catalog/identityExport';
 import { LAP_OPTIONS } from '@/race/raceEngine';
 import { DEFAULT_SETTINGS, useSettingsStore } from '@/store/settingsStore';
+import { useIdentityStore } from '@/store/identityStore';
 import {
   CALIBRATION_STEP,
   MAX_CALIBRATION,
@@ -103,6 +106,22 @@ export default function SettingsScreen() {
     const clamped = Math.min(MAX_CALIBRATION, Math.max(MIN_CALIBRATION, raw));
     if (clamped === speedCalibration) return;
     setSpeedCalibration(clamped);
+    tick();
+  };
+
+  // Community identity contributions (ADR-0014): only the user's own picks that
+  // resolve to a bundled catalog car are shareable. Recomputed off the identity
+  // snapshot so the button count/enabled-state stays live.
+  const identifications = useIdentityStore((s) => s.identifications);
+  const shareableCount = useMemo(
+    () => exportIdentifications(identifications).length,
+    [identifications],
+  );
+
+  const shareIdentifications = () => {
+    if (shareableCount === 0) return;
+    const payload = buildIdentityExport(identifications);
+    Share.share({ message: JSON.stringify(payload, null, 2) }).catch(() => {});
     tick();
   };
 
@@ -269,6 +288,30 @@ export default function SettingsScreen() {
           />
         </View>
 
+        <Text style={styles.sectionLabel}>Community</Text>
+        <View style={styles.card}>
+          <Text style={styles.rowLabel}>Share car identities</Text>
+          <Text style={styles.hint}>
+            Contribute the castings you've identified to the community seed so everyone's cars
+            auto-name. Only casting → catalog facts are shared — never your tags or collection.
+          </Text>
+          <Pressable
+            onPress={shareIdentifications}
+            disabled={shareableCount === 0}
+            style={({ pressed }) => [
+              styles.shareBtn,
+              pressed && styles.pressed,
+              shareableCount === 0 && styles.stepperBtnDisabled,
+            ]}
+          >
+            <Text style={styles.shareBtnText}>
+              {shareableCount === 0
+                ? 'No identified castings yet'
+                : `Share ${shareableCount} identified casting${shareableCount === 1 ? '' : 's'}`}
+            </Text>
+          </Pressable>
+        </View>
+
         <Pressable
           onPress={confirmReset}
           style={({ pressed }) => [styles.resetBtn, pressed && styles.pressed]}
@@ -391,6 +434,16 @@ const styles = StyleSheet.create({
     fontVariant: ['tabular-nums'],
   },
   divider: { height: 1, backgroundColor: colors.border, marginVertical: spacing(1) },
+  shareBtn: {
+    marginTop: spacing(1),
+    alignItems: 'center',
+    backgroundColor: colors.surfaceAlt,
+    borderColor: colors.accentBlue,
+    borderWidth: 1,
+    borderRadius: radius.md,
+    paddingVertical: spacing(3),
+  },
+  shareBtnText: { color: colors.accentBlue, fontSize: fontSize.md, fontWeight: fontWeight.bold },
   resetBtn: {
     marginTop: spacing(6),
     alignItems: 'center',

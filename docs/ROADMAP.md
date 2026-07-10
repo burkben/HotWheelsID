@@ -151,9 +151,12 @@ Pulls in the upstream roadmap's "future features" and more.
   (identify once, label matching copies), isolated from the garage schema (see
   [ADR-0013](adr/0013-car-identity-catalog.md)). The `mattelId` is now fully structured — model
   id + big-endian `productId` (== the portal serial) + embedded tag UID, with runtime cross-checks
-  (PR #46). Next slice is **automatic identity via a crowd-sourced community seed**: export
-  confirmed `castingKey → catalog` identifications and bundle a merged seed so scanned cars
-  auto-name with zero taps (see [ADR-0014](adr/0014-crowd-sourced-car-identity-seed.md)).
+  (PR #46). **Automatic identity via a crowd-sourced community seed is now shipped** — Settings
+  exports confirmed `castingKey → catalog` identifications (product-number facts only, never tags
+  or collection), a bundled seed merges at bootstrap so scanned cars auto-name with zero taps, and
+  the user's own pick always wins over the seed (see
+  [ADR-0014](adr/0014-crowd-sourced-car-identity-seed.md)). The seed ships empty at cold start and
+  is regenerated out-of-band as contributions pool.
 - 🟡 Multiplayer/turn-based race nights. **Initial race-night lineup shipped** — queue racers,
   choose who is up next, rotate turns after each heat. Next slice is per-lineup car assignment and
   deeper multi-racer race semantics.
