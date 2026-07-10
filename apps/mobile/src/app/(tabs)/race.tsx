@@ -80,7 +80,9 @@ function shortUid(uid?: string | null): string {
 export default function RaceScreen() {
   const insets = useSafeAreaInsets();
   // Force-reduce via the Settings toggle even when the OS setting is off.
-  const reduceMotion = useReducedMotion() || useSettingsStore((s) => s.reduceMotion);
+  const systemReduceMotion = useReducedMotion();
+  const settingReduceMotion = useSettingsStore((s) => s.reduceMotion);
+  const reduceMotion = systemReduceMotion || settingReduceMotion;
 
   const race = useRaceStore((s) => s.race);
   const leaderboard = useRaceStore((s) => s.leaderboard);
@@ -130,6 +132,9 @@ export default function RaceScreen() {
 
   // --- Countdown 3·2·1 → arm the race ----------------------------------------
   const [count, setCount] = useState(3);
+  // Animated.Value is a stable mutable object; the ref rule does not understand
+  // React Native's established initialization pattern.
+  // eslint-disable-next-line react-hooks/refs
   const pulse = useRef(new Animated.Value(1)).current;
   useEffect(() => {
     if (phase !== 'countdown') return;

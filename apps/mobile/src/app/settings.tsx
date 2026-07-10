@@ -292,8 +292,9 @@ export default function SettingsScreen() {
         <View style={styles.card}>
           <Text style={styles.rowLabel}>Share car identities</Text>
           <Text style={styles.hint}>
-            Contribute the castings you've identified to the community seed so everyone's cars
-            auto-name. Only casting → catalog facts are shared — never your tags or collection.
+            {
+              "Contribute the castings you've identified to the community seed so everyone's cars auto-name. Only casting → catalog facts are shared — never your tags or collection."
+            }
           </Text>
           <Pressable
             onPress={shareIdentifications}

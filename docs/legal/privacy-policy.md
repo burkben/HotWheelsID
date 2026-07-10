@@ -1,6 +1,6 @@
 # Privacy Policy — Redline ID
 
-_Last updated: 2026-06-20_
+_Last updated: 2026-07-10_
 
 Redline ID ("the app") is a free, open-source utility that connects over Bluetooth
 Low Energy (BLE) to a discontinued toy car race portal and shows live speed and lap
@@ -9,14 +9,12 @@ times. This policy explains what the app does — and does not do — with your 
 ## Summary
 
 **Redline ID does not collect, transmit, or share any personal information.** The app
-has no account, no analytics, no ads, and makes no network requests. Any data the app
-saves is stored only on your own device.
+has no account, analytics, ads, crash reporting, or application server. Normal app
+operation makes no internet requests; data the app saves is stored only on your device.
 
 ## Data we collect
 
-**None.** The app has no account system, no analytics, no advertising, no crash
-reporting, and makes no network requests. We operate no servers and never receive
-any data from the app.
+**None.** We operate no application servers and never receive data from the app.
 
 ## Information stored on your device
 
@@ -40,13 +38,24 @@ The app requests Bluetooth permission solely to communicate with the race portal
 does not use location, contacts, the camera, the microphone, or any other personal
 data, and it does not use Bluetooth to determine your location.
 
+## Catalog and external links
+
+The car catalog is bundled with the app as a fixed metadata snapshot. Catalog artwork
+is not bundled or downloaded; the app uses local placeholder tiles.
+
+Catalog cards, car details, and the Credits screen contain optional links to source,
+contributor, licensing, privacy, and project pages. These links make no request until
+you tap them. Tapping opens the selected URL in a browser, where the destination's own
+privacy policy applies. Redline ID passes only the public URL and does not add your
+garage, race, Bluetooth, or settings data.
+
 You can permanently remove all stored data at any time by deleting the app from your
 device.
 
 ## Data sharing
 
-We do not sell, rent, share, or disclose any data, because we never collect or receive
-any. All app data stays on your device.
+We do not sell, rent, share, or disclose any app data, because we never collect or
+receive any. All app data stays on your device.
 
 ## Children's privacy
 

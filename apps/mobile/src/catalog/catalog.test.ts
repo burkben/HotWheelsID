@@ -1,6 +1,12 @@
 import { describe, it, expect } from "vitest";
 
-import { CATALOG, catalogMeta, findCatalogCar, searchCatalog } from "./catalog";
+import {
+  CATALOG,
+  CATALOG_PROVENANCE,
+  catalogMeta,
+  findCatalogCar,
+  searchCatalog,
+} from "./catalog";
 
 describe("catalog data", () => {
   it("ships a non-trivial catalog", () => {
@@ -17,6 +23,17 @@ describe("catalog data", () => {
       expect(car.id).toBeTruthy();
       expect(car.name).toBeTruthy();
     }
+  });
+
+  it("never bundles or fetches third-party artwork", () => {
+    expect(CATALOG.every((car) => car.image === null)).toBe(true);
+    expect(CATALOG_PROVENANCE.artwork.included).toBe(false);
+  });
+
+  it("matches the pinned source provenance", () => {
+    expect(CATALOG_PROVENANCE.catalog.recordCount).toBe(CATALOG.length);
+    expect(CATALOG_PROVENANCE.source.revisionId).toBe(782123);
+    expect(CATALOG_PROVENANCE.source.revisionUrl).toContain("oldid=782123");
   });
 });
 

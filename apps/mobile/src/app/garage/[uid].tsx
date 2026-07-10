@@ -84,7 +84,6 @@ export default function CarDetailScreen() {
             <Link href={{ pathname: '/identify', params: { uid } }} asChild>
               <Pressable style={({ pressed }) => [styles.heroPhoto, pressed && styles.pressed]}>
                 <CarPhoto
-                  uri={identity.image}
                   width="100%"
                   aspectRatio={16 / 10}
                   rounded={radius.lg}
@@ -107,7 +106,7 @@ export default function CarDetailScreen() {
           {!identity ? (
             <Link href={{ pathname: '/identify', params: { uid } }} asChild>
               <Pressable style={({ pressed }) => [styles.identityCard, pressed && styles.pressed]}>
-                <CarPhoto uri={null} size={64} rounded={radius.md} />
+                <CarPhoto size={64} rounded={radius.md} />
                 <View style={styles.identityText}>
                   <Text style={styles.identityName} numberOfLines={1}>
                     Unidentified car

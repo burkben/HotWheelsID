@@ -51,6 +51,12 @@ export default function MoreScreen() {
           title="Settings"
           subtitle="Units · haptics · player profile"
         />
+        <MoreRow
+          href="/credits"
+          icon="information-outline"
+          title="Credits & licenses"
+          subtitle="Catalog provenance · privacy · open source"
+        />
       </ScrollView>
     </View>
   );
@@ -62,7 +68,7 @@ function MoreRow({
   title,
   subtitle,
 }: {
-  href: '/achievements' | '/live' | '/settings';
+  href: '/achievements' | '/live' | '/settings' | '/credits';
   icon: IconName;
   title: string;
   subtitle: string;

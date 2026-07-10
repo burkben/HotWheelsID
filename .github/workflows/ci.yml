@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   build:
-    name: Typecheck & protocol tests
+    name: Typecheck, test, lint & web export
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -32,3 +32,9 @@ jobs:
 
       - name: Unit tests (all workspaces)
         run: npm test
+
+      - name: Lint mobile app
+        run: npm run lint --workspace mobile
+
+      - name: Export web preview
+        run: npm run web:export --workspace mobile
