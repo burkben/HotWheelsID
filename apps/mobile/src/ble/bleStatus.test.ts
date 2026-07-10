@@ -33,6 +33,12 @@ describe("bleStatusBanner", () => {
     expect(banner?.body).toMatch(/try again/i);
   });
 
+  it("explains when bounded scanning cannot find the portal", () => {
+    const banner = bleStatusBanner("notFound");
+    expect(banner?.title).toMatch(/not found/i);
+    expect(banner?.body).toMatch(/scan again/i);
+  });
+
   it("stays silent for the healthy / in-progress phases", () => {
     const quiet: (BlePhase | null)[] = [
       null,

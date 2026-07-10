@@ -51,6 +51,8 @@ export interface PortalState {
   connection: ConnectionState;
   controlStatus: ControlStatus | null;
   car: CurrentCar | null;
+  /** Most recently detected car, retained when it leaves or the portal disconnects. */
+  lastCar: CurrentCar | null;
   lastSpeed: SpeedSample | null;
   bestMph: number;
   passes: Pass[];
@@ -67,6 +69,7 @@ const initialState = {
   connection: "disconnected" as ConnectionState,
   controlStatus: null as ControlStatus | null,
   car: null as CurrentCar | null,
+  lastCar: null as CurrentCar | null,
   lastSpeed: null as SpeedSample | null,
   bestMph: 0,
   passes: [] as Pass[],
@@ -80,7 +83,7 @@ export const usePortalStore = create<PortalState>((set) => ({
       if (connection === "disconnected") {
         lastPassAt = 0;
         lastPassRaw = Number.NaN;
-        return { ...initialState, connection };
+        return { ...initialState, connection, lastCar: s.lastCar };
       }
       return { connection: connection === s.connection ? s.connection : connection };
     }),
@@ -89,14 +92,19 @@ export const usePortalStore = create<PortalState>((set) => ({
     set((state) => {
       switch (event.kind) {
         case "carDetected":
-          return {
-            car: { uid: event.uid, serial: state.car?.serial, mattelId: event.mattelId },
-          };
+          {
+            const car = { uid: event.uid, serial: state.car?.serial, mattelId: event.mattelId };
+            return { car, lastCar: car };
+          }
 
         case "serial":
-          return {
-            car: { uid: state.car?.uid ?? "", serial: event.serial },
-          };
+          {
+            const car = { uid: state.car?.uid ?? "", serial: event.serial };
+            return {
+              car,
+              ...(car.uid ? { lastCar: car } : null),
+            };
+          }
 
         case "carRemoved":
           return { car: null, lastSpeed: null, controlStatus: "idle" };

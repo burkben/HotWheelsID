@@ -43,6 +43,7 @@ import type {
 } from "react-native-ble-plx";
 import { claimActiveTransport, releaseActiveTransport } from "../transport/active";
 import { findMpidChars, runMpidSession } from "./mpidBle";
+import { retryDelay } from "./retryPolicy";
 import type { BleLogEntry, BleLogLevel, BlePhase, BlePortalOptions, PortalTransport } from "./types";
 
 type BlePlxModule = typeof import("react-native-ble-plx");
@@ -61,9 +62,7 @@ const MONITORED_CHARACTERISTICS: readonly string[] = [
   CHAR_COMMAND,
 ];
 
-const SCAN_HINT_MS = 12_000;
-const RECONNECT_BASE_MS = 1_000;
-const RECONNECT_MAX_MS = 8_000;
+const SCAN_TIMEOUT_MS = 10_000;
 
 let plx: BlePlxModule | null = null;
 function loadPlx(): BlePlxModule {
@@ -127,7 +126,7 @@ export function createBlePortal(options: BlePortalOptions): PortalTransport {
   let disconnectSub: Subscription | null = null;
   const monitorSubs: Subscription[] = [];
 
-  let scanHintTimer: ReturnType<typeof setTimeout> | null = null;
+  let scanTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   let reconnectAttempts = 0;
 
@@ -141,10 +140,10 @@ export function createBlePortal(options: BlePortalOptions): PortalTransport {
   };
   const phase = (p: BlePhase) => onPhase?.(p);
 
-  const clearScanHint = () => {
-    if (scanHintTimer) {
-      clearTimeout(scanHintTimer);
-      scanHintTimer = null;
+  const clearScanTimeout = () => {
+    if (scanTimeoutTimer) {
+      clearTimeout(scanTimeoutTimer);
+      scanTimeoutTimer = null;
     }
   };
   const clearReconnect = () => {
@@ -250,7 +249,7 @@ export function createBlePortal(options: BlePortalOptions): PortalTransport {
         device = null;
         removeMonitors();
         setConnection("disconnected");
-        if (autoReconnect) scheduleReconnect();
+        if (autoReconnect) scheduleReconnect("error");
         else phase("idle");
       });
 
@@ -363,10 +362,14 @@ export function createBlePortal(options: BlePortalOptions): PortalTransport {
       await stop();
       phase("locked");
     } catch (err) {
+      // A manual stop/handoff cancels an in-flight native connect/discovery. That
+      // rejection is expected and must not overwrite the controller's idle state.
+      if (!started) return;
       connecting = false;
+      device = null;
       log("error", `connect failed: ${(err as Error).message}`);
       setConnection("disconnected");
-      if (started && autoReconnect) scheduleReconnect();
+      if (started && autoReconnect) scheduleReconnect("error");
       else phase("error");
     }
   };
@@ -405,10 +408,16 @@ export function createBlePortal(options: BlePortalOptions): PortalTransport {
     setConnection("connecting");
     log("info", "scanning for portal…");
 
-    clearScanHint();
-    scanHintTimer = setTimeout(() => {
-      if (scanning) log("info", "still scanning — is the portal powered on and nearby?");
-    }, SCAN_HINT_MS);
+    clearScanTimeout();
+    scanTimeoutTimer = setTimeout(() => {
+      if (!started || !scanning) return;
+      scanning = false;
+      void manager.stopDeviceScan();
+      setConnection("disconnected");
+      log("error", "portal not found — check that it is powered on and nearby");
+      if (autoReconnect) scheduleReconnect("notFound");
+      else phase("notFound");
+    }, SCAN_TIMEOUT_MS);
 
     try {
       // Scan-all (null filter) + name match is more reliable than a service
@@ -417,31 +426,45 @@ export function createBlePortal(options: BlePortalOptions): PortalTransport {
         if (error) {
           log("error", `scan error: ${error.message}`);
           scanning = false;
-          clearScanHint();
+          clearScanTimeout();
+          void manager.stopDeviceScan();
           setConnection("disconnected");
-          phase("error");
+          if (started && autoReconnect) scheduleReconnect("error");
+          else phase("error");
           return;
         }
-        if (!scanned || !matchesPortal(scanned) || connecting) return;
+        if (!started || !scanning || !scanned || !matchesPortal(scanned) || connecting) return;
         scanning = false;
-        clearScanHint();
+        clearScanTimeout();
         log("info", `found ${scanned.name ?? scanned.id}`);
         void manager.stopDeviceScan();
         void subscribeToPortal(scanned);
       });
     } catch (err) {
       scanning = false;
-      clearScanHint();
+      clearScanTimeout();
       setConnection("disconnected");
       log("error", `could not start scan: ${(err as Error).message}`);
-      phase("error");
+      if (started && autoReconnect) scheduleReconnect("error");
+      else phase("error");
     }
   };
 
-  const scheduleReconnect = () => {
+  const scheduleReconnect = (terminalPhase: "notFound" | "error") => {
     if (!started) return;
     clearReconnect();
-    const delay = Math.min(RECONNECT_BASE_MS * 2 ** reconnectAttempts, RECONNECT_MAX_MS);
+    const delay = retryDelay(reconnectAttempts);
+    if (delay === null) {
+      phase(terminalPhase);
+      setConnection("disconnected");
+      log(
+        "error",
+        terminalPhase === "notFound"
+          ? "portal not found after several attempts — tap Retry when it is ready"
+          : "connection retries exhausted — tap Retry to try again",
+      );
+      return;
+    }
     reconnectAttempts += 1;
     phase("reconnecting");
     log("info", `reconnecting in ${Math.round(delay / 1000)}s…`);
@@ -479,16 +502,28 @@ export function createBlePortal(options: BlePortalOptions): PortalTransport {
         if (!connecting && !device && !scanning) void beginScan();
         break;
       case State.PoweredOff:
+        scanning = false;
+        clearScanTimeout();
+        clearReconnect();
+        void getManager().stopDeviceScan();
         phase("poweredOff");
         setConnection("disconnected");
         log("error", "Bluetooth is off — enable it in Control Center / Settings");
         break;
       case State.Unauthorized:
+        scanning = false;
+        clearScanTimeout();
+        clearReconnect();
+        void getManager().stopDeviceScan();
         phase("unauthorized");
         setConnection("disconnected");
         log("error", "Bluetooth permission denied — allow it in Settings");
         break;
       case State.Unsupported:
+        scanning = false;
+        clearScanTimeout();
+        clearReconnect();
+        void getManager().stopDeviceScan();
         phase("unsupported");
         setConnection("disconnected");
         log("error", "BLE is unsupported here (e.g. the iOS Simulator has no radio)");
@@ -546,7 +581,7 @@ export function createBlePortal(options: BlePortalOptions): PortalTransport {
     scanning = false;
     connecting = false;
     reconnectAttempts = 0;
-    clearScanHint();
+    clearScanTimeout();
     clearReconnect();
 
     // Reset connection state + release the active slot *synchronously*, before

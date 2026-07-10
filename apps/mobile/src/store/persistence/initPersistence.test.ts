@@ -3,20 +3,28 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { createRace, type RaceResult } from "../../race/raceEngine";
 import { useAchievementsStore } from "../achievementsStore";
 import { useGarageStore } from "../garageStore";
+import { useIdentityStore } from "../identityStore";
 import { usePortalStore } from "../portalStore";
 import { useRaceStore } from "../raceStore";
 import { DEFAULT_SETTINGS, useSettingsStore } from "../settingsStore";
 import { InMemoryAchievementsRepository } from "./achievementsRepository";
 import { InMemoryCarRepository } from "./carRepository";
 import { getSessionRepository } from "./historyAccess";
+import { InMemoryIdentityRepository, type IdentityRepository } from "./identityRepository";
 import { initPersistence, resetPersistenceForTests } from "./initPersistence";
 import { InMemoryRaceRepository, type RaceRepository } from "./raceRepository";
 import { InMemorySessionRepository } from "./sessionRepository";
 import { InMemorySettingsRepository } from "./settingsRepository";
+import { usePersistenceStatusStore } from "./persistenceStatusStore";
 import { emptyStats } from "../../achievements/stats";
 
 /** Flush pending micro + macro tasks so async repo writes settle. */
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+function withFailingInit<T extends { init(): Promise<void> }>(repository: T, domain: string): T {
+  repository.init = () => Promise.reject(new Error(`${domain} init failed`));
+  return repository;
+}
 
 function makeResult(over: Partial<RaceResult> = {}): RaceResult {
   return {
@@ -39,6 +47,7 @@ beforeEach(() => {
   resetPersistenceForTests();
   useRaceStore.setState({ race: createRace(), leaderboard: [] });
   useGarageStore.setState({ cars: [] });
+  useIdentityStore.setState({ links: {}, identifications: {}, seed: {}, hydrated: false });
   useSettingsStore.setState({ ...DEFAULT_SETTINGS, hydrated: false });
   useAchievementsStore.setState({ unlocked: {}, stats: emptyStats(), hydrated: false });
   usePortalStore.getState().reset();
@@ -60,6 +69,16 @@ describe("initPersistence", () => {
     expect(useGarageStore.getState().cars).toHaveLength(0);
     // Settings still report "loaded" (at defaults) so hydration-gated UI proceeds.
     expect(useSettingsStore.getState().hydrated).toBe(true);
+    expect(usePersistenceStatusStore.getState()).toMatchObject({
+      mode: "memory",
+      reason: "unavailable",
+    });
+
+    // The fallback is fully wired, not merely a set of render-store defaults.
+    usePortalStore.getState().dispatch({ kind: "carDetected", uid: "MEM:01" });
+    await flush();
+    expect(useGarageStore.getState().cars[0]?.uid).toBe("MEM:01");
+    expect(getSessionRepository()).not.toBeNull();
 
     // No sinks registered, so finishing a race must not throw.
     const store = useRaceStore.getState();
@@ -279,6 +298,59 @@ describe("initPersistence", () => {
 
     await expect(initPersistence({ race })).resolves.toBeUndefined();
     expect(useRaceStore.getState().leaderboard).toHaveLength(0);
+    expect(useSettingsStore.getState().hydrated).toBe(true);
+    expect(usePersistenceStatusStore.getState()).toMatchObject({
+      mode: "partial",
+      reason: "initFailed",
+      degradedDomains: ["Race"],
+    });
+  });
+
+  it("preserves already hydrated stores when a later repository falls back", async () => {
+    const race = new InMemoryRaceRepository();
+    await race.saveResult(makeResult({ player: "Ada" }));
+    const car = new InMemoryCarRepository();
+    await car.recordDetection({ uid: "KEEP:ME", at: 100 });
+    const identity: IdentityRepository = {
+      init: () => Promise.resolve(),
+      load: () => Promise.reject(new Error("identity hydration failed")),
+      saveLink: () => Promise.resolve(),
+      saveIdentification: () => Promise.resolve(),
+      clear: () => Promise.resolve(),
+    };
+
+    await initPersistence({ race, car, identity });
+
+    expect(useRaceStore.getState().leaderboard.map((result) => result.player)).toEqual(["Ada"]);
+    expect(useGarageStore.getState().cars.map((record) => record.uid)).toEqual(["KEEP:ME"]);
+    expect(useIdentityStore.getState()).toMatchObject({
+      links: {},
+      identifications: {},
+      hydrated: true,
+    });
+    expect(usePersistenceStatusStore.getState()).toMatchObject({
+      mode: "partial",
+      reason: "initFailed",
+      degradedDomains: ["Identity"],
+    });
+  });
+
+  it("reports full memory mode when every repository falls back individually", async () => {
+    await initPersistence({
+      race: withFailingInit(new InMemoryRaceRepository(), "Race"),
+      car: withFailingInit(new InMemoryCarRepository(), "Garage"),
+      session: withFailingInit(new InMemorySessionRepository(), "History"),
+      settings: withFailingInit(new InMemorySettingsRepository(), "Settings"),
+      achievements: withFailingInit(new InMemoryAchievementsRepository(), "Achievements"),
+      identity: withFailingInit(new InMemoryIdentityRepository(), "Identity"),
+    });
+
+    const { mode, reason, degradedDomains } = usePersistenceStatusStore.getState();
+    expect({ mode, reason, degradedDomains }).toEqual({
+      mode: "memory",
+      reason: "initFailed",
+      degradedDomains: [],
+    });
   });
 
   it("is one-shot per runtime; a rebuilt client (guard reset) hydrates", async () => {

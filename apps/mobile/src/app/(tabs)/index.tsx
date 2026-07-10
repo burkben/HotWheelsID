@@ -1,8 +1,16 @@
-import { useEffect, useRef, useState } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  AccessibilityInfo,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import * as Device from 'expo-device';
+import { useReducedMotion } from 'react-native-reanimated';
 
 import { PORTAL_NAME } from '@redlineid/protocol';
 
@@ -10,9 +18,14 @@ import { RecentPasses } from '@/components/RecentPasses';
 import { Speedometer } from '@/components/gauge/Speedometer';
 import { StatusPill } from '@/components/StatusPill';
 import { BleStatusBanner } from '@/components/BleStatusBanner';
-import { createMockPortal } from '@/mock/mockPortal';
-import { createBlePortal, isBleAvailable } from '@/ble/blePortal';
-import type { BlePhase } from '@/ble/types';
+import { CurrentCarHero } from '@/components/CurrentCarHero';
+import { useCarIdentity } from '@/catalog/useCarIdentity';
+import {
+  usePortalController,
+  usePortalControllerActions,
+} from '@/portal/PortalControllerProvider';
+import { carHeroModel, portalStatusPresentation } from '@/portal/selectors';
+import { useGarageStore } from '@/store/garageStore';
 import { usePortalStore } from '@/store/portalStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { formatBestSpeed, speedUnitLabel, type SpeedDisplay } from '@/speed/format';
@@ -21,52 +34,73 @@ import { colors, elevation, fontSize, fontWeight, radius, spacing, speedGauge } 
 /** How long the needle holds a pass before easing back toward zero. */
 const NEEDLE_HOLD_MS = 1300;
 
-/** Minimal transport shape the home screen drives (mock adds `triggerPass`). */
-interface HomeTransport {
-  start: () => void | Promise<void>;
-  stop: () => void | Promise<void>;
-  triggerPass?: (scaleMph?: number) => void;
-}
-
 export default function SpeedometerScreen() {
   const insets = useSafeAreaInsets();
 
   const connection = usePortalStore((s) => s.connection);
   const controlStatus = usePortalStore((s) => s.controlStatus);
   const car = usePortalStore((s) => s.car);
+  const lastCar = usePortalStore((s) => s.lastCar);
   const lastSpeed = usePortalStore((s) => s.lastSpeed);
   const bestMph = usePortalStore((s) => s.bestMph);
   const passes = usePortalStore((s) => s.passes);
+  const garageCars = useGarageStore((s) => s.cars);
 
-  // On a real device we can drive the speedometer from the *actual* portal over
-  // BLE. On web / the iOS Simulator there's no radio, so we fall back to the mock.
-  // `demoMode` also lets the user opt into the mock on a real device — invaluable
-  // when their portal is firmware-locked but they still want to show off the UI.
-  const canBle = isBleAvailable() && Device.isDevice;
-  const [demoMode, setDemoMode] = useState(!canBle);
-  const useBle = canBle && !demoMode;
-  const [blePhase, setBlePhase] = useState<BlePhase | null>(null);
-  const transportRef = useRef<HomeTransport | null>(null);
+  const canBle = usePortalController((s) => s.canBle);
+  const mode = usePortalController((s) => s.mode);
+  const blePhase = usePortalController((s) => s.phase);
+  const manuallyDisconnected = usePortalController((s) => s.manuallyDisconnected);
+  const controller = usePortalControllerActions();
+  const useBle = mode === 'live';
 
-  // Apply the persisted "start in demo mode" preference once Settings hydrate.
-  // Only meaningful on a BLE-capable device (otherwise demo is already forced on);
-  // runs a single time so it seeds the initial mode without fighting later toggles.
-  // If the user has already picked a mode or hit connect (possible if hydration is
-  // slow), their choice wins — we never yank them back to the startup default.
-  const mockModeDefault = useSettingsStore((s) => s.mockModeDefault);
-  const settingsHydrated = useSettingsStore((s) => s.hydrated);
   const speedUnit = useSettingsStore((s) => s.speedUnit);
   const speedCalibration = useSettingsStore((s) => s.speedCalibration);
+  const reduceMotionSetting = useSettingsStore((s) => s.reduceMotion);
+  const reduceMotion = useReducedMotion() || reduceMotionSetting;
   const speedDisplay: SpeedDisplay = { unit: speedUnit, calibration: speedCalibration };
-  const appliedMockDefault = useRef(false);
-  const userTouchedMode = useRef(false);
+
+  const heroUid = car?.uid || lastCar?.uid || garageCars[0]?.uid;
+  const catalogCar = useCarIdentity(heroUid);
+  const hero = useMemo(
+    () =>
+      carHeroModel({
+        currentCar: car,
+        lastCar,
+        garageCars,
+        catalogCar,
+        sessionBestMph: bestMph,
+        lastMph: lastSpeed?.scaleMph,
+      }),
+    [car, lastCar, garageCars, catalogCar, bestMph, lastSpeed?.scaleMph],
+  );
+
+  const status = useMemo(
+    () =>
+      portalStatusPresentation({
+        connection,
+        controlStatus,
+        phase: blePhase,
+        mode,
+        manuallyDisconnected,
+      }),
+    [connection, controlStatus, blePhase, mode, manuallyDisconnected],
+  );
+  const previousStatus = useRef(status.label);
   useEffect(() => {
-    if (!canBle || appliedMockDefault.current || userTouchedMode.current || !settingsHydrated) {
-      return;
-    }
-    appliedMockDefault.current = true;
-    if (mockModeDefault) setDemoMode(true);
-  }, [canBle, settingsHydrated, mockModeDefault]);
+    if (status.label === previousStatus.current) return;
+    previousStatus.current = status.label;
+    AccessibilityInfo.announceForAccessibility(status.accessibilityLabel);
+  }, [status]);
+
+  const previousHero = useRef(hero ? `${hero.uid}:${hero.isCurrent}` : null);
+  useEffect(() => {
+    const key = hero ? `${hero.uid}:${hero.isCurrent}` : null;
+    if (!hero || key === previousHero.current) return;
+    previousHero.current = key;
+    AccessibilityInfo.announceForAccessibility(
+      `${hero.isCurrent ? 'Car on portal' : 'Last scanned car'}: ${hero.title}`,
+    );
+  }, [hero]);
 
   // Needle springs to each pass, then eases back to rest; the digital readout
   // keeps showing the last recorded speed.
@@ -100,31 +134,6 @@ export default function SpeedometerScreen() {
     }
   }, [car?.uid]);
 
-  // Build (and rebuild) the portal transport whenever the live/demo mode flips.
-  // The BleManager is a module-level singleton, so recreating this thin wrapper on
-  // toggle is cheap and leak-free; the cleanup tears down the outgoing transport.
-  //
-  // Demo mode auto-starts so the gauge comes alive the instant you enter it (zero
-  // taps — ideal for the showcase, and for the locked-portal "Switch to demo"
-  // escape hatch). Live BLE never auto-starts: scanning the radio is an explicit
-  // "Connect portal" action, so the home screen shows no fabricated activity until
-  // the user opts in.
-  useEffect(() => {
-    const { dispatch, setConnection } = usePortalStore.getState();
-    const transport: HomeTransport = useBle
-      ? createBlePortal({ dispatch, setConnection, onPhase: setBlePhase })
-      : createMockPortal({ dispatch, setConnection });
-    transportRef.current = transport;
-    if (!useBle) {
-      setBlePhase(null); // a mock portal is never "locked"
-      void transport.start();
-    }
-    return () => {
-      void transport.stop();
-      transportRef.current = null;
-    };
-  }, [useBle]);
-
   useEffect(() => {
     return () => {
       if (holdTimer.current) clearTimeout(holdTimer.current);
@@ -132,25 +141,10 @@ export default function SpeedometerScreen() {
   }, []);
 
   const isConnected = connection === 'connected';
-  const isBusy = connection === 'connecting';
-
-  const toggleConnection = () => {
-    userTouchedMode.current = true; // an explicit connect/disconnect counts as intent
-    if (isConnected || isBusy) {
-      transportRef.current?.stop();
-      setNeedleValue(0);
-    } else {
-      transportRef.current?.start();
-    }
-  };
-
-  // Flip between the real BLE transport and the in-app mock. The effect keyed on
-  // `useBle` tears down the old transport and spins up the new one.
   const switchMode = (toDemo: boolean) => {
-    userTouchedMode.current = true; // a manual Live/Demo pick overrides the startup default
-    if (toDemo === demoMode) return;
+    if ((toDemo ? 'demo' : 'live') === mode) return;
     setNeedleValue(0);
-    setDemoMode(toDemo);
+    void controller.setMode(toDemo ? 'demo' : 'live');
   };
 
   return (
@@ -168,22 +162,40 @@ export default function SpeedometerScreen() {
             Portal “{PORTAL_NAME}” · {useBle ? 'live BLE' : 'demo mode'}
           </Text>
         </View>
-        <StatusPill connection={connection} controlStatus={controlStatus} />
+        <StatusPill
+          connection={connection}
+          controlStatus={controlStatus}
+          phase={blePhase}
+          mode={mode}
+          manuallyDisconnected={manuallyDisconnected}
+          onConnect={() => void controller.connect()}
+          onRetry={() => void controller.retry()}
+          onDisconnect={() => {
+            setNeedleValue(0);
+            void controller.disconnect();
+          }}
+        />
       </View>
 
       {canBle && (
         <View style={styles.modeToggle}>
           <Pressable
             onPress={() => switchMode(false)}
+            accessibilityRole="button"
+            accessibilityLabel="Use live Bluetooth portal"
+            accessibilityState={{ selected: useBle }}
             style={[styles.modeOption, useBle && styles.modeOptionActive]}
           >
             <Text style={[styles.modeText, useBle && styles.modeTextActive]}>Live BLE</Text>
           </Pressable>
           <Pressable
             onPress={() => switchMode(true)}
-            style={[styles.modeOption, demoMode && styles.modeOptionActive]}
+            accessibilityRole="button"
+            accessibilityLabel="Use demo portal"
+            accessibilityState={{ selected: mode === 'demo' }}
+            style={[styles.modeOption, mode === 'demo' && styles.modeOptionActive]}
           >
-            <Text style={[styles.modeText, demoMode && styles.modeTextActive]}>Demo</Text>
+            <Text style={[styles.modeText, mode === 'demo' && styles.modeTextActive]}>Demo</Text>
           </Pressable>
         </View>
       )}
@@ -200,12 +212,16 @@ export default function SpeedometerScreen() {
           </Text>
           <Pressable
             onPress={() => switchMode(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Switch to demo mode"
             style={({ pressed }) => [styles.lockedButton, pressed && styles.buttonPressed]}
           >
             <Text style={styles.lockedButtonText}>Switch to demo mode</Text>
           </Pressable>
         </View>
       )}
+
+      <CurrentCarHero model={hero} display={speedDisplay} reduceMotion={reduceMotion} />
 
       <Speedometer
         value={needleValue}
@@ -216,31 +232,27 @@ export default function SpeedometerScreen() {
         flameThreshold={speedGauge.flameThreshold}
         size={300}
         display={speedDisplay}
+        reduceMotion={reduceMotion}
       />
 
       <View style={styles.statsRow}>
         <Stat label="Best" value={formatBestSpeed(bestMph, speedDisplay)} unit={speedUnitLabel(speedUnit)} />
         <Stat label="Passes" value={passes.length.toString()} unit="total" />
-        <Stat label="Car" value={car ? shortUid(car.uid) : '—'} unit={car?.serial ?? 'none'} />
+        <Stat
+          label="Last"
+          value={formatBestSpeed(lastPassMph, speedDisplay)}
+          unit={speedUnitLabel(speedUnit)}
+        />
       </View>
 
-      <View style={styles.controls}>
-        <Pressable
-          onPress={toggleConnection}
-          style={({ pressed }) => [
-            styles.button,
-            isConnected || isBusy ? styles.buttonSecondary : styles.buttonPrimary,
-            pressed && styles.buttonPressed,
-          ]}
-        >
-          <Text style={styles.buttonText}>
-            {isConnected ? 'Disconnect' : isBusy ? 'Connecting…' : 'Connect portal'}
-          </Text>
-        </Pressable>
-        {!useBle && (
+      {!useBle && (
+        <View style={styles.controls}>
           <Pressable
-            onPress={() => transportRef.current?.triggerPass?.()}
+            onPress={() => controller.triggerDemoPass()}
             disabled={!isConnected}
+            accessibilityRole="button"
+            accessibilityLabel="Trigger a demo car pass"
+            accessibilityState={{ disabled: !isConnected }}
             style={({ pressed }) => [
               styles.button,
               styles.buttonGhost,
@@ -250,16 +262,16 @@ export default function SpeedometerScreen() {
           >
             <Text style={styles.buttonText}>Trigger pass</Text>
           </Pressable>
-        )}
-      </View>
+        </View>
+      )}
 
       <RecentPasses passes={passes} bestMph={bestMph} display={speedDisplay} />
 
       <Text style={styles.note}>
         {useBle
-          ? 'Tap “Connect portal”, then roll a car across your race portal to log real passes over Bluetooth. The Live portal screen (under More) shows every decoded BLE event.'
+          ? 'The app connects automatically. Roll a car across the portal to log real passes; tap the status pill to retry or disconnect. Live portal under More shows every decoded BLE event.'
           : canBle
-            ? 'Demo mode: simulated passes roll automatically — tap “Trigger pass” to fire one, or “Disconnect” to pause. Switch to “Live BLE” to use a real race portal.'
+            ? 'Demo mode: simulated passes roll automatically. Tap “Trigger pass” to fire one, or use the status pill to pause. Switch to “Live BLE” to use a real race portal.'
             : 'This screen is a demo: simulated passes roll automatically, driving the flames + haptics. Run a dev build on a physical iPhone to connect a real portal over Bluetooth.'}
       </Text>
     </ScrollView>
@@ -278,11 +290,6 @@ function Stat({ label, value, unit }: { label: string; value: string; unit: stri
       </Text>
     </View>
   );
-}
-
-function shortUid(uid: string): string {
-  const parts = uid.split(':');
-  return parts.length > 2 ? parts.slice(-2).join(':') : uid;
 }
 
 const styles = StyleSheet.create({
@@ -358,14 +365,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing(3.5),
     alignItems: 'center',
     borderWidth: 1,
-  },
-  buttonPrimary: {
-    backgroundColor: colors.accent,
-    borderColor: colors.accent,
-  },
-  buttonSecondary: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
   },
   buttonGhost: {
     backgroundColor: colors.surfaceAlt,

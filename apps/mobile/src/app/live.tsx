@@ -1,16 +1,15 @@
 /**
  * Live portal — the Phase 1 diagnostics screen (parity with `python/monitor.py`).
  *
- * Connects to a real Hot Wheels id Race Portal over BLE, shows the connection /
+ * Observes the application-level Hot Wheels id Race Portal connection, shows the
  * adapter phase, and streams a raw event log of everything the portal sends
- * (decoded by the shared `@redlineid/protocol` pipeline). The hero gauge on the
- * home screen keeps using the mock demo; this screen is where hardware is proven.
+ * decoded by the shared `@redlineid/protocol` pipeline. This screen never creates
+ * a second BLE client, so opening diagnostics cannot interrupt Speed or Race.
  *
  * Web/Simulator: there is no BLE radio, so this screen renders a clear notice and
- * the Connect button is disabled. The native BLE module is only ever `require`d
- * once `start()` runs on a real device, so static web export stays safe.
+ * a clear notice. The root controller never requires the native BLE module there.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 import {
   Platform,
   Pressable,
@@ -21,18 +20,19 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import * as Device from "expo-device";
 
 import { PORTAL_NAME } from "@redlineid/protocol";
 
-import { createBlePortal, isBleAvailable } from "@/ble/blePortal";
-import type { BleLogEntry, BlePhase, PortalTransport } from "@/ble/types";
+import type { BleLogEntry, BlePhase } from "@/ble/types";
+import { StatusPill } from "@/components/StatusPill";
+import {
+  usePortalController,
+  usePortalControllerActions,
+} from "@/portal/PortalControllerProvider";
 import { usePortalStore } from "@/store/portalStore";
 import { useSettingsStore } from "@/store/settingsStore";
 import { formatBestSpeed, formatSpeedValue, speedUnitLabel } from "@/speed/format";
 import { colors, fontSize, fontWeight, radius, spacing } from "@/theme/tokens";
-
-const MAX_LOG = 100;
 
 const PHASE_LABEL: Record<BlePhase, string> = {
   idle: "Idle",
@@ -46,30 +46,9 @@ const PHASE_LABEL: Record<BlePhase, string> = {
   connected: "Connected",
   locked: "Portal locked",
   reconnecting: "Reconnecting…",
+  notFound: "Portal not found",
   error: "Error",
 };
-
-function phaseColor(phase: BlePhase): string {
-  switch (phase) {
-    case "connected":
-      return colors.ok;
-    case "scanning":
-    case "connecting":
-    case "discovering":
-    case "authenticating":
-    case "reconnecting":
-      return colors.warn;
-    case "poweredOff":
-    case "unauthorized":
-    case "unsupported":
-    case "locked":
-    case "error":
-      return colors.danger;
-    case "idle":
-    default:
-      return colors.idle;
-  }
-}
 
 function logColor(level: BleLogEntry["level"]): string {
   if (level === "error") return colors.danger;
@@ -82,6 +61,7 @@ export default function LiveScreen() {
   const router = useRouter();
 
   const connection = usePortalStore((s) => s.connection);
+  const controlStatus = usePortalStore((s) => s.controlStatus);
   const car = usePortalStore((s) => s.car);
   const lastSpeed = usePortalStore((s) => s.lastSpeed);
   const bestMph = usePortalStore((s) => s.bestMph);
@@ -89,48 +69,17 @@ export default function LiveScreen() {
   const speedUnit = useSettingsStore((s) => s.speedUnit);
   const speedCalibration = useSettingsStore((s) => s.speedCalibration);
 
-  const [phase, setPhase] = useState<BlePhase>("idle");
-  const [logs, setLogs] = useState<BleLogEntry[]>([]);
+  const controllerPhase = usePortalController((s) => s.phase);
+  const phase = controllerPhase ?? "idle";
+  const logs = usePortalController((s) => s.logs);
+  const bleReady = usePortalController((s) => s.canBle);
+  const mode = usePortalController((s) => s.mode);
+  const manuallyDisconnected = usePortalController((s) => s.manuallyDisconnected);
+  const controller = usePortalControllerActions();
 
   const isWeb = Platform.OS === "web";
-  // `Device.isDevice` is false on the iOS Simulator / Android emulator.
-  const isSimulator = !isWeb && !Device.isDevice;
-  const bleReady = isBleAvailable() && !isSimulator;
-
-  const portalRef = useRef<PortalTransport | null>(null);
-  const getPortal = useCallback((): PortalTransport | null => {
-    if (!bleReady) return null;
-    if (portalRef.current === null) {
-      const { dispatch, setConnection } = usePortalStore.getState();
-      portalRef.current = createBlePortal({
-        dispatch,
-        setConnection,
-        onPhase: setPhase,
-        onLog: (entry) => setLogs((prev) => [entry, ...prev].slice(0, MAX_LOG)),
-      });
-    }
-    return portalRef.current;
-  }, [bleReady]);
-
-  useEffect(() => {
-    return () => {
-      void portalRef.current?.stop();
-    };
-  }, []);
 
   const isLive = connection === "connected";
-  const isBusy = connection === "connecting";
-
-  const toggle = () => {
-    const portal = getPortal();
-    if (!portal) return;
-    if (isLive || isBusy) {
-      void portal.stop();
-    } else {
-      setLogs([]);
-      void portal.start();
-    }
-  };
 
   const summary = useMemo(() => {
     const display = { unit: speedUnit, calibration: speedCalibration };
@@ -151,14 +100,22 @@ export default function LiveScreen() {
         <Pressable
           onPress={() => router.back()}
           hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
           style={({ pressed }) => [styles.backBtn, pressed && styles.pressed]}
         >
           <Text style={styles.backText}>‹ Back</Text>
         </Pressable>
-        <View style={styles.phasePill}>
-          <View style={[styles.dot, { backgroundColor: phaseColor(phase) }]} />
-          <Text style={styles.phaseText}>{PHASE_LABEL[phase]}</Text>
-        </View>
+        <StatusPill
+          connection={connection}
+          controlStatus={controlStatus}
+          phase={controllerPhase}
+          mode={mode}
+          manuallyDisconnected={manuallyDisconnected}
+          onConnect={() => void controller.connect()}
+          onRetry={() => void controller.retry()}
+          onDisconnect={() => void controller.disconnect()}
+        />
       </View>
 
       <ScrollView
@@ -172,7 +129,7 @@ export default function LiveScreen() {
         </Text>
 
         {!bleReady && (
-          <View style={styles.notice}>
+          <View style={styles.notice} accessibilityRole="alert">
             <Text style={styles.noticeTitle}>
               {isWeb ? "Bluetooth isn’t available on the web" : "No Bluetooth radio here"}
             </Text>
@@ -184,8 +141,26 @@ export default function LiveScreen() {
           </View>
         )}
 
+        {bleReady && mode === "demo" && (
+          <View style={styles.notice}>
+            <Text style={styles.noticeTitle}>Demo mode is active</Text>
+            <Text style={styles.noticeBody}>
+              Switch to Live BLE to collect real portal diagnostics. This also updates your startup
+              preference.
+            </Text>
+            <Pressable
+              onPress={() => void controller.setMode("live")}
+              accessibilityRole="button"
+              accessibilityLabel="Switch to live Bluetooth"
+              style={({ pressed }) => [styles.modeButton, pressed && styles.pressed]}
+            >
+              <Text style={styles.modeButtonText}>Use Live BLE</Text>
+            </Pressable>
+          </View>
+        )}
+
         {phase === "locked" && (
-          <View style={styles.noticeError}>
+          <View style={styles.noticeError} accessibilityRole="alert">
             <Text style={styles.noticeTitle}>Portal firmware unsupported</Text>
             <Text style={styles.noticeBody}>
               This portal connected, but it exposes neither the legacy control service nor a usable
@@ -213,25 +188,15 @@ export default function LiveScreen() {
           </View>
         </View>
 
-        <Pressable
-          onPress={toggle}
-          disabled={!bleReady}
-          style={({ pressed }) => [
-            styles.button,
-            isLive || isBusy ? styles.buttonSecondary : styles.buttonPrimary,
-            !bleReady && styles.buttonDisabled,
-            pressed && styles.pressed,
-          ]}
-        >
-          <Text style={styles.buttonText}>
-            {isLive ? "Disconnect" : isBusy ? "Connecting…" : "Scan & connect"}
-          </Text>
-        </Pressable>
-
         <View style={styles.logHeaderRow}>
           <Text style={styles.logHeader}>Event log</Text>
           {logs.length > 0 && (
-            <Pressable onPress={() => setLogs([])} hitSlop={8}>
+            <Pressable
+              onPress={controller.clearLogs}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Clear portal event log"
+            >
               <Text style={styles.clearText}>Clear</Text>
             </Pressable>
           )}
@@ -294,27 +259,6 @@ const styles = StyleSheet.create({
   backText: {
     color: colors.accentBlue,
     fontSize: fontSize.md,
-    fontWeight: fontWeight.medium,
-  },
-  phasePill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing(2),
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: radius.pill,
-    paddingVertical: spacing(1.5),
-    paddingHorizontal: spacing(3),
-  },
-  dot: {
-    width: 9,
-    height: 9,
-    borderRadius: radius.pill,
-  },
-  phaseText: {
-    color: colors.textPrimary,
-    fontSize: fontSize.sm,
     fontWeight: fontWeight.medium,
   },
   body: {
@@ -406,26 +350,17 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     fontWeight: fontWeight.bold,
   },
-  button: {
+  modeButton: {
+    alignSelf: "flex-start",
+    marginTop: spacing(2),
     borderRadius: radius.md,
-    paddingVertical: spacing(3.5),
-    alignItems: "center",
-    borderWidth: 1,
-  },
-  buttonPrimary: {
+    paddingVertical: spacing(2.5),
+    paddingHorizontal: spacing(4),
     backgroundColor: colors.accent,
-    borderColor: colors.accent,
   },
-  buttonSecondary: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-  },
-  buttonDisabled: {
-    opacity: 0.4,
-  },
-  buttonText: {
-    color: colors.textPrimary,
-    fontSize: fontSize.md,
+  modeButtonText: {
+    color: colors.bg,
+    fontSize: fontSize.sm,
     fontWeight: fontWeight.bold,
   },
   pressed: {

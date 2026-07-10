@@ -36,6 +36,7 @@ export type BlePhase =
   | "connected"
   | "locked"
   | "reconnecting"
+  | "notFound"
   | "error";
 
 export type BleLogLevel = "info" | "event" | "error";

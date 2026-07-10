@@ -3,9 +3,8 @@
  *
  * Opens the shared `redlineid.db` **once**, hydrates every render store from disk,
  * registers write-through sinks, and bridges the runtime portal store into the
- * Garage and History. Today it wires four repositories — Race (durable
- * leaderboard), Car (durable garage), Session (durable history), and Settings
- * (durable preferences) — sharing a single migrated DB handle.
+ * Garage and History. It wires Race, Car, Session, Settings, Achievements, and
+ * Identity repositories sharing a single migrated DB handle when available.
  *
  * **Native-module discipline (load-bearing — do not relax):** `expo-sqlite`
  * throws *at module-evaluation time* when `ExpoSQLite` is absent (its
@@ -19,10 +18,12 @@
  *      `Requiring unknown module "…"` on every later reload. `require()` keeps the
  *      adapters in the main bundle, and their factories only run once the probe has
  *      confirmed the module is present.
- * Only `sqliteDb.ts` value-imports `expo-sqlite`; the repository adapters use
- * type-only imports, so requiring them is always safe.
+ * Only `sqliteDb.ts` value-imports `expo-sqlite`; `sqliteDb.web.ts` is a no-native
+ * bundler stub, and the repository adapters use type-only imports.
  *
  * Absent native module → one quiet `console.log`, in-memory stores, no red screen.
+ * A failure in one repository falls back only that domain; successful hydrations
+ * remain intact and continue using their original repositories.
  * The attempt is **one-shot per JS runtime** (a missing module can't appear without
  * an app rebuild, which restarts the runtime anyway), so we never retry.
  */
@@ -45,6 +46,12 @@ import { InMemoryRaceRepository, type RaceRepository } from "./raceRepository";
 import { setSessionRepository } from "./historyAccess";
 import { InMemorySessionRepository, type SessionRepository } from "./sessionRepository";
 import { InMemorySettingsRepository, type SettingsRepository } from "./settingsRepository";
+import {
+  PERSISTENCE_DOMAINS,
+  usePersistenceStatusStore,
+  type PersistenceDegradedReason,
+  type PersistenceDomain,
+} from "./persistenceStatusStore";
 
 /** The repositories the bootstrap wires. Tests may inject any subset. */
 export interface PersistenceRepositories {
@@ -79,12 +86,28 @@ function sqliteNativeModuleAvailable(): boolean {
 /**
  * Resolve the repositories to use. Injected repos (tests) win; a partial injection
  * fills the gap with an in-memory repo. Otherwise, only when the native module is
- * confirmed present, open the shared DB and build the SQLite adapters. Returns
- * `null` (not a throw) when SQLite is unavailable so the caller falls back cleanly.
+ * confirmed present, open the shared DB and build the SQLite adapters. Native
+ * loading/open failures resolve to fully wired in-memory repositories.
  */
+interface PersistenceResolution {
+  repositories: PersistenceRepositories;
+  degradedReason: PersistenceDegradedReason | null;
+}
+
+function createInMemoryRepositories(): PersistenceRepositories {
+  return {
+    race: new InMemoryRaceRepository(),
+    car: new InMemoryCarRepository(),
+    session: new InMemorySessionRepository(),
+    settings: new InMemorySettingsRepository(),
+    achievements: new InMemoryAchievementsRepository(),
+    identity: new InMemoryIdentityRepository(),
+  };
+}
+
 async function resolveRepositories(
   injected?: Partial<PersistenceRepositories>,
-): Promise<PersistenceRepositories | null> {
+): Promise<PersistenceResolution> {
   if (
     injected?.race ||
     injected?.car ||
@@ -94,167 +117,254 @@ async function resolveRepositories(
     injected?.identity
   ) {
     return {
-      race: injected.race ?? new InMemoryRaceRepository(),
-      car: injected.car ?? new InMemoryCarRepository(),
-      session: injected.session ?? new InMemorySessionRepository(),
-      settings: injected.settings ?? new InMemorySettingsRepository(),
-      achievements: injected.achievements ?? new InMemoryAchievementsRepository(),
-      identity: injected.identity ?? new InMemoryIdentityRepository(),
+      repositories: {
+        race: injected.race ?? new InMemoryRaceRepository(),
+        car: injected.car ?? new InMemoryCarRepository(),
+        session: injected.session ?? new InMemorySessionRepository(),
+        settings: injected.settings ?? new InMemorySettingsRepository(),
+        achievements: injected.achievements ?? new InMemoryAchievementsRepository(),
+        identity: injected.identity ?? new InMemoryIdentityRepository(),
+      },
+      degradedReason: null,
     };
   }
 
-  if (!sqliteNativeModuleAvailable()) return null;
+  if (!sqliteNativeModuleAvailable()) {
+    return { repositories: createInMemoryRepositories(), degradedReason: "unavailable" };
+  }
 
-  const { openRedlineDb } = require("./sqliteDb") as typeof import("./sqliteDb");
-  const { SqliteRaceRepository } =
-    require("./sqliteRaceRepository") as typeof import("./sqliteRaceRepository");
-  const { SqliteCarRepository } =
-    require("./sqliteCarRepository") as typeof import("./sqliteCarRepository");
-  const { SqliteSessionRepository } =
-    require("./sqliteSessionRepository") as typeof import("./sqliteSessionRepository");
-  const { SqliteSettingsRepository } =
-    require("./sqliteSettingsRepository") as typeof import("./sqliteSettingsRepository");
-  const { SqliteAchievementsRepository } =
-    require("./sqliteAchievementsRepository") as typeof import("./sqliteAchievementsRepository");
-  const { SqliteIdentityRepository } =
-    require("./sqliteIdentityRepository") as typeof import("./sqliteIdentityRepository");
+  try {
+    const { openRedlineDb } = require("./sqliteDb") as typeof import("./sqliteDb");
+    const { SqliteRaceRepository } =
+      require("./sqliteRaceRepository") as typeof import("./sqliteRaceRepository");
+    const { SqliteCarRepository } =
+      require("./sqliteCarRepository") as typeof import("./sqliteCarRepository");
+    const { SqliteSessionRepository } =
+      require("./sqliteSessionRepository") as typeof import("./sqliteSessionRepository");
+    const { SqliteSettingsRepository } =
+      require("./sqliteSettingsRepository") as typeof import("./sqliteSettingsRepository");
+    const { SqliteAchievementsRepository } =
+      require("./sqliteAchievementsRepository") as typeof import("./sqliteAchievementsRepository");
+    const { SqliteIdentityRepository } =
+      require("./sqliteIdentityRepository") as typeof import("./sqliteIdentityRepository");
 
-  const db = await openRedlineDb();
-  return {
-    race: new SqliteRaceRepository(db),
-    car: new SqliteCarRepository(db),
-    session: new SqliteSessionRepository(db),
-    settings: new SqliteSettingsRepository(db),
-    achievements: new SqliteAchievementsRepository(db),
-    identity: new SqliteIdentityRepository(db),
+    const db = await openRedlineDb();
+    return {
+      repositories: {
+        race: new SqliteRaceRepository(db),
+        car: new SqliteCarRepository(db),
+        session: new SqliteSessionRepository(db),
+        settings: new SqliteSettingsRepository(db),
+        achievements: new SqliteAchievementsRepository(db),
+        identity: new SqliteIdentityRepository(db),
+      },
+      degradedReason: null,
+    };
+  } catch (error) {
+    console.warn("[persist] SQLite open failed; using in-memory repositories", error);
+    return { repositories: createInMemoryRepositories(), degradedReason: "initFailed" };
+  }
+}
+
+interface InitializableRepository {
+  init(): Promise<void>;
+}
+
+interface InitializedRepository<R> {
+  repository: R;
+  degraded: boolean;
+  domain: PersistenceDomain;
+}
+
+/**
+ * Initialize and hydrate one persistence domain in isolation. A late failure in
+ * Identity, for example, must not replace already-hydrated Race or Garage data.
+ */
+async function initializeRepository<R extends InitializableRepository>(
+  label: PersistenceDomain,
+  repository: R,
+  createFallback: () => R,
+  hydrate: (active: R) => Promise<void>,
+): Promise<InitializedRepository<R>> {
+  try {
+    await repository.init();
+    await hydrate(repository);
+    return { repository, degraded: false, domain: label };
+  } catch (error) {
+    console.warn(`[persist] ${label} init/hydration failed; using in-memory ${label}`, error);
+    const fallback = createFallback();
+    await fallback.init();
+    await hydrate(fallback);
+    return { repository: fallback, degraded: true, domain: label };
+  }
+}
+
+async function initializeRepositories(
+  requested: PersistenceRepositories,
+): Promise<PersistenceDomain[]> {
+  const race = await initializeRepository(
+    "Race",
+    requested.race,
+    () => new InMemoryRaceRepository(),
+    async (repository) => useRaceStore.getState().hydrate(await repository.loadResults()),
+  );
+  const car = await initializeRepository(
+    "Garage",
+    requested.car,
+    () => new InMemoryCarRepository(),
+    async (repository) => useGarageStore.getState().hydrate(await repository.getCars()),
+  );
+  const session = await initializeRepository(
+    "History",
+    requested.session,
+    () => new InMemorySessionRepository(),
+    async () => {},
+  );
+  const settings = await initializeRepository(
+    "Settings",
+    requested.settings,
+    () => new InMemorySettingsRepository(),
+    async (repository) => useSettingsStore.getState().hydrate(await repository.load()),
+  );
+  const achievements = await initializeRepository(
+    "Achievements",
+    requested.achievements,
+    () => new InMemoryAchievementsRepository(),
+    async (repository) =>
+      useAchievementsStore.getState().hydrate(await repository.loadUnlocked()),
+  );
+  const identity = await initializeRepository(
+    "Identity",
+    requested.identity,
+    () => new InMemoryIdentityRepository(),
+    async (repository) => useIdentityStore.getState().hydrate(await repository.load()),
+  );
+
+  const repos: PersistenceRepositories = {
+    race: race.repository,
+    car: car.repository,
+    session: session.repository,
+    settings: settings.repository,
+    achievements: achievements.repository,
+    identity: identity.repository,
   };
+  setSessionRepository(repos.session);
+
+  const refreshAchievements = (): void => {
+    void repos.race
+      .aggregate()
+      .then((race) => {
+        const stats = combineStats(race, garageAggregate(useGarageStore.getState().cars));
+        useAchievementsStore.getState().applyStats(stats);
+      })
+      .catch((error) => console.warn("[achievements] refresh failed", error));
+  };
+
+  setRacePersistence({
+    onResult: (result) =>
+      void repos.race
+        .saveResult(result)
+        .then(refreshAchievements)
+        .catch((error) => console.warn("[race] persist result failed", error)),
+    onClear: () =>
+      void repos.race
+        .clear()
+        .then(refreshAchievements)
+        .catch((error) => console.warn("[race] clear failed", error)),
+  });
+  setGaragePersistence({
+    onDetection: (input) =>
+      void repos.car
+        .recordDetection(input)
+        .catch((error) => console.warn("[garage] detection failed", error)),
+    onSerial: (uid, serial) =>
+      void repos.car
+        .recordSerial(uid, serial)
+        .catch((error) => console.warn("[garage] serial failed", error)),
+    onSpeed: (input) =>
+      void repos.car
+        .recordSpeed(input)
+        .catch((error) => console.warn("[garage] speed failed", error)),
+    onRename: (uid, name) =>
+      void repos.car.setName(uid, name).catch((error) => console.warn("[garage] rename failed", error)),
+    onClear: () =>
+      void repos.car.clear().catch((error) => console.warn("[garage] clear failed", error)),
+  });
+  setSettingsPersistence({
+    onSave: (key, value) =>
+      void repos.settings
+        .save(key, value)
+        .catch((error) => console.warn("[settings] save failed", error)),
+    onClear: () =>
+      void repos.settings.clear().catch((error) => console.warn("[settings] clear failed", error)),
+  });
+  setAchievementsPersistence({
+    onUnlock: (id, at) =>
+      void repos.achievements
+        .unlock(id, at)
+        .catch((error) => console.warn("[achievements] unlock failed", error)),
+    onClear: () =>
+      void repos.achievements
+        .clear()
+        .catch((error) => console.warn("[achievements] clear failed", error)),
+  });
+  setIdentityPersistence({
+    onLink: (uid, castingKey) =>
+      void repos.identity
+        .saveLink(uid, castingKey)
+        .catch((error) => console.warn("[identity] link failed", error)),
+    onIdentify: (castingKey, catalogId) =>
+      void repos.identity
+        .saveIdentification(castingKey, catalogId)
+        .catch((error) => console.warn("[identity] identify failed", error)),
+    onClear: () =>
+      void repos.identity.clear().catch((error) => console.warn("[identity] clear failed", error)),
+  });
+
+  let lastCars = useGarageStore.getState().cars;
+  unsubscribeGarage = useGarageStore.subscribe((state) => {
+    if (state.cars === lastCars) return;
+    lastCars = state.cars;
+    refreshAchievements();
+  });
+
+  wirePortalBridges(repos.session);
+  refreshAchievements();
+  return [race, car, session, settings, achievements, identity]
+    .filter((result) => result.degraded)
+    .map((result) => result.domain);
 }
 
 export async function initPersistence(injected?: Partial<PersistenceRepositories>): Promise<void> {
   if (started) return;
-  started = true; // attempt once; never reset (see file header)
+  started = true;
+  useIdentityStore.getState().loadSeed(IDENTITY_SEED);
 
   try {
-    // Bundled community identity seed (ADR-0014): reference data, merged
-    // regardless of whether durable storage is available so scanned cars can
-    // auto-name even in the in-memory (SQLite-absent) build. Never persisted.
-    useIdentityStore.getState().loadSeed(IDENTITY_SEED);
-
-    const repos = await resolveRepositories(injected);
-    if (!repos) {
+    const resolution = await resolveRepositories(injected);
+    const degradedDomains = await initializeRepositories(resolution.repositories);
+    if (resolution.degradedReason) {
       console.log(
-        "[persist] SQLite not in this build — Race leaderboard, Garage, History, and Settings are in-memory until you rebuild the dev client (expo run:ios).",
+        resolution.degradedReason === "unavailable"
+          ? "[persist] SQLite not in this build — using in-memory Race, Garage, History, Settings, Achievements, and Identity repositories."
+          : "[persist] SQLite could not open — using in-memory repositories.",
       );
-      // Settings stay at defaults, but mark them "loaded" so hydration-gated UI
-      // (e.g. Home's startup demo-mode default) doesn't wait forever.
-      if (!useSettingsStore.getState().hydrated) useSettingsStore.getState().hydrate({});
-      return;
+      usePersistenceStatusStore.getState().setMemory(resolution.degradedReason);
+    } else if (degradedDomains.length === PERSISTENCE_DOMAINS.length) {
+      console.log("[persist] Every repository fell back to in-memory storage.");
+      usePersistenceStatusStore.getState().setMemory("initFailed");
+    } else if (degradedDomains.length > 0) {
+      console.log(`[persist] In-memory fallback: ${degradedDomains.join(", ")}.`);
+      usePersistenceStatusStore.getState().setPartial(degradedDomains);
+    } else {
+      usePersistenceStatusStore.getState().setDurable();
     }
-
-    await repos.race.init();
-    await repos.car.init();
-    await repos.session.init();
-    await repos.settings.init();
-    await repos.achievements.init();
-    await repos.identity.init();
-
-    // Hydrate the render stores from durable storage.
-    useRaceStore.getState().hydrate(await repos.race.loadResults());
-    useGarageStore.getState().hydrate(await repos.car.getCars());
-    useSettingsStore.getState().hydrate(await repos.settings.load());
-    useAchievementsStore.getState().hydrate(await repos.achievements.loadUnlocked());
-    useIdentityStore.getState().hydrate(await repos.identity.load());
-
-    // History has no render store — publish the repo so screens read it on focus.
-    setSessionRepository(repos.session);
-
-    // Recompute achievement stats from the durable race totals + the live garage,
-    // then fold them in (unlocking anything newly earned). Called once now and
-    // again whenever a race is banked or the garage changes (see below).
-    const refreshAchievements = (): void => {
-      void repos.race
-        .aggregate()
-        .then((race) => {
-          const stats = combineStats(race, garageAggregate(useGarageStore.getState().cars));
-          useAchievementsStore.getState().applyStats(stats);
-        })
-        .catch((e) => console.warn("[achievements] refresh failed", e));
-    };
-
-    // Write-through sinks: every store mutation persists (failures stay non-fatal).
-    setRacePersistence({
-      onResult: (result) =>
-        void repos.race
-          .saveResult(result)
-          .then(refreshAchievements) // the new race is now in the durable totals
-          .catch((e) => console.warn("[race] persist result failed", e)),
-      onClear: () =>
-        void repos.race
-          .clear()
-          .then(refreshAchievements)
-          .catch((e) => console.warn("[race] clear failed", e)),
-    });
-    setGaragePersistence({
-      onDetection: (input) =>
-        void repos.car.recordDetection(input).catch((e) => console.warn("[garage] detection failed", e)),
-      onSerial: (uid, serial) =>
-        void repos.car.recordSerial(uid, serial).catch((e) => console.warn("[garage] serial failed", e)),
-      onSpeed: (input) =>
-        void repos.car.recordSpeed(input).catch((e) => console.warn("[garage] speed failed", e)),
-      onRename: (uid, name) =>
-        void repos.car.setName(uid, name).catch((e) => console.warn("[garage] rename failed", e)),
-      onClear: () =>
-        void repos.car.clear().catch((e) => console.warn("[garage] clear failed", e)),
-    });
-    setSettingsPersistence({
-      onSave: (key, value) =>
-        void repos.settings.save(key, value).catch((e) => console.warn("[settings] save failed", e)),
-      onClear: () =>
-        void repos.settings.clear().catch((e) => console.warn("[settings] clear failed", e)),
-    });
-    setAchievementsPersistence({
-      onUnlock: (id, at) =>
-        void repos.achievements.unlock(id, at).catch((e) => console.warn("[achievements] unlock failed", e)),
-      onClear: () =>
-        void repos.achievements.clear().catch((e) => console.warn("[achievements] clear failed", e)),
-    });
-    setIdentityPersistence({
-      onLink: (uid, castingKey) =>
-        void repos.identity
-          .saveLink(uid, castingKey)
-          .catch((e) => console.warn("[identity] link failed", e)),
-      onIdentify: (castingKey, catalogId) =>
-        void repos.identity
-          .saveIdentification(castingKey, catalogId)
-          .catch((e) => console.warn("[identity] identify failed", e)),
-      onClear: () =>
-        void repos.identity.clear().catch((e) => console.warn("[identity] clear failed", e)),
-    });
-
-    // Garage changes (new car, faster pass) move collection/speed achievements;
-    // refresh off the in-memory store snapshot. Race achievements refresh via the
-    // race sink above (after the durable write, so aggregate() counts it).
-    let lastCars = useGarageStore.getState().cars;
-    unsubscribeGarage = useGarageStore.subscribe((state) => {
-      if (state.cars === lastCars) return;
-      lastCars = state.cars;
-      refreshAchievements();
-    });
-
-    // Bridge the runtime portal store → Garage (collect every detected car) and
-    // → History (open a session per connection, record each pass), keeping
-    // portalStore pure (no new coupling, just an external subscription).
-    wirePortalBridges(repos.session);
-
-    // Initial evaluation against the hydrated totals (may unlock retroactively).
-    refreshAchievements();
-  } catch (err) {
-    // Native module present but init failed (e.g. a corrupt DB). Keep the app on
-    // in-memory stores rather than crash.
-    console.warn("[persist] init failed; using in-memory stores", err);
-    // If settings never hydrated before the failure, fall back to defaults so the
-    // store reports "loaded" (don't clobber a successful settings hydration).
+  } catch (error) {
+    // In-memory repositories cannot normally fail. If the bootstrap itself does,
+    // preserve every store already hydrated rather than resetting the application.
+    console.warn("[persist] bootstrap failed; preserving initialized stores", error);
     if (!useSettingsStore.getState().hydrated) useSettingsStore.getState().hydrate({});
+    usePersistenceStatusStore.getState().setMemory("initFailed");
   }
 }
 
@@ -386,6 +496,7 @@ function wirePortalBridges(sessionRepo: SessionRepository): void {
 /** Test-only: reset the one-shot guard, sinks, and portal bridge between tests. */
 export function resetPersistenceForTests(): void {
   started = false;
+  usePersistenceStatusStore.getState().reset();
   setRacePersistence(null);
   setGaragePersistence(null);
   setSessionRepository(null);

@@ -59,6 +59,8 @@ export interface SpeedometerProps {
   size?: number;
   /** Unit + calibration for the readout and tick labels (needle stays canonical). */
   display?: SpeedDisplay;
+  /** App-level override, OR'd with the operating-system preference. */
+  reduceMotion?: boolean;
 }
 
 export function Speedometer({
@@ -70,6 +72,7 @@ export function Speedometer({
   flameThreshold,
   size = 300,
   display = DEFAULT_SPEED_DISPLAY,
+  reduceMotion: reduceMotionOverride = false,
 }: SpeedometerProps) {
   const stroke = 18;
   const cx = size / 2;
@@ -78,7 +81,7 @@ export function Speedometer({
   const needleLength = r - stroke / 2 - 6;
 
   const angle = useSharedValue(GAUGE_START_ANGLE);
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useReducedMotion() || reduceMotionOverride;
 
   useEffect(() => {
     const fraction = Math.max(0, Math.min(value, max)) / max;
@@ -87,9 +90,9 @@ export function Speedometer({
       damping: 13,
       stiffness: 95,
       mass: 0.7,
-      reduceMotion: ReduceMotion.System,
+      reduceMotion: reduceMotion ? ReduceMotion.Always : ReduceMotion.System,
     });
-  }, [value, max, angle]);
+  }, [value, max, angle, reduceMotion]);
 
   const needleProps = useAnimatedProps(() => {
     "worklet";
@@ -109,7 +112,11 @@ export function Speedometer({
   const liveIntensity = Math.max(0, Math.min((value - flameThreshold) / headroom, 1));
 
   return (
-    <View style={[styles.wrap, { width: size, height: size }]}>
+    <View
+      style={[styles.wrap, { width: size, height: size }]}
+      accessible
+      accessibilityLabel={`Speedometer, ${formatSpeedValue(readoutMph, display)} ${speedUnitLabel(display.unit)}`}
+    >
       <Svg width={size} height={size}>
         {/* Unfilled track */}
         <Path
