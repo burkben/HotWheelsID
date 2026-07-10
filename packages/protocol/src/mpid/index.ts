@@ -22,4 +22,6 @@ export { MpidToken, MpidTokenError } from "./token";
 export { MpidSession } from "./session";
 export type { MpidSessionOptions } from "./session";
 export { castingKeyFromMattelId } from "./casting";
+export { decodeMattelId, mattelIdMatchesUid, mattelIdMatchesSerial } from "./mattelId";
+export type { DecodedMattelId } from "./mattelId";
 export * from "./protobuf";

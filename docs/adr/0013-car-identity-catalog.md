@@ -102,3 +102,25 @@ call to action. A shared `CarPhoto` component degrades a missing/404 image to a 
   once; the per-uid synthetic key is only a fallback for cars with no decodable id.
 - **Fetch the catalog at runtime from the wiki.** Rejected: adds a network dependency and a runtime
   failure mode to a primarily-offline app. A bundled snapshot is simpler and deterministic.
+
+## Addendum (2026-07-09): independent corroboration of the id layout
+
+Reviewing external prior art confirmed the reverse-engineered `mattelId` layout against real
+third-party captures, and firmed it up:
+
+- **[`mtxmiller/hotwheels-portal`](https://github.com/mtxmiller/hotwheels-portal)** independently
+  decoded the *same* portal (HWiD fw 1.2.5) and documents the identical structure: `version(2)` at
+  offset 0, a 4-byte **Car Type/Model ID** at offset 2, and the **NFC UID in the last 6 bytes** —
+  matching both our slice and the tag-UID tail our decoder now validates.
+- **[`Project-Genoa/API-Protocol-Docs`](https://github.com/Project-Genoa/API-Protocol-Docs)** decodes
+  the broader Mattel PID scheme (Minecraft Earth boost figures, same `pid.mattel/<b64>` URL) and
+  identifies the offset-2 field as **a product id encoded as an unsigned 32-bit big-endian integer**.
+- **Verified numerically:** decoding those 4 bytes as a BE uint32 yields the number the portal *also*
+  reports on its Serial-Number characteristic — mtxmiller logged id `AQBBr66t…` next to serial
+  `1102032557`, and `0x41afaead = 1102032557` exactly. `decodeMattelId()` now exposes this as
+  `productId`, and `mattelIdMatchesSerial()` cross-checks it against the serial channel (a second
+  free integrity check alongside the tag-UID one).
+
+**Naming is still unsolved by everyone.** Both external sources fall back to a manual/community
+lookup table keyed by the raw id — the same conclusion this ADR reached. No offline binary-id → name
+oracle exists; the manual catalog picker stands.
