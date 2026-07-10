@@ -9,7 +9,7 @@ import {
 
 const reset = () => {
   setIdentityPersistence(null);
-  useIdentityStore.setState({ links: {}, identifications: {}, hydrated: false });
+  useIdentityStore.setState({ links: {}, identifications: {}, seed: {}, hydrated: false });
 };
 
 afterEach(reset);
@@ -75,6 +75,19 @@ describe("identityStore", () => {
     expect(useIdentityStore.getState().links).toEqual({});
     expect(onClear).toHaveBeenCalledOnce();
   });
+
+  it("loadSeed stores the seed and reset leaves it intact", () => {
+    setIdentityPersistence({ onLink: vi.fn(), onIdentify: vi.fn(), onClear: vi.fn() });
+    useIdentityStore.getState().loadSeed({ keyA: "car-a" });
+    useIdentityStore.getState().linkCar("uid1", "keyB");
+
+    useIdentityStore.getState().reset();
+
+    // user data cleared, bundled reference seed survives
+    expect(useIdentityStore.getState().links).toEqual({});
+    expect(useIdentityStore.getState().identifications).toEqual({});
+    expect(useIdentityStore.getState().seed).toEqual({ keyA: "car-a" });
+  });
 });
 
 describe("catalogIdForUid", () => {
@@ -94,5 +107,17 @@ describe("catalogIdForUid", () => {
   it("returns undefined for an unknown or empty uid", () => {
     expect(catalogIdForUid(state, "nope")).toBeUndefined();
     expect(catalogIdForUid(state, undefined)).toBeUndefined();
+  });
+
+  it("falls back to the seed when the user hasn't identified the casting", () => {
+    const seeded: IdentityState = {
+      links: { uid1: "keyA", uid2: "keyB" },
+      identifications: { keyA: "car-a" },
+      seed: { keyA: "seed-a", keyB: "seed-b" },
+    };
+    // user's own pick wins over the seed
+    expect(catalogIdForUid(seeded, "uid1")).toBe("car-a");
+    // seed fills the gap for an un-identified casting
+    expect(catalogIdForUid(seeded, "uid2")).toBe("seed-b");
   });
 });

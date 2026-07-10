@@ -27,8 +27,9 @@ export default function GarageScreen() {
   // Count identified cars off a single identity snapshot (uid → casting → catalog).
   const links = useIdentityStore((s) => s.links);
   const identifications = useIdentityStore((s) => s.identifications);
+  const seed = useIdentityStore((s) => s.seed);
   const identifiedCount = cars.reduce(
-    (n, c) => (catalogIdForUid({ links, identifications }, c.uid) ? n + 1 : n),
+    (n, c) => (catalogIdForUid({ links, identifications, seed }, c.uid) ? n + 1 : n),
     0,
   );
   const onPortalHere = onPortalUid != null && cars.some((c) => c.uid === onPortalUid);

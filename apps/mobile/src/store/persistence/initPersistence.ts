@@ -27,6 +27,7 @@
  * an app rebuild, which restarts the runtime anyway), so we never retry.
  */
 import { combineStats, garageAggregate } from "../../achievements/stats";
+import { IDENTITY_SEED } from "../../catalog/identitySeed";
 import { castingKeyFromMattelId } from "@redlineid/protocol";
 import { setAchievementsPersistence, useAchievementsStore } from "../achievementsStore";
 import { setGaragePersistence, useGarageStore } from "../garageStore";
@@ -134,6 +135,11 @@ export async function initPersistence(injected?: Partial<PersistenceRepositories
   started = true; // attempt once; never reset (see file header)
 
   try {
+    // Bundled community identity seed (ADR-0014): reference data, merged
+    // regardless of whether durable storage is available so scanned cars can
+    // auto-name even in the in-memory (SQLite-absent) build. Never persisted.
+    useIdentityStore.getState().loadSeed(IDENTITY_SEED);
+
     const repos = await resolveRepositories(injected);
     if (!repos) {
       console.log(

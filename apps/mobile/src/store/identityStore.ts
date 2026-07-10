@@ -36,6 +36,14 @@ export interface IdentityState {
   links: Record<string, string>;
   /** castingKey → catalog car id, the user's confirmed identification. */
   identifications: Record<string, string>;
+  /**
+   * castingKey → catalog car id, the bundled crowd-sourced community seed
+   * (ADR-0014). Read-only reference data merged at bootstrap; it only *fills
+   * gaps* — a user's own {@link identifications} pick always wins. Never
+   * persisted, and never exported (only the user's own picks are shareable).
+   * Optional so existing `{ links, identifications }` snapshots keep type-checking.
+   */
+  seed?: Record<string, string>;
 }
 
 interface IdentityStore extends IdentityState {
@@ -43,17 +51,20 @@ interface IdentityStore extends IdentityState {
   hydrated: boolean;
   /** Merge persisted maps in (does not write back). */
   hydrate: (state: Partial<IdentityState>) => void;
+  /** Load the bundled community seed (ADR-0014). Reference data — never persisted. */
+  loadSeed: (seed: Record<string, string>) => void;
   /** Remember which casting a tag belongs to (idempotent; persists on change). */
   linkCar: (uid: string, castingKey: string) => void;
   /** Confirm which catalog car a casting is (persists). */
   identify: (castingKey: string, catalogId: string) => void;
-  /** Forget all identity data. */
+  /** Forget all *user* identity data (links + identifications). The seed stays. */
   reset: () => void;
 }
 
 export const useIdentityStore = create<IdentityStore>((set, get) => ({
   links: {},
   identifications: {},
+  seed: {},
   hydrated: false,
 
   hydrate: (state) =>
@@ -62,6 +73,8 @@ export const useIdentityStore = create<IdentityStore>((set, get) => ({
       identifications: { ...(state.identifications ?? {}) },
       hydrated: true,
     }),
+
+  loadSeed: (seed) => set({ seed: { ...seed } }),
 
   linkCar: (uid, castingKey) => {
     if (!uid || !castingKey) return;
@@ -84,12 +97,14 @@ export const useIdentityStore = create<IdentityStore>((set, get) => ({
 
 /**
  * Resolve the catalog id a tag currently maps to, if any: `uid → castingKey →
- * catalogId`. Pure selector over a snapshot so it's trivial to unit-test and to
- * reuse from a `useIdentityStore` subscription.
+ * catalogId`. The user's own {@link IdentityState.identifications} pick wins;
+ * the bundled community {@link IdentityState.seed} only fills gaps (ADR-0014).
+ * Pure selector over a snapshot so it's trivial to unit-test and to reuse from a
+ * `useIdentityStore` subscription.
  */
 export function catalogIdForUid(state: IdentityState, uid: string | undefined | null): string | undefined {
   if (!uid) return undefined;
   const castingKey = state.links[uid];
   if (!castingKey) return undefined;
-  return state.identifications[castingKey];
+  return state.identifications[castingKey] ?? state.seed?.[castingKey];
 }

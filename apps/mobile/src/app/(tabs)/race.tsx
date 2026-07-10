@@ -196,13 +196,14 @@ export default function RaceScreen() {
   // short uid, else a hint that the heat will use whatever is on the portal.
   const links = useIdentityStore((s) => s.links);
   const identifications = useIdentityStore((s) => s.identifications);
+  const seed = useIdentityStore((s) => s.seed);
   const carLabel = useCallback(
     (uid: string | null): string => {
       if (!uid) return 'Car on portal';
-      const catalogCar = findCatalogCar(catalogIdForUid({ links, identifications }, uid));
+      const catalogCar = findCatalogCar(catalogIdForUid({ links, identifications, seed }, uid));
       return catalogCar?.name ?? shortUid(uid);
     },
-    [links, identifications],
+    [links, identifications, seed],
   );
 
   const onAddRacer = () => {
