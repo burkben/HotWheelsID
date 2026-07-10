@@ -59,12 +59,18 @@ freshly-scanned car then **auto-names with zero taps** if anyone has ever identi
 Merge rule: the **user's own pick always wins** over the seed (seed only fills gaps).
 
 **3. Aggregate in the repository.** Contributors add an unmodified app export under
-`identity-contributions/`. The repository tool validates the export schema and bundled catalog,
-deduplicates semantic payload copies, reports conflicts with repository review provenance, and
-deterministically regenerates the seed. Only casting keys explicitly attested in a pull request's
-repository-only `verifiedCastingKeys` metadata can vote. A mapping is promoted only when two
-independently reviewed source IDs agree and none conflict. No runtime network dependency is added
-to the app.
+`identity-contributions/`. Repository-only attestations bind a stable non-personal source ID and
+HotWheelsID review PR to the exact normalized payload SHA-256 and exact reviewed
+`castingKey -> catalogId` mappings. The tool validates exports and attestations, reports conflicts,
+and deterministically regenerates the seed. A mapping is promoted only when two independently
+reviewed source IDs agree and none conflict. No runtime network dependency is added to the app.
+
+Attestations are activated in two phases. A contribution/review PR may register an attestation, but
+CI takes trust only from the immutable PR base revision (or the pre-push revision on `main`), so that
+new or edited attestation cannot vote in the same change. A later generation PR can use it after it
+has passed review and landed on the base. Attestation filtering occurs before observations are
+counted. The digest and exact mapping binding prevents copied payloads, appended padding rows, or
+editable provenance fields from borrowing another source's vote.
 
 **Privacy boundary (the crux).** Only the `identifications` map (`castingKey → catalogId`) ever
 leaves the device. The `links` map (`uid → castingKey`) — the per-tag, per-device data — **never**
@@ -88,10 +94,11 @@ isolated from the garage schema.
 
 - **Cold start.** Until contributions accumulate, the seed is small; early users still pick manually.
 - **Trust & moderation.** Pooled entries can be wrong or adversarial. The seed requires agreement
-  from two independently reviewed source IDs, semantically deduplicates copied exports, blocks on
-  duplicate payloads or conflicting mappings, and remains reviewable in pull requests. The app still
-  prefers the user's own pick, which limits blast radius, but maintainers must verify that distinct
-  source IDs represent independently checked physical/package evidence.
+  from two independently reviewed, base-trusted source IDs and blocks on conflicting mappings.
+  Identical payloads can corroborate when distinct trusted sources independently submitted them;
+  repeats within one source still count once. The app prefers the user's own pick, which limits blast
+  radius, but maintainers must verify that distinct source IDs represent independently checked
+  physical/package evidence.
 - **Catalog licensing still applies.** Names/photos derive from the CC-BY-SA Fandom wiki
   ([ADR-0013](0013-car-identity-catalog.md)); sharing the `catalogId` map inherits that attribution
   obligation before any public release.
@@ -114,17 +121,18 @@ isolated from the garage schema.
 
 The repository loop is now implemented:
 
-- `identity-contributions/README.md` defines the contribution convention and privacy boundary;
-  `sources.json` records stable non-personal source handles, pull-request URLs, and per-casting review
-  attestations outside device exports.
+- `identity-contributions/README.md` defines the contribution convention, two-phase review workflow,
+  and privacy boundary. `sources.json` records stable non-personal source handles, pull-request URLs,
+  immutable normalized payload digests, and exact mapping attestations outside device exports.
 - `tools/identity-seed.mjs` provides `validate`, `report`, `generate`, and `check`.
 - Validation uses an allowlist, so NFC UIDs, `links`, collection data, and unknown fields fail rather
   than being silently ignored. The 8-hex casting key must agree with its unsigned 32-bit product ID,
   but no speculative product-ID range is imposed.
-- Generation is deterministic and part of the root test command. Conflicts and semantic payload
-  copies block generation instead of choosing a plurality or counting renamed/timestamp-only copies.
-  Export rows without per-casting PR attestation are reported and ignored, so copy-plus-append cannot
-  make copied rows vote.
+- Generation is deterministic and part of the root test command. Conflicts block generation instead
+  of choosing a plurality. Filename and `generatedAt` do not affect payload digests, but distinct
+  base-trusted sources can corroborate identical exports. Repeats within one source count once.
+  Current-only or digest/mapping-mismatched attestations are ignored or rejected before votes are
+  computed, so copied payloads plus padding and forged provenance cannot manufacture consensus.
 - Current state: **0 contribution observations, 0 pending mappings, 0 conflicts, and 0 promoted seed
   rows**. `identity-seed.json` correctly remains empty.
 

@@ -3,20 +3,29 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 export const IDENTITY_EXPORT_SCHEMA = "redlineid.identity-seed/1";
-export const IDENTITY_SOURCES_SCHEMA = "redlineid.identity-sources/1";
+export const IDENTITY_ATTESTATIONS_SCHEMA = "redlineid.identity-attestations/1";
+export const LEGACY_SOURCES_SCHEMA = "redlineid.identity-sources/1";
 export const MIN_AGREEING_SOURCES = 2;
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DEFAULT_CONTRIBUTIONS = path.join(REPO_ROOT, "identity-contributions");
 const DEFAULT_CATALOG = path.join(REPO_ROOT, "apps/mobile/src/catalog/catalog.json");
 const DEFAULT_SEED = path.join(REPO_ROOT, "apps/mobile/src/catalog/identity-seed.json");
+const ATTESTATIONS_PATH = "identity-contributions/sources.json";
 const PAYLOAD_FIELDS = new Set(["schema", "generatedAt", "count", "identifications"]);
 const ROW_FIELDS = new Set(["castingKey", "productId", "catalogId", "name", "toyNumber"]);
-const SOURCES_FIELDS = new Set(["schema", "sources"]);
-const SOURCE_FIELDS = new Set(["file", "sourceId", "review", "verifiedCastingKeys"]);
+const MANIFEST_FIELDS = new Set(["schema", "attestations"]);
+const ATTESTATION_FIELDS = new Set([
+  "sourceId",
+  "review",
+  "payloadSha256",
+  "mappings",
+]);
+const MAPPING_FIELDS = new Set(["castingKey", "catalogId"]);
 const REVIEW_URL = /^https:\/\/github\.com\/burkben\/HotWheelsID\/pull\/[1-9][0-9]*$/;
 
 function isObject(value) {
@@ -97,6 +106,137 @@ export function contributionFingerprint(observations) {
   return crypto.createHash("sha256").update(JSON.stringify(normalized)).digest("hex");
 }
 
+function attestationKey(attestation) {
+  return JSON.stringify({
+    sourceId: attestation.sourceId,
+    review: attestation.review,
+    payloadSha256: attestation.payloadSha256,
+    mappings: attestation.mappings,
+  });
+}
+
+export function validateAttestationManifest(manifest, location, catalogById) {
+  if (!isObject(manifest)) throw new Error(`${location}: manifest must be an object`);
+  assertAllowedFields(manifest, MANIFEST_FIELDS, location);
+  if (manifest.schema !== IDENTITY_ATTESTATIONS_SCHEMA) {
+    throw new Error(`${location}: schema must be ${IDENTITY_ATTESTATIONS_SCHEMA}`);
+  }
+  if (!Array.isArray(manifest.attestations)) {
+    throw new Error(`${location}: attestations must be an array`);
+  }
+
+  const reviewUrls = new Set();
+  const attestations = manifest.attestations.map((entry, index) => {
+    const entryLocation = `${location}: attestations[${index}]`;
+    if (!isObject(entry)) throw new Error(`${entryLocation} must be an object`);
+    assertAllowedFields(entry, ATTESTATION_FIELDS, entryLocation);
+    if (
+      typeof entry.sourceId !== "string" ||
+      !/^[a-z0-9][a-z0-9._-]{2,63}$/.test(entry.sourceId)
+    ) {
+      throw new Error(`${entryLocation}: sourceId must be a stable non-personal review handle`);
+    }
+    if (typeof entry.review !== "string" || !REVIEW_URL.test(entry.review)) {
+      throw new Error(`${entryLocation}: review must be a HotWheelsID pull request URL`);
+    }
+    if (reviewUrls.has(entry.review)) {
+      throw new Error(`${entryLocation}: each attestation requires a distinct review URL`);
+    }
+    reviewUrls.add(entry.review);
+    if (typeof entry.payloadSha256 !== "string" || !/^[0-9a-f]{64}$/.test(entry.payloadSha256)) {
+      throw new Error(`${entryLocation}: payloadSha256 must be lowercase SHA-256 hex`);
+    }
+    if (!Array.isArray(entry.mappings) || entry.mappings.length === 0) {
+      throw new Error(`${entryLocation}: mappings must contain PR-reviewed facts`);
+    }
+    const seenMappings = new Set();
+    const mappings = entry.mappings
+      .map((mapping, mappingIndex) => {
+        const mappingLocation = `${entryLocation}: mappings[${mappingIndex}]`;
+        if (!isObject(mapping)) throw new Error(`${mappingLocation} must be an object`);
+        assertAllowedFields(mapping, MAPPING_FIELDS, mappingLocation);
+        if (
+          typeof mapping.castingKey !== "string" ||
+          !/^[0-9a-f]{8}$/.test(mapping.castingKey)
+        ) {
+          throw new Error(`${mappingLocation}: castingKey must be 8 lowercase hex characters`);
+        }
+        if (typeof mapping.catalogId !== "string" || !catalogById.has(mapping.catalogId)) {
+          throw new Error(`${mappingLocation}: catalogId is not in the bundled catalog`);
+        }
+        const key = `${mapping.castingKey}:${mapping.catalogId}`;
+        if (seenMappings.has(key)) throw new Error(`${mappingLocation}: duplicate mapping ${key}`);
+        seenMappings.add(key);
+        return { castingKey: mapping.castingKey, catalogId: mapping.catalogId };
+      })
+      .sort(
+        (a, b) =>
+          a.castingKey.localeCompare(b.castingKey) ||
+          a.catalogId.localeCompare(b.catalogId),
+      );
+    return {
+      sourceId: entry.sourceId,
+      review: entry.review,
+      payloadSha256: entry.payloadSha256,
+      mappings,
+    };
+  });
+  return attestations.sort((a, b) => attestationKey(a).localeCompare(attestationKey(b)));
+}
+
+export function validateTrustManifest(manifest, location, catalogById) {
+  if (isObject(manifest) && manifest.schema === LEGACY_SOURCES_SCHEMA) {
+    assertAllowedFields(manifest, new Set(["schema", "sources"]), location);
+    if (!Array.isArray(manifest.sources)) {
+      throw new Error(`${location}: legacy sources must be an array`);
+    }
+    if (manifest.sources.length > 0) {
+      throw new Error(`${location}: non-empty legacy trust metadata must be migrated explicitly`);
+    }
+    return [];
+  }
+  return validateAttestationManifest(manifest, location, catalogById);
+}
+
+function readJsonFile(filePath, location) {
+  try {
+    return JSON.parse(fs.readFileSync(filePath, "utf8"));
+  } catch (error) {
+    throw new Error(`${location}: invalid JSON (${error.message})`);
+  }
+}
+
+export function readAttestationsAtRef(repoRoot, ref, catalogById) {
+  const verifiedRef = spawnSync("git", ["rev-parse", "--verify", `${ref}^{commit}`], {
+    cwd: repoRoot,
+    encoding: "utf8",
+  });
+  if (verifiedRef.status !== 0) {
+    throw new Error(`identity trust ref "${ref}" is not a commit`);
+  }
+
+  const exists = spawnSync("git", ["cat-file", "-e", `${ref}:${ATTESTATIONS_PATH}`], {
+    cwd: repoRoot,
+    encoding: "utf8",
+  });
+  if (exists.status !== 0) return [];
+
+  const shown = spawnSync("git", ["show", `${ref}:${ATTESTATIONS_PATH}`], {
+    cwd: repoRoot,
+    encoding: "utf8",
+  });
+  if (shown.status !== 0) {
+    throw new Error(`could not read ${ATTESTATIONS_PATH} from trust ref "${ref}"`);
+  }
+  let manifest;
+  try {
+    manifest = JSON.parse(shown.stdout);
+  } catch (error) {
+    throw new Error(`${ref}:${ATTESTATIONS_PATH}: invalid JSON (${error.message})`);
+  }
+  return validateTrustManifest(manifest, `${ref}:${ATTESTATIONS_PATH}`, catalogById);
+}
+
 export function analyzeObservations(observations) {
   const byCasting = new Map();
   for (const observation of observations) {
@@ -112,8 +252,9 @@ export function analyzeObservations(observations) {
     }
     sources.set(observation.sourceId, {
       sourceId: observation.sourceId,
-      file: observation.source,
+      source: observation.source,
       review: observation.review,
+      payloadSha256: observation.payloadSha256,
     });
   }
 
@@ -149,157 +290,140 @@ export function serializeSeed(seed) {
   return `${JSON.stringify(sorted, null, 2)}\n`;
 }
 
-export function readContributions(contributionsDir, catalogById) {
+export function readContributions(
+  contributionsDir,
+  catalogById,
+  trustedAttestations = [],
+) {
   if (!fs.existsSync(contributionsDir)) {
-    return { contributions: [], duplicates: [], observations: [], unreviewed: [] };
+    return {
+      currentAttestations: [],
+      duplicateFiles: [],
+      eligibleAttestations: [],
+      observations: [],
+      payloads: [],
+      pendingAttestations: [],
+    };
   }
+
   const manifestPath = path.join(contributionsDir, "sources.json");
   if (!fs.existsSync(manifestPath)) {
     throw new Error("identity-contributions/sources.json is required");
   }
-  let manifest;
-  try {
-    manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
-  } catch (error) {
-    throw new Error(`identity-contributions/sources.json: invalid JSON (${error.message})`);
-  }
-  if (!isObject(manifest)) throw new Error("sources.json: manifest must be an object");
-  assertAllowedFields(manifest, SOURCES_FIELDS, "sources.json");
-  if (manifest.schema !== IDENTITY_SOURCES_SCHEMA) {
-    throw new Error(`sources.json: schema must be ${IDENTITY_SOURCES_SCHEMA}`);
-  }
-  if (!Array.isArray(manifest.sources)) {
-    throw new Error("sources.json: sources must be an array");
-  }
-
-  const listedFiles = new Set();
-  const reviewUrls = new Set();
-  const contributions = manifest.sources.map((entry, index) => {
-    const location = `sources.json: sources[${index}]`;
-    if (!isObject(entry)) throw new Error(`${location} must be an object`);
-    assertAllowedFields(entry, SOURCE_FIELDS, location);
-    if (
-      typeof entry.file !== "string" ||
-      path.basename(entry.file) !== entry.file ||
-      entry.file === "sources.json" ||
-      !entry.file.endsWith(".json")
-    ) {
-      throw new Error(`${location}: file must be a safe contribution .json filename`);
-    }
-    if (listedFiles.has(entry.file)) throw new Error(`${location}: duplicate file ${entry.file}`);
-    listedFiles.add(entry.file);
-    if (
-      typeof entry.sourceId !== "string" ||
-      !/^[a-z0-9][a-z0-9._-]{2,63}$/.test(entry.sourceId)
-    ) {
-      throw new Error(`${location}: sourceId must be a stable non-personal review handle`);
-    }
-    if (typeof entry.review !== "string" || !REVIEW_URL.test(entry.review)) {
-      throw new Error(`${location}: review must be a HotWheelsID pull request URL`);
-    }
-    if (reviewUrls.has(entry.review)) {
-      throw new Error(`${location}: each contribution requires a distinct review URL`);
-    }
-    reviewUrls.add(entry.review);
-    if (!Array.isArray(entry.verifiedCastingKeys) || entry.verifiedCastingKeys.length === 0) {
-      throw new Error(`${location}: verifiedCastingKeys must list PR-reviewed casting facts`);
-    }
-    const verifiedCastingKeys = new Set();
-    for (const castingKey of entry.verifiedCastingKeys) {
-      if (typeof castingKey !== "string" || !/^[0-9a-f]{8}$/.test(castingKey)) {
-        throw new Error(`${location}: verifiedCastingKeys must contain lowercase 8-hex keys`);
-      }
-      if (verifiedCastingKeys.has(castingKey)) {
-        throw new Error(`${location}: duplicate verified castingKey ${castingKey}`);
-      }
-      verifiedCastingKeys.add(castingKey);
-    }
-    return { ...entry, verifiedCastingKeys: [...verifiedCastingKeys].sort() };
-  });
+  const currentAttestations = validateAttestationManifest(
+    readJsonFile(manifestPath, "identity-contributions/sources.json"),
+    "identity-contributions/sources.json",
+    catalogById,
+  );
 
   const actualFiles = fs
     .readdirSync(contributionsDir)
     .filter((name) => name.endsWith(".json") && name !== "sources.json")
     .sort();
-  for (const file of actualFiles) {
-    if (!listedFiles.has(file)) throw new Error(`${file}: missing from sources.json`);
-  }
-  for (const file of listedFiles) {
-    if (!actualFiles.includes(file)) throw new Error(`${file}: listed in sources.json but missing`);
+  const payloadByDigest = new Map();
+  for (const name of actualFiles) {
+    const source = path.posix.join(path.basename(contributionsDir), name);
+    const payload = readJsonFile(path.join(contributionsDir, name), source);
+    const validated = validateContribution(payload, source, catalogById);
+    const payloadSha256 = contributionFingerprint(validated);
+    let grouped = payloadByDigest.get(payloadSha256);
+    if (!grouped) {
+      grouped = {
+        payloadSha256,
+        files: [],
+        observations: validated.map(({ castingKey, productId, catalogId }) => ({
+          castingKey,
+          productId,
+          catalogId,
+        })),
+      };
+      payloadByDigest.set(payloadSha256, grouped);
+    }
+    grouped.files.push(source);
   }
 
-  const observations = [];
-  const duplicates = [];
-  const unreviewed = [];
-  const fingerprints = new Map();
-  for (const contribution of contributions.sort((a, b) => a.file.localeCompare(b.file))) {
-    const source = path.posix.join(path.basename(contributionsDir), contribution.file);
-    let payload;
-    try {
-      payload = JSON.parse(
-        fs.readFileSync(path.join(contributionsDir, contribution.file), "utf8"),
+  for (const attestation of currentAttestations) {
+    const payload = payloadByDigest.get(attestation.payloadSha256);
+    if (!payload) {
+      throw new Error(
+        `${attestation.review}: attested payload ${attestation.payloadSha256} is not present`,
       );
-    } catch (error) {
-      throw new Error(`${source}: invalid JSON (${error.message})`);
     }
-    const validated = validateContribution(payload, source, catalogById);
-    const byCastingKey = new Map(validated.map((observation) => [observation.castingKey, observation]));
-    for (const castingKey of contribution.verifiedCastingKeys) {
-      if (!byCastingKey.has(castingKey)) {
+    const payloadMappings = new Set(
+      payload.observations.map(
+        (observation) => `${observation.castingKey}:${observation.catalogId}`,
+      ),
+    );
+    for (const mapping of attestation.mappings) {
+      const mappingKey = `${mapping.castingKey}:${mapping.catalogId}`;
+      if (!payloadMappings.has(mappingKey)) {
         throw new Error(
-          `${source}: PR-reviewed castingKey ${castingKey} is not present in the export`,
+          `${attestation.review}: attested mapping ${mappingKey} is absent from payload ${attestation.payloadSha256}`,
         );
       }
     }
-    const fingerprint = contributionFingerprint(validated);
-    const canonical = fingerprints.get(fingerprint);
-    if (canonical) {
-      duplicates.push({
-        fingerprint,
-        canonical,
-        duplicate: { ...contribution, file: source },
-      });
-      continue;
-    }
-    const provenance = { ...contribution, file: source };
-    fingerprints.set(fingerprint, provenance);
-    const reviewedKeys = new Set(contribution.verifiedCastingKeys);
-    for (const observation of validated) {
-      if (!reviewedKeys.has(observation.castingKey)) {
-        unreviewed.push({
-          sourceId: contribution.sourceId,
-          file: source,
-          review: contribution.review,
-          castingKey: observation.castingKey,
-          catalogId: observation.catalogId,
-        });
-      }
-    }
-    observations.push(
-      ...validated
-        .filter((observation) => reviewedKeys.has(observation.castingKey))
-        .map((observation) => ({
-          ...observation,
-          sourceId: contribution.sourceId,
-          review: contribution.review,
-        })),
-    );
   }
-  return { contributions, duplicates, observations, unreviewed };
+
+  const currentKeys = new Set(currentAttestations.map(attestationKey));
+  const trustedKeys = new Set(trustedAttestations.map(attestationKey));
+  const eligibleAttestations = currentAttestations.filter((attestation) =>
+    trustedKeys.has(attestationKey(attestation)),
+  );
+  const pendingAttestations = currentAttestations.filter(
+    (attestation) => !trustedKeys.has(attestationKey(attestation)),
+  );
+  const removedTrustedAttestations = trustedAttestations.filter(
+    (attestation) => !currentKeys.has(attestationKey(attestation)),
+  );
+
+  const observations = [];
+  for (const attestation of eligibleAttestations) {
+    const payload = payloadByDigest.get(attestation.payloadSha256);
+    for (const mapping of attestation.mappings) {
+      observations.push({
+        ...mapping,
+        sourceId: attestation.sourceId,
+        source: payload.files.join(", "),
+        review: attestation.review,
+        payloadSha256: attestation.payloadSha256,
+      });
+    }
+  }
+
+  const payloads = [...payloadByDigest.values()].sort((a, b) =>
+    a.payloadSha256.localeCompare(b.payloadSha256),
+  );
+  const duplicateFiles = payloads
+    .filter((payload) => payload.files.length > 1)
+    .map((payload) => ({
+      payloadSha256: payload.payloadSha256,
+      files: [...payload.files].sort(),
+    }));
+  return {
+    currentAttestations,
+    duplicateFiles,
+    eligibleAttestations,
+    observations,
+    payloads,
+    pendingAttestations,
+    removedTrustedAttestations,
+  };
 }
 
 function formatSource(source) {
-  return `${source.sourceId} (${source.file}; ${source.review})`;
+  return `${source.sourceId} (${source.review}; ${source.payloadSha256})`;
 }
 
-function formatReport(analysis, loaded) {
-  const reviewedSources = new Set(loaded.contributions.map((item) => item.sourceId));
+function formatReport(analysis, loaded, trustRef) {
   const lines = [
-    `Validated ${loaded.contributions.length} contribution payload(s) from ${reviewedSources.size} reviewed source(s).`,
-    `Accepted ${loaded.contributions.length - loaded.duplicates.length} semantically unique payload(s).`,
-    `Semantic duplicates: ${loaded.duplicates.length}.`,
-    `Accepted ${loaded.observations.length} PR-reviewed observation(s).`,
-    `Unreviewed export rows ignored: ${loaded.unreviewed.length}.`,
+    `Trust ref: ${trustRef}.`,
+    `Unique contribution payloads: ${loaded.payloads.length}.`,
+    `Duplicate payload file groups: ${loaded.duplicateFiles.length}.`,
+    `Current attestations: ${loaded.currentAttestations.length}.`,
+    `Eligible base-trusted attestations: ${loaded.eligibleAttestations.length}.`,
+    `Pending attestations (cannot vote in this change): ${loaded.pendingAttestations.length}.`,
+    `Removed/modified trusted attestations ignored: ${loaded.removedTrustedAttestations.length}.`,
+    `Accepted reviewed observations: ${loaded.observations.length}.`,
     `Promoted ${Object.keys(analysis.seed).length} seed row(s).`,
     `Pending corroboration: ${analysis.pending.length}.`,
     `Conflicts: ${analysis.conflicts.length}.`,
@@ -315,14 +439,12 @@ function formatReport(analysis, loaded) {
       lines.push(`  ${candidate.catalogId}: ${candidate.sources.map(formatSource).join(", ")}`);
     }
   }
-  for (const duplicate of loaded.duplicates) {
-    lines.push(
-      `DUPLICATE ${duplicate.duplicate.file} [${duplicate.duplicate.sourceId}] matches ${duplicate.canonical.file} [${duplicate.canonical.sourceId}] (${duplicate.fingerprint})`,
-    );
+  for (const duplicate of loaded.duplicateFiles) {
+    lines.push(`DUPLICATE FILES ${duplicate.payloadSha256}: ${duplicate.files.join(", ")}`);
   }
-  for (const item of loaded.unreviewed) {
+  for (const attestation of loaded.pendingAttestations) {
     lines.push(
-      `UNREVIEWED ${item.file} [${item.sourceId}] ${item.castingKey} -> ${item.catalogId}`,
+      `PENDING TRUST ${attestation.sourceId} ${attestation.review} ${attestation.payloadSha256}`,
     );
   }
   return lines.join("\n");
@@ -330,20 +452,22 @@ function formatReport(analysis, loaded) {
 
 function run(command) {
   const catalog = JSON.parse(fs.readFileSync(DEFAULT_CATALOG, "utf8"));
-  const loaded = readContributions(DEFAULT_CONTRIBUTIONS, catalogIndex(catalog));
+  const catalogById = catalogIndex(catalog);
+  const trustRef = process.env.IDENTITY_TRUST_REF || "main";
+  const trustedAttestations = readAttestationsAtRef(REPO_ROOT, trustRef, catalogById);
+  const loaded = readContributions(
+    DEFAULT_CONTRIBUTIONS,
+    catalogById,
+    trustedAttestations,
+  );
   const analysis = analyzeObservations(loaded.observations);
 
-  if (command === "validate") {
-    console.log(formatReport(analysis, loaded));
-    if (loaded.duplicates.length > 0) process.exitCode = 1;
+  if (command === "validate" || command === "report") {
+    console.log(formatReport(analysis, loaded, trustRef));
     return;
   }
-  if (command === "report") {
-    console.log(formatReport(analysis, loaded));
-    return;
-  }
-  if (analysis.conflicts.length > 0 || loaded.duplicates.length > 0) {
-    console.error(formatReport(analysis, loaded));
+  if (analysis.conflicts.length > 0) {
+    console.error(formatReport(analysis, loaded, trustRef));
     process.exitCode = 1;
     return;
   }
@@ -361,7 +485,7 @@ function run(command) {
       process.exitCode = 1;
       return;
     }
-    console.log(formatReport(analysis, loaded));
+    console.log(formatReport(analysis, loaded, trustRef));
     return;
   }
   throw new Error(`unknown command "${command}"`);

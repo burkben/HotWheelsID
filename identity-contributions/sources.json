@@ -1,4 +1,4 @@
 {
-  "schema": "redlineid.identity-sources/1",
-  "sources": []
+  "schema": "redlineid.identity-attestations/1",
+  "attestations": []
 }
