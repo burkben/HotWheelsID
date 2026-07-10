@@ -227,6 +227,10 @@ export async function initPersistence(injected?: Partial<PersistenceRepositories
         void repos.identity
           .saveIdentification(castingKey, catalogId)
           .catch((e) => console.warn("[identity] identify failed", e)),
+      onForgetIdentification: (castingKey) =>
+        void repos.identity
+          .deleteIdentification(castingKey)
+          .catch((e) => console.warn("[identity] forget failed", e)),
       onClear: () =>
         void repos.identity.clear().catch((e) => console.warn("[identity] clear failed", e)),
     });

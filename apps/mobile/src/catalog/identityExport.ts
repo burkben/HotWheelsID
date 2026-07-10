@@ -8,10 +8,10 @@
  *
  * **Privacy boundary (the crux of ADR-0014).** Only `castingKey → catalog`
  * facts leave the device. The `uid → castingKey` `links` map (per physical tag,
- * per device) is never read here. Synthetic `uid:`-prefixed keys — cars
- * identified without a Mattel id (e.g. demo passes) — are device-local and
- * excluded. A stale identification pointing at a `catalogId` that is no longer
- * in the bundled catalog is dropped rather than leaked.
+ * per device) is never read here. Synthetic `uid:` keys and undecodable raw
+ * Mattel-ID fallbacks are excluded because both can carry physical-tag identity.
+ * A stale identification pointing at a `catalogId` that is no longer in the
+ * bundled catalog is dropped rather than leaked.
  */
 import { findCatalogCar, type CatalogCar } from "./catalog";
 
@@ -21,9 +21,8 @@ export interface ExportedIdentification {
   /**
    * The model-id bytes as a big-endian uint32 — for Hot Wheels this equals the
    * number the portal reports on its Serial-Number characteristic (PR #46).
-   * `null` when `castingKey` isn't the expected 8 hex chars.
    */
-  readonly productId: number | null;
+  readonly productId: number;
   readonly catalogId: string;
   readonly name: string;
   readonly toyNumber: string | null;
@@ -45,12 +44,16 @@ export function exportIdentifications(
 ): ExportedIdentification[] {
   const rows: ExportedIdentification[] = [];
   for (const [castingKey, catalogId] of Object.entries(identifications)) {
-    if (!castingKey || castingKey.startsWith("uid:")) continue;
+    if (!/^[0-9a-f]{8}$/.test(castingKey)) continue;
+    const productId = productIdFromCastingKey(castingKey);
+    // Undecodable Mattel IDs fall back to the raw id, which can contain a tag UID.
+    // Only the verified 4-byte product key is safe and meaningful to share.
+    if (productId === null) continue;
     const car: CatalogCar | undefined = findCatalogCar(catalogId);
     if (!car) continue;
     rows.push({
       castingKey,
-      productId: productIdFromCastingKey(castingKey),
+      productId,
       catalogId,
       name: car.name,
       toyNumber: car.toyNumber,

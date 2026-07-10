@@ -56,6 +56,13 @@ export class SqliteIdentityRepository implements IdentityRepository {
     );
   }
 
+  async deleteIdentification(castingKey: string): Promise<void> {
+    await this.db.runAsync(
+      `DELETE FROM car_identifications WHERE casting_key = ?;`,
+      castingKey,
+    );
+  }
+
   async clear(): Promise<void> {
     await this.db.execAsync(`DELETE FROM car_links; DELETE FROM car_identifications;`);
   }

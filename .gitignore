@@ -44,3 +44,9 @@ web-build/
 apps/*/ios/
 apps/*/android/
 *.orig.*
+
+# Proprietary mobile packages / local reverse-engineering output
+*.apk
+*.aab
+*.obb
+hwid_apk_src/

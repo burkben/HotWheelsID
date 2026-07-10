@@ -58,10 +58,13 @@ describe("exportIdentifications", () => {
     expect(rows).toEqual([]);
   });
 
-  it("carries productId null when the castingKey isn't 8 hex chars", () => {
-    const rows = exportIdentifications({ oddkey: CHARGER });
-    expect(rows).toHaveLength(1);
-    expect(rows[0].productId).toBeNull();
+  it("drops non-product keys because a raw Mattel ID may embed a tag UID", () => {
+    const rows = exportIdentifications({
+      oddkey: CHARGER,
+      AQBBrl5bAAAGAF0TKZcEKn6i8WKA: CHARGER,
+      "41AE5E5B": CHARGER,
+    });
+    expect(rows).toEqual([]);
   });
 });
 
