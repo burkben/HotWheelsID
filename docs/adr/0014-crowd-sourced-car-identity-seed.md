@@ -49,16 +49,20 @@ native share sheet:
   "catalogId": "70-dodge-charger-rt", "name": "'70 Dodge Charger R/T", "toyNumber": "GHF45" }
 ```
 
-Only entries whose `castingKey` is a **real** model id are exported; synthetic `uid:`-prefixed keys
-(demo passes / cars seen without a `mattelId`) are device-local and filtered out.
+Only entries whose `castingKey` is a **real lowercase 8-hex model id** are exported; synthetic
+`uid:`-prefixed keys (demo passes / cars seen without a `mattelId`) and undecodable raw Mattel-ID
+fallbacks are filtered out. A raw Mattel ID can embed a tag UID, so it is never shareable.
 
 **2. Bundle a seed and merge it at bootstrap.** Ship a community `identity-seed.json`
 (`castingKey → catalogId`) that pre-populates `identifications` when identity is initialised. A
 freshly-scanned car then **auto-names with zero taps** if anyone has ever identified that casting.
 Merge rule: the **user's own pick always wins** over the seed (seed only fills gaps).
 
-**3. Aggregate later.** Contributions are pooled out-of-band (a repo/gist) and the bundled seed is
-regenerated on a cadence. No runtime network dependency is added to the app.
+**3. Aggregate in the repository.** Contributors add an unmodified app export under
+`identity-contributions/`. The repository tool validates the export schema and bundled catalog,
+reports conflicts with source filenames, and deterministically regenerates the seed. A mapping is
+promoted only when two distinct contribution files agree and none conflict. No runtime network
+dependency is added to the app.
 
 **Privacy boundary (the crux).** Only the `identifications` map (`castingKey → catalogId`) ever
 leaves the device. The `links` map (`uid → castingKey`) — the per-tag, per-device data — **never**
@@ -81,9 +85,10 @@ isolated from the garage schema.
 ### Negative / costs
 
 - **Cold start.** Until contributions accumulate, the seed is small; early users still pick manually.
-- **Trust & moderation.** Pooled entries can be wrong or adversarial. The seed must be curated
-  (reviewed / majority-voted) before it is bundled; the app already prefers the user's own pick, which
-  limits blast radius, but a bad seed row could mislabel a casting a user hasn't identified.
+- **Trust & moderation.** Pooled entries can be wrong or adversarial. The seed requires two-file
+  agreement, blocks on any conflicting mapping, and remains reviewable in pull requests. The app
+  still prefers the user's own pick, which limits blast radius, but maintainers must verify that
+  distinct files represent independently checked physical/package evidence.
 - **Catalog licensing still applies.** Names/photos derive from the CC-BY-SA Fandom wiki
   ([ADR-0013](0013-car-identity-catalog.md)); sharing the `catalogId` map inherits that attribution
   obligation before any public release.
@@ -101,3 +106,39 @@ isolated from the garage schema.
   globally meaningful unit.
 - **Stay fully manual (status quo).** Rejected as a ceiling: it caps identity at what each user
   personally scans, and discards reusable knowledge the app already collects.
+
+## Operational addendum (2026-07-10)
+
+The repository loop is now implemented:
+
+- `identity-contributions/README.md` defines the contribution convention and privacy boundary.
+- `tools/identity-seed.mjs` provides `validate`, `report`, `generate`, and `check`.
+- Validation uses an allowlist, so NFC UIDs, `links`, collection data, and unknown fields fail rather
+  than being silently ignored. The 8-hex casting key must agree with its unsigned 32-bit product ID,
+  but no speculative product-ID range is imposed.
+- Generation is deterministic and part of the root test command. Conflicts block generation instead
+  of choosing a plurality.
+- Current state: **0 contribution observations, 0 pending mappings, 0 conflicts, and 0 promoted seed
+  rows**. `identity-seed.json` correctly remains empty.
+
+### Manufacture-date evidence
+
+The misc bytes do not yet support a manufacture-date field. In the one full Hot Wheels capture,
+`000006005d13299704` contains at least two plausible Unix windows in the product era:
+
+- offset 7, `0006005d` little-endian: `2019-06-11T19:50:24Z`
+- offset 10, `5d132997` big-endian: `2019-06-26T08:15:19Z`
+
+Project-Genoa documents a timestamp in a related Mattel PID layout, but at a different location and
+endianness, and labels its own interpretation tentatively. The app therefore exposes neither date as
+fact. `python/tools/analyze_mattel_ids.py` reports candidates as `unverified`; promotion requires
+multiple full Hot Wheels captures with UID/serial integrity checks and packaging corroboration.
+
+### Archived official-app inspection
+
+The public Internet Archive copy of package `com.mattel.hwid` was inspected locally without
+executing or committing it. The base APK contains product-ID code symbols and references to OBB,
+remote asset bundles, and content catalogs, but no bundled packaging toy numbers, PID URLs, or direct
+`productId -> catalog` records. The archive item has no OBB/content bundle. No mapping was added.
+Hashes, commands, boundaries, and the negative result are recorded in
+[`docs/research/hwid-apk-identity.md`](../research/hwid-apk-identity.md).

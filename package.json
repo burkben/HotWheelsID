@@ -13,7 +13,13 @@
   },
   "scripts": {
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present",
+    "test": "npm run test:identity-tools && npm run test:identity-seed && npm run identity-seed:check && npm run test --workspaces --if-present",
+    "test:identity-tools": "cd python/tools && python3 -m unittest test_analyze_mattel_ids.py test_inspect_hwid_apk.py",
+    "test:identity-seed": "node --test tools/identity-seed.test.mjs",
+    "identity-seed:validate": "node tools/identity-seed.mjs validate",
+    "identity-seed:report": "node tools/identity-seed.mjs report",
+    "identity-seed:generate": "node tools/identity-seed.mjs generate",
+    "identity-seed:check": "node tools/identity-seed.mjs check",
     "test:protocol": "npm run test --workspace @redlineid/protocol"
   }
 }

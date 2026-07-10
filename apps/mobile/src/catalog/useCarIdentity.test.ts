@@ -1,6 +1,15 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
-import { castingCoverageForUid } from "./useCarIdentity";
+import { useIdentityStore } from "../store/identityStore";
+import {
+  castingCoverageForUid,
+  identifyCar,
+  undoIdentification,
+} from "./useCarIdentity";
+
+afterEach(() => {
+  useIdentityStore.setState({ links: {}, identifications: {}, seed: {}, hydrated: false });
+});
 
 describe("castingCoverageForUid", () => {
   it("counts every garage car that shares the same casting key", () => {
@@ -16,6 +25,7 @@ describe("castingCoverageForUid", () => {
       otherCars: 1,
       synthetic: false,
     });
+
   });
 
   it("falls back to one car when the current uid is linked but not present in the garage snapshot", () => {
@@ -24,6 +34,35 @@ describe("castingCoverageForUid", () => {
       totalCars: 1,
       otherCars: 0,
       synthetic: false,
+    });
+  });
+
+  describe("identification confirmation helpers", () => {
+    it("undo restores the prior user identification", () => {
+      useIdentityStore.setState({
+        links: { uid1: "keyA" },
+        identifications: { keyA: "car-before" },
+      });
+
+      const change = identifyCar("uid1", "car-after");
+      expect(useIdentityStore.getState().identifications.keyA).toBe("car-after");
+
+      undoIdentification(change!);
+      expect(useIdentityStore.getState().identifications.keyA).toBe("car-before");
+    });
+
+    it("undo removes a new override so the seed is visible again", () => {
+      useIdentityStore.setState({
+        links: { uid1: "keyA" },
+        identifications: {},
+        seed: { keyA: "seed-car" },
+      });
+
+      const change = identifyCar("uid1", "wrong-car");
+      undoIdentification(change!);
+
+      expect(useIdentityStore.getState().identifications).toEqual({});
+      expect(useIdentityStore.getState().seed?.keyA).toBe("seed-car");
     });
   });
 

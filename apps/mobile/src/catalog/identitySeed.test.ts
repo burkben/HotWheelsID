@@ -13,6 +13,15 @@ describe("sanitizeSeed", () => {
     expect(sanitizeSeed({ "uid:04AABBCC": CHARGER })).toEqual({});
   });
 
+  it("strips malformed or raw fallback Mattel IDs that could contain a tag UID", () => {
+    expect(
+      sanitizeSeed({
+        AQBBrl5bAAAGAF0TKZcEKn6i8WKA: CHARGER,
+        "41AE5E5B": CHARGER,
+      }),
+    ).toEqual({});
+  });
+
   it("drops entries pointing at an unknown catalog id", () => {
     expect(sanitizeSeed({ "41ae5e5b": "no-such-car" })).toEqual({});
   });

@@ -40,6 +40,21 @@ export const CATALOG: readonly CatalogCar[] = catalogJson as CatalogCar[];
 /** Index by id for O(1) lookup. */
 const BY_ID: ReadonlyMap<string, CatalogCar> = new Map(CATALOG.map((c) => [c.id, c]));
 
+export const CATALOG_YEARS: readonly number[] = [
+  ...new Set(CATALOG.map((car) => car.year).filter((year): year is number => year !== null)),
+].sort((a, b) => a - b);
+
+export const CATALOG_WAVES: readonly string[] = [
+  ...new Set(CATALOG.map((car) => car.wave).filter((wave): wave is string => wave !== null)),
+].sort((a, b) => a.localeCompare(b));
+
+export interface CatalogFilters {
+  readonly year?: number | null;
+  readonly wave?: string | null;
+  /** Dedicated package lookup; normalized to letters/digits before matching. */
+  readonly toyNumber?: string;
+}
+
 /** Resolve a catalog entry by its stable id, or `undefined` if unknown. */
 export function findCatalogCar(id: string | undefined | null): CatalogCar | undefined {
   if (!id) return undefined;
@@ -48,6 +63,10 @@ export function findCatalogCar(id: string | undefined | null): CatalogCar | unde
 
 function norm(s: string): string {
   return s.toLowerCase().trim();
+}
+
+export function normalizeToyNumber(value: string): string {
+  return value.replace(/[^a-z0-9]/gi, "").toUpperCase();
 }
 
 function includesNormalized(value: string | null, query: string): boolean {
@@ -86,19 +105,32 @@ function score(car: CatalogCar, q: string): number | null {
   return null;
 }
 
+function toyNumberScore(car: CatalogCar, query: string): number | null {
+  const candidate = normalizeToyNumber(car.toyNumber ?? "");
+  const wanted = normalizeToyNumber(query);
+  if (!wanted || !candidate) return null;
+  if (candidate === wanted) return 200;
+  if (candidate.startsWith(wanted)) return 120;
+  if (candidate.includes(wanted)) return 90;
+  return null;
+}
+
 /**
  * Search the catalog by name / toy number / series / year. An empty query
  * returns the whole catalog (name-sorted) so the picker can show everything.
  * Results are ranked by {@link score}, then alphabetically by name.
  */
-export function searchCatalog(query: string): CatalogCar[] {
+export function searchCatalog(query: string, filters: CatalogFilters = {}): CatalogCar[] {
   const q = norm(query);
-  if (q.length === 0) {
-    return [...CATALOG].sort((a, b) => a.name.localeCompare(b.name));
-  }
   const scored: { car: CatalogCar; rank: number }[] = [];
   for (const car of CATALOG) {
-    const rank = score(car, q);
+    if (filters.year != null && car.year !== filters.year) continue;
+    if (filters.wave && car.wave !== filters.wave) continue;
+    const rank = filters.toyNumber
+      ? toyNumberScore(car, filters.toyNumber)
+      : q.length > 0
+        ? score(car, q)
+        : 0;
     if (rank !== null) scored.push({ car, rank });
   }
   scored.sort((a, b) => b.rank - a.rank || a.car.name.localeCompare(b.car.name));

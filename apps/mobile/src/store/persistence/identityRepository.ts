@@ -18,6 +18,8 @@ export interface IdentityRepository {
   saveLink(uid: string, castingKey: string): Promise<void>;
   /** Persist a castingKey → catalogId identification (insert or replace). */
   saveIdentification(castingKey: string, catalogId: string): Promise<void>;
+  /** Remove one user identification without disturbing its uid links. */
+  deleteIdentification(castingKey: string): Promise<void>;
   /** Forget all identity data. */
   clear(): Promise<void>;
 }
@@ -39,6 +41,10 @@ export class InMemoryIdentityRepository implements IdentityRepository {
 
   async saveIdentification(castingKey: string, catalogId: string): Promise<void> {
     this.identifications[castingKey] = catalogId;
+  }
+
+  async deleteIdentification(castingKey: string): Promise<void> {
+    delete this.identifications[castingKey];
   }
 
   async clear(): Promise<void> {

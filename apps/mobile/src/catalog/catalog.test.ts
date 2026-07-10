@@ -1,6 +1,14 @@
 import { describe, it, expect } from "vitest";
 
-import { CATALOG, catalogMeta, findCatalogCar, searchCatalog } from "./catalog";
+import {
+  CATALOG,
+  CATALOG_WAVES,
+  CATALOG_YEARS,
+  catalogMeta,
+  findCatalogCar,
+  normalizeToyNumber,
+  searchCatalog,
+} from "./catalog";
 
 describe("catalog data", () => {
   it("ships a non-trivial catalog", () => {
@@ -97,5 +105,29 @@ describe("searchCatalog", () => {
       const colorHits = searchCatalog(withColor.bodyColor);
       expect(colorHits.some((c) => c.id === withColor.id)).toBe(true);
     }
+  });
+
+  it("filters explicitly by year and wave", () => {
+    const year = CATALOG_YEARS[0];
+    const wave = CATALOG_WAVES.find((candidate) =>
+      CATALOG.some((car) => car.year === year && car.wave === candidate),
+    );
+    expect(wave).toBeTruthy();
+
+    const hits = searchCatalog("", { year, wave });
+    expect(hits.length).toBeGreaterThan(0);
+    expect(hits.every((car) => car.year === year && car.wave === wave)).toBe(true);
+  });
+
+  it("normalizes a package toy number and ranks an exact match first", () => {
+    expect(normalizeToyNumber(" fxb-03 ")).toBe("FXB03");
+    const hits = searchCatalog("", { toyNumber: "fxb-03" });
+    expect(hits[0].toyNumber).toBe("FXB03");
+  });
+
+  it("returns likely package matches for a partial toy number", () => {
+    const hits = searchCatalog("", { toyNumber: "FXB0" });
+    expect(hits.length).toBeGreaterThan(1);
+    expect(hits.every((car) => car.toyNumber?.startsWith("FXB0"))).toBe(true);
   });
 });

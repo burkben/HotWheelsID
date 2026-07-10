@@ -10,7 +10,7 @@ direction set in the [ADRs](adr/) (React Native + Expo, shared TS protocol packa
 
 ---
 
-## Status at a glance (updated 2026-07-09)
+## Status at a glance (updated 2026-07-10)
 
 | Phase | Status | Notes |
 |---|---|---|
@@ -147,7 +147,8 @@ Pulls in the upstream roadmap's "future features" and more.
 - ✅ Achievements (top speed, lap streaks, collection milestones) (PR #23).
 - 🟡 Richer car identity: art, model names, rarity from the Mattel id. **Initial catalog flow
   shipped** — bundled Hot Wheels Fandom catalog (146 cars + photos), richer search/meta, manual
-  casting picker keyed off decoded `mattelId`, and casting coverage UX in identify/garage
+  casting picker keyed off decoded `mattelId`, assisted year/wave narrowing, an exact packaging
+  toy-number path, explicit confirmation/Undo, and casting coverage UX in identify/garage
   (identify once, label matching copies), isolated from the garage schema (see
   [ADR-0013](adr/0013-car-identity-catalog.md)). The `mattelId` is now fully structured — model
   id + big-endian `productId` (== the portal serial) + embedded tag UID, with runtime cross-checks
@@ -155,8 +156,10 @@ Pulls in the upstream roadmap's "future features" and more.
   exports confirmed `castingKey → catalog` identifications (product-number facts only, never tags
   or collection), a bundled seed merges at bootstrap so scanned cars auto-name with zero taps, and
   the user's own pick always wins over the seed (see
-  [ADR-0014](adr/0014-crowd-sourced-car-identity-seed.md)). The seed ships empty at cold start and
-  is regenerated out-of-band as contributions pool.
+  [ADR-0014](adr/0014-crowd-sourced-car-identity-seed.md)). The repository contribution loop now has
+  a strict privacy/schema validator, source-aware conflict report, two-file agreement threshold, and
+  deterministic generation check. Its current state is explicit: **0 observations and 0 promoted
+  rows**, so the bundled seed remains empty.
 - 🟡 Multiplayer/turn-based race nights. **Initial race-night lineup shipped** — queue racers,
   choose who is up next, rotate turns after each heat. Next slice is per-lineup car assignment and
   deeper multi-racer race semantics.
@@ -167,14 +170,18 @@ Pulls in the upstream roadmap's "future features" and more.
   for real testing.
 - 🟡 Decode remaining protocol unknowns. The **live-telemetry gate is solved** on modern
   firmware (the encrypted auth-service stream is fully decoded — see Phase 1 / ADR-0012). Car
-  **identity decoding is now solved too**: the `mattelId` structure (version / `productId` /
+  **stable product identity decoding is solved**: the `mattelId` structure (version / `productId` /
   tag UID) is reverse-engineered and independently corroborated, and the product number is
   recoverable offline from the tag alone (PR #46). What remains is only the **product-number → name**
   map. Reviving the Mattel backend and scraping archived responses were both investigated and are
   **dead ends** (host discontinued end of 2023 and now redirects to a FAQ; zero `pid.mattel` captures
-  in the Wayback index). The chosen path is the crowd-sourced community seed
+  in the Wayback index). A local, hash-verified inspection of the archived official v3.6.1 base APK
+  also found no direct mapping records; identity code points to absent OBB/remote content bundles
+  ([research note](research/hwid-apk-identity.md)). The chosen path is the crowd-sourced community seed
   ([ADR-0014](adr/0014-crowd-sourced-car-identity-seed.md)). The Python tools +
-  `python/diag_portal.py` stay the desktop lab bench.
+  `python/diag_portal.py` stay the desktop lab bench. Manufacture-date decoding remains explicitly
+  unverified: one misc-byte sample yields multiple plausible Unix windows, so diagnostics do not
+  expose a year as product fact.
 
 ---
 

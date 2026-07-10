@@ -71,15 +71,35 @@ export function useCastingCoverage(uid: string | undefined | null): CastingCover
  * Returns `identify(uid, catalogId)`: records (and, if needed, fabricates) the
  * `uid → castingKey → catalogId` chain so the garage immediately renders the pick.
  */
-export function useIdentifyCar(): (uid: string, catalogId: string) => void {
+export interface IdentificationChange {
+  readonly castingKey: string;
+  readonly previousCatalogId?: string;
+}
+
+export function identifyCar(uid: string, catalogId: string): IdentificationChange | undefined {
+  if (!uid || !catalogId) return undefined;
+  const { links, identifications, linkCar, identify } = useIdentityStore.getState();
+  let castingKey = links[uid];
+  if (!castingKey) {
+    castingKey = `uid:${uid}`;
+    linkCar(uid, castingKey);
+  }
+  const change = { castingKey, previousCatalogId: identifications[castingKey] };
+  identify(castingKey, catalogId);
+  return change;
+}
+
+export function undoIdentification(change: IdentificationChange): void {
+  const { identify, forgetIdentification } = useIdentityStore.getState();
+  if (change.previousCatalogId) {
+    identify(change.castingKey, change.previousCatalogId);
+  } else {
+    forgetIdentification(change.castingKey);
+  }
+}
+
+export function useIdentifyCar(): (uid: string, catalogId: string) => IdentificationChange | undefined {
   return useCallback((uid: string, catalogId: string) => {
-    if (!uid || !catalogId) return;
-    const { links, linkCar, identify } = useIdentityStore.getState();
-    let castingKey = links[uid];
-    if (!castingKey) {
-      castingKey = `uid:${uid}`;
-      linkCar(uid, castingKey);
-    }
-    identify(castingKey, catalogId);
+    return identifyCar(uid, catalogId);
   }, []);
 }
