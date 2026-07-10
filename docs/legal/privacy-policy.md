@@ -8,19 +8,19 @@ times. This policy explains what the app does — and does not do — with your 
 
 ## Summary
 
-**Redline ID does not collect, transmit, or share any personal information.** The app
-has no account, analytics, ads, crash reporting, or application server. Normal app
-operation makes no internet requests; data the app saves is stored only on your device.
+**Redline ID does not automatically collect or transmit personal information.** The app
+has no account, analytics, ads, crash reporting, or application server. Data stays on
+your device unless you deliberately export it or open an external link.
 
 ## Data we collect
 
-**None.** We operate no application servers and never receive data from the app.
+**None automatically.** We operate no application servers and receive nothing unless
+you deliberately choose to share content with us.
 
 ## Information stored on your device
 
 To work — and to remember your races between sessions — the app saves the following in
-a private database **on your device only**. None of it leaves your phone, and none of
-it is sent to us or any third party:
+a private database **on your device**. The app does not transmit it in the background:
 
 - **Garage** — cars are recognized by the identifier their id chip broadcasts over
   Bluetooth, along with any nickname you give them and simple stats such as top speed
@@ -54,12 +54,19 @@ device.
 
 ## Data sharing
 
-We do not sell, rent, share, or disclose any app data, because we never collect or
-receive any. All app data stays on your device.
+The app offers OS share-sheet actions for race results, session history, and car
+identity contributions. Depending on what you share, an export can contain player or
+car names, race/lap/speed results, or casting-to-catalog mappings. Nothing is sent until
+you tap a share action and select a destination.
+
+The destination you select receives the exported content under its own privacy terms.
+The Redline ID developer receives nothing unless you deliberately select or separately
+send the export to the developer. We do not sell, rent, or disclose app data.
 
 ## Children's privacy
 
-The app collects no personal information from anyone, including children.
+The app does not automatically collect or transmit personal information from anyone,
+including children.
 
 ## Changes to this policy
 

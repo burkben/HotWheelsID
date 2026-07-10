@@ -69,8 +69,12 @@ export default function CreditsScreen() {
         <Text style={styles.sectionLabel}>Privacy</Text>
         <View style={styles.card}>
           <Text style={styles.body}>
-            Redline ID has no account, analytics, ads, crash reporting, or application server. Race
-            and garage data stay on this device.
+            Redline ID has no account, analytics, ads, crash reporting, or application server. It
+            does not automatically transmit race or garage data.
+          </Text>
+          <Text style={styles.body}>
+            Share actions open the OS share sheet. Nothing is sent until you choose a destination;
+            that destination&apos;s privacy terms apply.
           </Text>
           <ExternalLink label="Read the privacy policy" url={PRIVACY_URL} />
         </View>
