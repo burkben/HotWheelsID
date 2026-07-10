@@ -3,12 +3,14 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { createRace, type RaceResult } from "../../race/raceEngine";
 import { useAchievementsStore } from "../achievementsStore";
 import { useGarageStore } from "../garageStore";
+import { useIdentityStore } from "../identityStore";
 import { usePortalStore } from "../portalStore";
 import { useRaceStore } from "../raceStore";
 import { DEFAULT_SETTINGS, useSettingsStore } from "../settingsStore";
 import { InMemoryAchievementsRepository } from "./achievementsRepository";
 import { InMemoryCarRepository } from "./carRepository";
 import { getSessionRepository } from "./historyAccess";
+import type { IdentityRepository } from "./identityRepository";
 import { initPersistence, resetPersistenceForTests } from "./initPersistence";
 import { InMemoryRaceRepository, type RaceRepository } from "./raceRepository";
 import { InMemorySessionRepository } from "./sessionRepository";
@@ -40,6 +42,7 @@ beforeEach(() => {
   resetPersistenceForTests();
   useRaceStore.setState({ race: createRace(), leaderboard: [] });
   useGarageStore.setState({ cars: [] });
+  useIdentityStore.setState({ links: {}, identifications: {}, seed: {}, hydrated: false });
   useSettingsStore.setState({ ...DEFAULT_SETTINGS, hydrated: false });
   useAchievementsStore.setState({ unlocked: {}, stats: emptyStats(), hydrated: false });
   usePortalStore.getState().reset();
@@ -292,8 +295,38 @@ describe("initPersistence", () => {
     expect(useRaceStore.getState().leaderboard).toHaveLength(0);
     expect(useSettingsStore.getState().hydrated).toBe(true);
     expect(usePersistenceStatusStore.getState()).toMatchObject({
-      mode: "memory",
+      mode: "partial",
       reason: "initFailed",
+      degradedDomains: ["Race"],
+    });
+  });
+
+  it("preserves already hydrated stores when a later repository falls back", async () => {
+    const race = new InMemoryRaceRepository();
+    await race.saveResult(makeResult({ player: "Ada" }));
+    const car = new InMemoryCarRepository();
+    await car.recordDetection({ uid: "KEEP:ME", at: 100 });
+    const identity: IdentityRepository = {
+      init: () => Promise.resolve(),
+      load: () => Promise.reject(new Error("identity hydration failed")),
+      saveLink: () => Promise.resolve(),
+      saveIdentification: () => Promise.resolve(),
+      clear: () => Promise.resolve(),
+    };
+
+    await initPersistence({ race, car, identity });
+
+    expect(useRaceStore.getState().leaderboard.map((result) => result.player)).toEqual(["Ada"]);
+    expect(useGarageStore.getState().cars.map((record) => record.uid)).toEqual(["KEEP:ME"]);
+    expect(useIdentityStore.getState()).toMatchObject({
+      links: {},
+      identifications: {},
+      hydrated: true,
+    });
+    expect(usePersistenceStatusStore.getState()).toMatchObject({
+      mode: "partial",
+      reason: "initFailed",
+      degradedDomains: ["Identity"],
     });
   });
 

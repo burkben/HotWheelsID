@@ -6,12 +6,18 @@ import { colors, fontSize, fontWeight, spacing } from "../theme/tokens";
 export function PersistenceStatusBanner() {
   const mode = usePersistenceStatusStore((state) => state.mode);
   const reason = usePersistenceStatusStore((state) => state.reason);
-  if (mode !== "memory") return null;
+  const degradedDomains = usePersistenceStatusStore((state) => state.degradedDomains);
+  if (mode !== "memory" && mode !== "partial") return null;
 
   const isWeb = Platform.OS === "web";
-  const title = isWeb ? "Browser session" : "Saving unavailable";
+  const domainLabel = degradedDomains
+    .map((domain) => (domain === "Identity" ? "Car identities" : domain))
+    .join(", ");
+  const title = isWeb ? "Browser session" : mode === "partial" ? "Saving limited" : "Saving unavailable";
   const body = isWeb
     ? "Garage, History, and Settings work while this page is open, but reset when it closes."
+    : mode === "partial"
+      ? `${domainLabel || "Some data"} is using temporary memory and may reset when the app closes. Other data continues saving. Restart the app to retry.`
     : reason === "unavailable"
       ? "You can keep using the app, but changes reset when it closes. Rebuild the native app to restore saving."
       : "You can keep using the app, but changes reset when it closes. Restart the app to try saving again.";

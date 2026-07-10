@@ -3,9 +3,8 @@
  *
  * Opens the shared `redlineid.db` **once**, hydrates every render store from disk,
  * registers write-through sinks, and bridges the runtime portal store into the
- * Garage and History. Today it wires four repositories — Race (durable
- * leaderboard), Car (durable garage), Session (durable history), and Settings
- * (durable preferences) — sharing a single migrated DB handle.
+ * Garage and History. It wires Race, Car, Session, Settings, Achievements, and
+ * Identity repositories sharing a single migrated DB handle when available.
  *
  * **Native-module discipline (load-bearing — do not relax):** `expo-sqlite`
  * throws *at module-evaluation time* when `ExpoSQLite` is absent (its
@@ -23,6 +22,8 @@
  * bundler stub, and the repository adapters use type-only imports.
  *
  * Absent native module → one quiet `console.log`, in-memory stores, no red screen.
+ * A failure in one repository falls back only that domain; successful hydrations
+ * remain intact and continue using their original repositories.
  * The attempt is **one-shot per JS runtime** (a missing module can't appear without
  * an app rebuild, which restarts the runtime anyway), so we never retry.
  */
@@ -45,7 +46,11 @@ import { InMemoryRaceRepository, type RaceRepository } from "./raceRepository";
 import { setSessionRepository } from "./historyAccess";
 import { InMemorySessionRepository, type SessionRepository } from "./sessionRepository";
 import { InMemorySettingsRepository, type SettingsRepository } from "./settingsRepository";
-import { usePersistenceStatusStore } from "./persistenceStatusStore";
+import {
+  usePersistenceStatusStore,
+  type PersistenceDegradedReason,
+  type PersistenceDomain,
+} from "./persistenceStatusStore";
 
 /** The repositories the bootstrap wires. Tests may inject any subset. */
 export interface PersistenceRepositories {
@@ -80,12 +85,12 @@ function sqliteNativeModuleAvailable(): boolean {
 /**
  * Resolve the repositories to use. Injected repos (tests) win; a partial injection
  * fills the gap with an in-memory repo. Otherwise, only when the native module is
- * confirmed present, open the shared DB and build the SQLite adapters. Returns
- * `null` (not a throw) when SQLite is unavailable so the caller falls back cleanly.
+ * confirmed present, open the shared DB and build the SQLite adapters. Native
+ * loading/open failures resolve to fully wired in-memory repositories.
  */
 interface PersistenceResolution {
   repositories: PersistenceRepositories;
-  degradedReason: "unavailable" | null;
+  degradedReason: PersistenceDegradedReason | null;
 }
 
 function createInMemoryRepositories(): PersistenceRepositories {
@@ -127,47 +132,121 @@ async function resolveRepositories(
     return { repositories: createInMemoryRepositories(), degradedReason: "unavailable" };
   }
 
-  const { openRedlineDb } = require("./sqliteDb") as typeof import("./sqliteDb");
-  const { SqliteRaceRepository } =
-    require("./sqliteRaceRepository") as typeof import("./sqliteRaceRepository");
-  const { SqliteCarRepository } =
-    require("./sqliteCarRepository") as typeof import("./sqliteCarRepository");
-  const { SqliteSessionRepository } =
-    require("./sqliteSessionRepository") as typeof import("./sqliteSessionRepository");
-  const { SqliteSettingsRepository } =
-    require("./sqliteSettingsRepository") as typeof import("./sqliteSettingsRepository");
-  const { SqliteAchievementsRepository } =
-    require("./sqliteAchievementsRepository") as typeof import("./sqliteAchievementsRepository");
-  const { SqliteIdentityRepository } =
-    require("./sqliteIdentityRepository") as typeof import("./sqliteIdentityRepository");
+  try {
+    const { openRedlineDb } = require("./sqliteDb") as typeof import("./sqliteDb");
+    const { SqliteRaceRepository } =
+      require("./sqliteRaceRepository") as typeof import("./sqliteRaceRepository");
+    const { SqliteCarRepository } =
+      require("./sqliteCarRepository") as typeof import("./sqliteCarRepository");
+    const { SqliteSessionRepository } =
+      require("./sqliteSessionRepository") as typeof import("./sqliteSessionRepository");
+    const { SqliteSettingsRepository } =
+      require("./sqliteSettingsRepository") as typeof import("./sqliteSettingsRepository");
+    const { SqliteAchievementsRepository } =
+      require("./sqliteAchievementsRepository") as typeof import("./sqliteAchievementsRepository");
+    const { SqliteIdentityRepository } =
+      require("./sqliteIdentityRepository") as typeof import("./sqliteIdentityRepository");
 
-  const db = await openRedlineDb();
-  return {
-    repositories: {
-      race: new SqliteRaceRepository(db),
-      car: new SqliteCarRepository(db),
-      session: new SqliteSessionRepository(db),
-      settings: new SqliteSettingsRepository(db),
-      achievements: new SqliteAchievementsRepository(db),
-      identity: new SqliteIdentityRepository(db),
-    },
-    degradedReason: null,
-  };
+    const db = await openRedlineDb();
+    return {
+      repositories: {
+        race: new SqliteRaceRepository(db),
+        car: new SqliteCarRepository(db),
+        session: new SqliteSessionRepository(db),
+        settings: new SqliteSettingsRepository(db),
+        achievements: new SqliteAchievementsRepository(db),
+        identity: new SqliteIdentityRepository(db),
+      },
+      degradedReason: null,
+    };
+  } catch (error) {
+    console.warn("[persist] SQLite open failed; using in-memory repositories", error);
+    return { repositories: createInMemoryRepositories(), degradedReason: "initFailed" };
+  }
 }
 
-async function initializeRepositories(repos: PersistenceRepositories): Promise<void> {
-  await repos.race.init();
-  await repos.car.init();
-  await repos.session.init();
-  await repos.settings.init();
-  await repos.achievements.init();
-  await repos.identity.init();
+interface InitializableRepository {
+  init(): Promise<void>;
+}
 
-  useRaceStore.getState().hydrate(await repos.race.loadResults());
-  useGarageStore.getState().hydrate(await repos.car.getCars());
-  useSettingsStore.getState().hydrate(await repos.settings.load());
-  useAchievementsStore.getState().hydrate(await repos.achievements.loadUnlocked());
-  useIdentityStore.getState().hydrate(await repos.identity.load());
+interface InitializedRepository<R> {
+  repository: R;
+  degraded: boolean;
+  domain: PersistenceDomain;
+}
+
+/**
+ * Initialize and hydrate one persistence domain in isolation. A late failure in
+ * Identity, for example, must not replace already-hydrated Race or Garage data.
+ */
+async function initializeRepository<R extends InitializableRepository>(
+  label: PersistenceDomain,
+  repository: R,
+  createFallback: () => R,
+  hydrate: (active: R) => Promise<void>,
+): Promise<InitializedRepository<R>> {
+  try {
+    await repository.init();
+    await hydrate(repository);
+    return { repository, degraded: false, domain: label };
+  } catch (error) {
+    console.warn(`[persist] ${label} init/hydration failed; using in-memory ${label}`, error);
+    const fallback = createFallback();
+    await fallback.init();
+    await hydrate(fallback);
+    return { repository: fallback, degraded: true, domain: label };
+  }
+}
+
+async function initializeRepositories(
+  requested: PersistenceRepositories,
+): Promise<PersistenceDomain[]> {
+  const race = await initializeRepository(
+    "Race",
+    requested.race,
+    () => new InMemoryRaceRepository(),
+    async (repository) => useRaceStore.getState().hydrate(await repository.loadResults()),
+  );
+  const car = await initializeRepository(
+    "Garage",
+    requested.car,
+    () => new InMemoryCarRepository(),
+    async (repository) => useGarageStore.getState().hydrate(await repository.getCars()),
+  );
+  const session = await initializeRepository(
+    "History",
+    requested.session,
+    () => new InMemorySessionRepository(),
+    async () => {},
+  );
+  const settings = await initializeRepository(
+    "Settings",
+    requested.settings,
+    () => new InMemorySettingsRepository(),
+    async (repository) => useSettingsStore.getState().hydrate(await repository.load()),
+  );
+  const achievements = await initializeRepository(
+    "Achievements",
+    requested.achievements,
+    () => new InMemoryAchievementsRepository(),
+    async (repository) =>
+      useAchievementsStore.getState().hydrate(await repository.loadUnlocked()),
+  );
+  const identity = await initializeRepository(
+    "Identity",
+    requested.identity,
+    () => new InMemoryIdentityRepository(),
+    async (repository) => useIdentityStore.getState().hydrate(await repository.load()),
+  );
+
+  const repos: PersistenceRepositories = {
+    race: race.repository,
+    car: car.repository,
+    session: session.repository,
+    settings: settings.repository,
+    achievements: achievements.repository,
+    identity: identity.repository,
+  };
   setSessionRepository(repos.session);
 
   const refreshAchievements = (): void => {
@@ -250,6 +329,9 @@ async function initializeRepositories(repos: PersistenceRepositories): Promise<v
 
   wirePortalBridges(repos.session);
   refreshAchievements();
+  return [race, car, session, settings, achievements, identity]
+    .filter((result) => result.degraded)
+    .map((result) => result.domain);
 }
 
 export async function initPersistence(injected?: Partial<PersistenceRepositories>): Promise<void> {
@@ -259,23 +341,25 @@ export async function initPersistence(injected?: Partial<PersistenceRepositories
 
   try {
     const resolution = await resolveRepositories(injected);
-    await initializeRepositories(resolution.repositories);
+    const degradedDomains = await initializeRepositories(resolution.repositories);
     if (resolution.degradedReason) {
       console.log(
-        "[persist] SQLite not in this build — using in-memory Race, Garage, History, Settings, Achievements, and Identity repositories.",
+        resolution.degradedReason === "unavailable"
+          ? "[persist] SQLite not in this build — using in-memory Race, Garage, History, Settings, Achievements, and Identity repositories."
+          : "[persist] SQLite could not open — using in-memory repositories.",
       );
       usePersistenceStatusStore.getState().setMemory(resolution.degradedReason);
+    } else if (degradedDomains.length > 0) {
+      console.log(`[persist] In-memory fallback: ${degradedDomains.join(", ")}.`);
+      usePersistenceStatusStore.getState().setPartial(degradedDomains);
     } else {
       usePersistenceStatusStore.getState().setDurable();
     }
   } catch (error) {
-    console.warn("[persist] init failed; using in-memory stores", error);
-    try {
-      await initializeRepositories(createInMemoryRepositories());
-    } catch (fallbackError) {
-      console.warn("[persist] in-memory fallback failed", fallbackError);
-      if (!useSettingsStore.getState().hydrated) useSettingsStore.getState().hydrate({});
-    }
+    // In-memory repositories cannot normally fail. If the bootstrap itself does,
+    // preserve every store already hydrated rather than resetting the application.
+    console.warn("[persist] bootstrap failed; preserving initialized stores", error);
+    if (!useSettingsStore.getState().hydrated) useSettingsStore.getState().hydrate({});
     usePersistenceStatusStore.getState().setMemory("initFailed");
   }
 }
