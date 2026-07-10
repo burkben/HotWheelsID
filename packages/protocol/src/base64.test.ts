@@ -23,6 +23,12 @@ describe("bytesFromBase64", () => {
     ]);
   });
 
+  it("decodes the URL-safe alphabet (- and _) identically to + and /", () => {
+    expect(Array.from(bytesFromBase64("--__"))).toEqual(Array.from(bytesFromBase64("++//")));
+    // Real Mattel car ids use the URL-safe alphabet (note the '-').
+    expect(bytesToHex(bytesFromBase64("AQBBq-A4"), "")).toBe("010041ABE038");
+  });
+
   it("decodes an empty string to an empty array", () => {
     expect(bytesFromBase64("").length).toBe(0);
   });
