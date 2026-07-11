@@ -19,7 +19,7 @@ direction set in the [ADRs](adr/) (React Native + Expo, shared TS protocol packa
 | 2 — Attractive UI | ✅ Done | Skia speedometer, flames, haptics, reduce-motion, mock generator, recent passes. |
 | 3 — Persistence: garage, history, races | ✅ Done | **Race Mode, Garage, History, and Settings all durable** on a shared `expo-sqlite` db (PRs #15/#16/#18/#19). Restart-safe and device-validated. |
 | 4 — iOS distribution | ✅ Done | Installed through TestFlight and race-validated end-to-end on iPhone. |
-| 5 — Delight & depth | 🟡 In progress | Achievements shipped; richer car identity and initial race-night lineup shipped; sound/advanced multiplayer remain. |
+| 5 — Delight & depth | 🟡 In progress | Achievements, richer car identity, initial race-night lineup, and TV host display shipped; sound/advanced multiplayer remain. |
 
 > The headline goal — a polished, hardware-validated live speedometer on iOS — is **achieved**.
 > The app is now **installed through TestFlight and race-validated end-to-end on iPhone**,
@@ -161,7 +161,9 @@ Pulls in the upstream roadmap's "future features" and more.
   choose who is up next, rotate turns after each heat. Next slice is per-lineup car assignment and
   deeper multi-racer race semantics.
 - ✅ Share race & session results to the native share sheet (PR #26).
-- ⬜ Sound design; optional "TV/host mode."
+- 🟡 Sound design; **initial TV host mode shipped** — a responsive, landscape-ready race display
+  mirrors the active racer, live lap clock, lap stats, portal status, and session leaderboard for
+  AirPlay/HDMI mirroring. Dedicated second-screen transport and host audio remain optional follow-ups.
 - ✅ Speed units (mph / km/h) + display calibration to real-world speeds (PR #25).
 - ⬜ Android `preview` build / parity. **Backlogged** until there is an Android device available
   for real testing.

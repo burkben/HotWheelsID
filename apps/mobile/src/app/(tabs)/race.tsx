@@ -255,7 +255,17 @@ export default function RaceScreen() {
     >
       <View style={styles.header}>
         <Text style={styles.title}>Race Mode</Text>
-        <ConnDot connection={connection} />
+        <View style={styles.headerActions}>
+          <Link href="/host" asChild>
+            <Pressable
+              accessibilityRole="button"
+              style={({ pressed }) => [styles.hostButton, pressed && styles.pressed]}
+            >
+              <Text style={styles.hostButtonText}>TV host</Text>
+            </Pressable>
+          </Link>
+          <ConnDot connection={connection} />
+        </View>
       </View>
 
       {phase === 'idle' && (
@@ -661,6 +671,15 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   title: { color: colors.textPrimary, fontSize: fontSize.lg, fontWeight: fontWeight.heavy },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: spacing(3) },
+  hostButton: {
+    borderColor: colors.border,
+    borderWidth: 1,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing(3),
+    paddingVertical: spacing(1.5),
+  },
+  hostButtonText: { color: colors.accentBlue, fontSize: fontSize.xs, fontWeight: fontWeight.bold },
   connDot: { width: 11, height: 11, borderRadius: radius.pill },
 
   section: { width: '100%', maxWidth: 420, gap: spacing(3) },

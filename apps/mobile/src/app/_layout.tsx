@@ -32,6 +32,7 @@ export default function RootLayout() {
           <Stack.Screen name="history/[id]" />
           <Stack.Screen name="achievements" />
           <Stack.Screen name="live" />
+          <Stack.Screen name="host" />
           <Stack.Screen name="settings" />
         </Stack>
         <StatusBar style="light" />
