@@ -15,6 +15,9 @@ import { usePortalStore } from '@/store/portalStore';
 import { useRaceStore } from '@/store/raceStore';
 import { colors, fontWeight, radius, spacing } from '@/theme/tokens';
 
+const WIDE_LEADERBOARD_LIMIT = 8;
+const NARROW_LEADERBOARD_LIMIT = 5;
+
 export default function HostScreen() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
@@ -109,7 +112,9 @@ export default function HostScreen() {
               <Text style={styles.emptyText}>Finished races will appear here.</Text>
             </View>
           ) : (
-            leaderboard.slice(0, wide ? 8 : 5).map((result, index) => (
+            leaderboard
+              .slice(0, wide ? WIDE_LEADERBOARD_LIMIT : NARROW_LEADERBOARD_LIMIT)
+              .map((result, index) => (
               <View key={`${result.finishedAt}-${index}`} style={styles.boardRow}>
                 <Text style={[styles.rank, index === 0 && styles.top]}>{index + 1}</Text>
                 <View style={styles.boardRacer}>
@@ -122,7 +127,7 @@ export default function HostScreen() {
                   {formatRaceTime(result.totalTime)}
                 </Text>
               </View>
-            ))
+              ))
           )}
         </View>
       </View>

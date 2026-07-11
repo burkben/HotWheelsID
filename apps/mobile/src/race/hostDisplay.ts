@@ -23,10 +23,8 @@ export function raceHostSnapshot(race: RaceState, nowMs: number): RaceHostSnapsh
   const racer = race.player || "Race night";
   const lastLap = race.lapTimes.at(-1);
   const bestLap = race.lapTimes.length > 0 ? Math.min(...race.lapTimes) : undefined;
-  const lapNumber = Math.min(
-    race.lapTimes.length + (race.lastGateAt == null ? 0 : 1),
-    race.targetLaps,
-  );
+  const inProgressLap = race.lastGateAt == null ? 0 : 1;
+  const lapNumber = Math.min(race.lapTimes.length + inProgressLap, race.targetLaps);
 
   if (race.phase === "countdown") {
     return {
