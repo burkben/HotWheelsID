@@ -7,6 +7,7 @@ describe("formatRaceTime", () => {
   it("formats seconds and minute-length times", () => {
     expect(formatRaceTime(12.345)).toBe("12.35s");
     expect(formatRaceTime(62.345)).toBe("1:02.34");
+    expect(formatRaceTime(119.999)).toBe("2:00.00");
     expect(formatRaceTime(Number.NaN)).toBe("—");
   });
 });

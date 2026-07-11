@@ -13,8 +13,12 @@ export interface RaceHostSnapshot {
 export function formatRaceTime(seconds: number): string {
   if (!Number.isFinite(seconds)) return "—";
   if (seconds >= 60) {
-    const minutes = Math.floor(seconds / 60);
-    return `${minutes}:${(seconds - minutes * 60).toFixed(2).padStart(5, "0")}`;
+    const totalHundredths = Math.round(Number(seconds.toFixed(2)) * 100);
+    const minutes = Math.floor(totalHundredths / 6_000);
+    const remainingHundredths = totalHundredths - minutes * 6_000;
+    const wholeSeconds = Math.floor(remainingHundredths / 100);
+    const hundredths = remainingHundredths % 100;
+    return `${minutes}:${String(wholeSeconds).padStart(2, "0")}.${String(hundredths).padStart(2, "0")}`;
   }
   return `${seconds.toFixed(2)}s`;
 }
