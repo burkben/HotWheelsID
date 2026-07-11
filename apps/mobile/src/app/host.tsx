@@ -114,7 +114,10 @@ export default function HostScreen() {
             </View>
           ) : (
             leaderboard.slice(0, leaderboardLimit).map((result, index) => (
-              <View key={index} style={styles.boardRow}>
+              <View
+                key={`${result.finishedAt}:${result.player}:${result.carUid}:${result.totalTime}`}
+                style={styles.boardRow}
+              >
                 <Text style={[styles.rank, index === 0 && styles.top]}>{index + 1}</Text>
                 <View style={styles.boardRacer}>
                   <Text style={styles.boardName} numberOfLines={1}>
