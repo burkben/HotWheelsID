@@ -34,6 +34,7 @@ export default function HostScreen() {
 
   const snapshot = raceHostSnapshot(race, now);
   const wide = width >= 760;
+  const leaderboardLimit = wide ? WIDE_LEADERBOARD_LIMIT : NARROW_LEADERBOARD_LIMIT;
 
   return (
     <ScrollView
@@ -112,10 +113,8 @@ export default function HostScreen() {
               <Text style={styles.emptyText}>Finished races will appear here.</Text>
             </View>
           ) : (
-            leaderboard
-              .slice(0, wide ? WIDE_LEADERBOARD_LIMIT : NARROW_LEADERBOARD_LIMIT)
-              .map((result, index) => (
-              <View key={`${result.finishedAt}-${index}`} style={styles.boardRow}>
+            leaderboard.slice(0, leaderboardLimit).map((result, index) => (
+              <View key={index} style={styles.boardRow}>
                 <Text style={[styles.rank, index === 0 && styles.top]}>{index + 1}</Text>
                 <View style={styles.boardRacer}>
                   <Text style={styles.boardName} numberOfLines={1}>
@@ -127,7 +126,7 @@ export default function HostScreen() {
                   {formatRaceTime(result.totalTime)}
                 </Text>
               </View>
-              ))
+            ))
           )}
         </View>
       </View>
