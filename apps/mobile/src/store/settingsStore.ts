@@ -23,6 +23,8 @@ export interface SettingsState {
   defaultLaps: number;
   /** Master switch for tactile feedback (countdown, laps, passes). */
   haptics: boolean;
+  /** Master switch for race sound cues (countdown, laps, finish). */
+  sound: boolean;
   /** Force-reduce animations even when the OS setting is off. */
   reduceMotion: boolean;
   /** Open the app in demo (mock portal) mode instead of live BLE. */
@@ -37,6 +39,7 @@ export const DEFAULT_SETTINGS: SettingsState = {
   playerName: "Player 1",
   defaultLaps: 5,
   haptics: true,
+  sound: true,
   reduceMotion: false,
   mockModeDefault: false,
   speedUnit: "mph",
@@ -67,6 +70,7 @@ function coerceSetting<K extends keyof SettingsState>(
         ? value
         : undefined) as SettingsState[K] | undefined;
     case "haptics":
+    case "sound":
     case "reduceMotion":
     case "mockModeDefault":
       return (typeof value === "boolean" ? value : undefined) as SettingsState[K] | undefined;
@@ -113,6 +117,7 @@ interface SettingsStore extends SettingsState {
   setPlayerName: (value: string) => void;
   setDefaultLaps: (value: number) => void;
   setHaptics: (value: boolean) => void;
+  setSound: (value: boolean) => void;
   setReduceMotion: (value: boolean) => void;
   setMockModeDefault: (value: boolean) => void;
   setSpeedUnit: (value: SpeedUnit) => void;
@@ -144,6 +149,10 @@ export const useSettingsStore = create<SettingsStore>((set) => ({
   setHaptics: (value) => {
     set({ haptics: value });
     persist("haptics", value);
+  },
+  setSound: (value) => {
+    set({ sound: value });
+    persist("sound", value);
   },
   setReduceMotion: (value) => {
     set({ reduceMotion: value });

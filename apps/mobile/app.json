@@ -47,11 +47,20 @@
         "react-native-ble-plx",
         {
           "isBackgroundEnabled": false,
-          "modes": ["central"],
+          "modes": [
+            "central"
+          ],
           "bluetoothAlwaysPermission": "Redline ID uses Bluetooth to connect to your race portal and read car and speed data."
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": false,
+          "enableBackgroundPlayback": false
+        }
+      ]
     ],
     "extra": {
       "eas": {
