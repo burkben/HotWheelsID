@@ -1,0 +1,3 @@
+# Contribution payloads land here as `*.json` files (one per submission).
+# See ../README.md for the format and PR flow. This keep-file makes the empty
+# directory tracked; it is ignored by the tooling (only *.json is read).
