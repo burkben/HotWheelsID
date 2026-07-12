@@ -47,6 +47,7 @@ export default function SettingsScreen() {
   const playerName = useSettingsStore((s) => s.playerName);
   const defaultLaps = useSettingsStore((s) => s.defaultLaps);
   const haptics = useSettingsStore((s) => s.haptics);
+  const sound = useSettingsStore((s) => s.sound);
   const reduceMotion = useSettingsStore((s) => s.reduceMotion);
   const mockModeDefault = useSettingsStore((s) => s.mockModeDefault);
   const speedUnit = useSettingsStore((s) => s.speedUnit);
@@ -55,6 +56,7 @@ export default function SettingsScreen() {
   const setPlayerName = useSettingsStore((s) => s.setPlayerName);
   const setDefaultLaps = useSettingsStore((s) => s.setDefaultLaps);
   const setHaptics = useSettingsStore((s) => s.setHaptics);
+  const setSound = useSettingsStore((s) => s.setSound);
   const setReduceMotion = useSettingsStore((s) => s.setReduceMotion);
   const setMockModeDefault = useSettingsStore((s) => s.setMockModeDefault);
   const setSpeedUnit = useSettingsStore((s) => s.setSpeedUnit);
@@ -268,6 +270,13 @@ export default function SettingsScreen() {
             hint="Vibration on the countdown, each lap, and new-best passes."
             value={haptics}
             onValueChange={setHaptics}
+          />
+          <View style={styles.divider} />
+          <ToggleRow
+            label="Sound"
+            hint="Play race cues on the countdown, each lap, new-best laps, and finish."
+            value={sound}
+            onValueChange={setSound}
           />
           <View style={styles.divider} />
           <ToggleRow

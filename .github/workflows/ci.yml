@@ -32,3 +32,12 @@ jobs:
 
       - name: Unit tests (all workspaces)
         run: npm test
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Sound assets in sync with generator
+        working-directory: python
+        run: python tools/gen_sound_cues.py --check

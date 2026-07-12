@@ -50,6 +50,8 @@ import { usePortalStore } from '@/store/portalStore';
 import { catalogIdForUid, useIdentityStore } from '@/store/identityStore';
 import { findCatalogCar } from '@/catalog/catalog';
 import { useSettingsStore } from '@/store/settingsStore';
+import { nextLapCue } from '@/sound/cues';
+import { playCue } from '@/sound/player';
 import { raceShareText } from '@/share/summary';
 import { getActiveTransportControls } from '@/transport/active';
 import { colors, fontSize, fontWeight, radius, spacing } from '@/theme/tokens';
@@ -136,15 +138,18 @@ export default function RaceScreen() {
     let n = 3;
     setCount(n);
     haptic(() => Haptics.selectionAsync());
+    playCue('countdownTick');
     const id = setInterval(() => {
       n -= 1;
       if (n <= 0) {
         clearInterval(id);
         haptic(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy));
+        playCue('countdownGo');
         startRacing();
       } else {
         setCount(n);
         haptic(() => Haptics.selectionAsync());
+        playCue('countdownTick');
       }
     }, COUNTDOWN_STEP_MS);
     return () => clearInterval(id);
@@ -170,19 +175,21 @@ export default function RaceScreen() {
     return () => clearInterval(id);
   }, [phase]);
 
-  // --- Haptics on lap + finish ------------------------------------------------
+  // --- Haptics + sound on lap + finish ---------------------------------------
   const prevLaps = useRef(0);
   useEffect(() => {
     const n = race.lapTimes.length;
     if (phase === 'racing' && n > prevLaps.current) {
       haptic(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium));
+      playCue(nextLapCue(race.lapTimes));
     }
     prevLaps.current = n;
-  }, [race.lapTimes.length, phase]);
+  }, [race.lapTimes, phase]);
 
   useEffect(() => {
     if (phase === 'finished') {
       haptic(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success));
+      playCue('finish');
     }
   }, [phase]);
 

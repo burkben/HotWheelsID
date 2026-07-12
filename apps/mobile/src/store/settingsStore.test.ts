@@ -82,6 +82,7 @@ describe("settingsStore", () => {
     s.setPlayerName("Ben");
     s.setDefaultLaps(10);
     s.setHaptics(false);
+    s.setSound(false);
     s.setReduceMotion(true);
     s.setMockModeDefault(true);
 
@@ -89,6 +90,7 @@ describe("settingsStore", () => {
       playerName: "Ben",
       defaultLaps: 10,
       haptics: false,
+      sound: false,
       reduceMotion: true,
       mockModeDefault: true,
     });
@@ -96,6 +98,7 @@ describe("settingsStore", () => {
       ["playerName", "Ben"],
       ["defaultLaps", 10],
       ["haptics", false],
+      ["sound", false],
       ["reduceMotion", true],
       ["mockModeDefault", true],
     ]);
