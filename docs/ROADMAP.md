@@ -155,8 +155,11 @@ Pulls in the upstream roadmap's "future features" and more.
   exports confirmed `castingKey → catalog` identifications (product-number facts only, never tags
   or collection), a bundled seed merges at bootstrap so scanned cars auto-name with zero taps, and
   the user's own pick always wins over the seed (see
-  [ADR-0014](adr/0014-crowd-sourced-car-identity-seed.md)). The seed ships empty at cold start and
-  is regenerated out-of-band as contributions pool.
+  [ADR-0014](adr/0014-crowd-sourced-car-identity-seed.md)). Contributions are managed **as a repo**
+  ([`community/`](../community/README.md)): the app's Share button emits a payload, a PR adds it, CI
+  validates it and majority-vote aggregation (`python/tools/build_seed.py`) regenerates the bundled
+  seed — no hosted service, no runtime network. The seed ships empty at cold start and grows as
+  contributions pool.
 - 🟡 Multiplayer/turn-based race nights. **Initial race-night lineup shipped** — queue racers,
   choose who is up next, rotate turns after each heat. Next slice is per-lineup car assignment and
   deeper multi-racer race semantics.
