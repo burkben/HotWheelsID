@@ -43,7 +43,16 @@ import {
   nextUpRacer,
   removeRacer,
   type RaceNightLineup,
+  type RaceNightRacer,
 } from '@/race/raceNight';
+import {
+  createTournament,
+  currentMatch,
+  isComplete,
+  reportTimes,
+  type Tournament,
+  type TournamentMatch,
+} from '@/race/tournament';
 import { useRaceStore } from '@/store/raceStore';
 import { useGarageStore } from '@/store/garageStore';
 import { usePortalStore } from '@/store/portalStore';
@@ -58,6 +67,15 @@ import { colors, fontSize, fontWeight, radius, spacing } from '@/theme/tokens';
 
 /** Milliseconds each countdown digit is shown before the race arms. */
 const COUNTDOWN_STEP_MS = 800;
+
+/** Racer id that still owes a heat in `match` (A before B), or null if both are in. */
+function runnerId(
+  match: TournamentMatch,
+  times: Record<string, { a?: number; b?: number }>,
+): string | null {
+  const mt = times[match.id] ?? {};
+  return match.a && mt.a == null ? match.a : match.b && mt.b == null ? match.b : null;
+}
 
 function haptic(fn: () => Promise<unknown>) {
   if (Platform.OS !== 'web' && useSettingsStore.getState().haptics) fn().catch(() => {});
@@ -104,6 +122,12 @@ export default function RaceScreen() {
   const [laps, setLaps] = useState<number>(() => useSettingsStore.getState().defaultLaps);
   const [player, setPlayer] = useState<string>(() => useSettingsStore.getState().playerName);
   const [lineup, setLineup] = useState<RaceNightLineup>([]);
+  // Tournament mode (Phase 5): opt-in single-elimination bracket over the lineup.
+  // `null` = casual rotating-queue mode (unchanged). `matchTimes` accumulates each
+  // racer's heat time within the active match until both are in and it's decided.
+  const [tournamentOn, setTournamentOn] = useState(false);
+  const [tournament, setTournament] = useState<Tournament | null>(null);
+  const [matchTimes, setMatchTimes] = useState<Record<string, { a?: number; b?: number }>>({});
 
   // --- Gate wiring: fold each *new* portal pass into the race -----------------
   // Track the newest pass id we've already consumed. Reset it when the race arms
@@ -244,6 +268,79 @@ export default function RaceScreen() {
     startCountdown();
   };
 
+  // --- Tournament mode --------------------------------------------------------
+  const nameForRacer = useCallback(
+    (id: string | null): string =>
+      id ? (lineup.find((r) => r.id === id)?.name ?? '—') : 'Bye',
+    [lineup],
+  );
+
+  const beginHeatFor = (racer: RaceNightRacer) => {
+    configure({ targetLaps: laps, player: racer.name, carUid: racer.carUid ?? liveCarUid });
+    startCountdown();
+  };
+
+  /** The racer who still owes a heat in the current match (A before B), or null. */
+  const runnerFor = (
+    t: Tournament,
+    times: Record<string, { a?: number; b?: number }>,
+  ): { racer: RaceNightRacer; match: TournamentMatch } | null => {
+    const match = currentMatch(t);
+    if (!match) return null;
+    const id = runnerId(match, times);
+    const racer = id ? (lineup.find((r) => r.id === id) ?? null) : null;
+    return racer ? { racer, match } : null;
+  };
+
+  const onStartTournament = () => {
+    const t = createTournament(lineup.map((r) => r.id));
+    setTournament(t);
+    setMatchTimes({});
+    const next = runnerFor(t, {});
+    if (next) beginHeatFor(next.racer);
+  };
+
+  const onResetTournament = () => {
+    setTournament(null);
+    setMatchTimes({});
+    abort();
+  };
+
+  /** Record the just-finished heat's time, decide/advance the bracket, run next. */
+  const onTournamentContinue = () => {
+    if (!tournament || !race.result) return;
+    const active = currentMatch(tournament);
+    if (!active) return;
+
+    const runner = runnerFor(tournament, matchTimes);
+    if (!runner) return;
+    const times = { ...(matchTimes[active.id] ?? {}) };
+    if (runner.racer.id === active.a) times.a = race.result.totalTime;
+    else if (runner.racer.id === active.b) times.b = race.result.totalTime;
+    const nextTimes = { ...matchTimes, [active.id]: times };
+
+    let t = tournament;
+    if (times.a != null && times.b != null) {
+      t = reportTimes(tournament, active.id, times.a, times.b);
+    }
+    setTournament(t);
+    setMatchTimes(nextTimes);
+
+    const next = runnerFor(t, nextTimes);
+    if (next) beginHeatFor(next.racer);
+    else abort(); // champion decided — fall back to setup, which shows the banner
+  };
+
+  const activeMatch = tournament ? currentMatch(tournament) : null;
+  const tournamentReady = lineup.length >= 2;
+  const inTournament = !!tournament && !tournament.championId;
+
+  const onResumeTournament = () => {
+    if (!tournament) return;
+    const next = runnerFor(tournament, matchTimes);
+    if (next) beginHeatFor(next.racer);
+  };
+
   const triggerDemoPass = () => getActiveTransportControls().triggerPass?.();
   const canTriggerDemo = !!getActiveTransportControls().triggerPass;
 
@@ -265,7 +362,29 @@ export default function RaceScreen() {
         <ConnDot connection={connection} />
       </View>
 
-      {phase === 'idle' && (
+      {phase === 'idle' && inTournament && tournament && (
+        <View style={styles.section}>
+          <BracketCard tournament={tournament} nameFor={nameForRacer} activeMatch={activeMatch} />
+          <View style={styles.actionRow}>
+            <Pressable
+              onPress={onResetTournament}
+              style={({ pressed }) => [styles.ghostBtn, styles.flex1, pressed && styles.pressed]}
+            >
+              <Text style={styles.ghostBtnText}>End tournament</Text>
+            </Pressable>
+            <Pressable
+              onPress={onResumeTournament}
+              style={({ pressed }) => [styles.primaryBtn, styles.flex1, pressed && styles.pressed]}
+            >
+              <Text style={styles.primaryBtnText}>
+                {activeMatch ? `Race ${nameForRacer(runnerId(activeMatch, matchTimes))}` : 'Resume'}
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
+
+      {phase === 'idle' && !inTournament && (
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>Race length</Text>
           <View style={styles.chips}>
@@ -317,6 +436,16 @@ export default function RaceScreen() {
             onAssignCar={onAssignCar}
           />
 
+          {tournament?.championId ? (
+            <ChampionBanner name={nameForRacer(tournament.championId)} onReset={onResetTournament} />
+          ) : (
+            <TournamentToggle
+              on={tournamentOn && tournamentReady}
+              enabled={tournamentReady}
+              onToggle={() => setTournamentOn((v) => !v)}
+            />
+          )}
+
           {connection !== 'connected' && (
             <Text style={styles.hint}>
               Connect your portal on the{' '}
@@ -343,10 +472,12 @@ export default function RaceScreen() {
             </Pressable>
 
             <Pressable
-              onPress={onStart}
+              onPress={tournamentOn && tournamentReady ? onStartTournament : onStart}
               style={({ pressed }) => [styles.primaryBtn, styles.flex1, pressed && styles.pressed]}
             >
-              <Text style={styles.primaryBtnText}>Start race</Text>
+              <Text style={styles.primaryBtnText}>
+                {tournamentOn && tournamentReady ? 'Start tournament' : 'Start race'}
+              </Text>
             </Pressable>
           </View>
         </View>
@@ -403,7 +534,19 @@ export default function RaceScreen() {
         </View>
       )}
 
-      {phase === 'finished' && race.result && (
+      {phase === 'finished' && race.result && tournament && (
+        <>
+          <Results
+            result={race.result}
+            nextRacerName={null}
+            onPrimaryAction={onTournamentContinue}
+            primaryActionLabel="Continue"
+          />
+          <BracketCard tournament={tournament} nameFor={nameForRacer} activeMatch={activeMatch} />
+        </>
+      )}
+
+      {phase === 'finished' && race.result && !tournament && (
         <Results
           result={race.result}
           nextRacerName={nextRacer?.name ?? null}
@@ -657,6 +800,106 @@ function Leaderboard({ board, onClear }: { board: RaceResult[]; onClear: () => v
   );
 }
 
+function TournamentToggle({
+  on,
+  enabled,
+  onToggle,
+}: {
+  on: boolean;
+  enabled: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <View style={styles.card}>
+      <View style={styles.cardHeadRow}>
+        <Text style={styles.cardHeading}>Tournament</Text>
+        <Pressable
+          onPress={onToggle}
+          disabled={!enabled}
+          style={[styles.tourPill, on && styles.tourPillOn, !enabled && styles.btnDisabled]}
+        >
+          <Text style={[styles.tourPillText, on && styles.tourPillTextOn]}>{on ? 'On' : 'Off'}</Text>
+        </Pressable>
+      </View>
+      <Text style={styles.empty}>
+        {enabled
+          ? 'Run the lineup as a single-elimination bracket — each pairing races, fastest time advances, last car standing wins.'
+          : 'Add at least two racers to the lineup to run a bracket.'}
+      </Text>
+    </View>
+  );
+}
+
+function ChampionBanner({ name, onReset }: { name: string; onReset: () => void }) {
+  return (
+    <View style={[styles.card, styles.champCard]}>
+      <Text style={styles.champLabel}>Tournament champion</Text>
+      <Text style={styles.champName} numberOfLines={1}>
+        🏆 {name}
+      </Text>
+      <Pressable
+        onPress={onReset}
+        style={({ pressed }) => [styles.ghostBtn, pressed && styles.pressed]}
+      >
+        <Text style={styles.ghostBtnText}>New tournament</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+function BracketCard({
+  tournament,
+  nameFor,
+  activeMatch,
+}: {
+  tournament: Tournament;
+  nameFor: (id: string | null) => string;
+  activeMatch: TournamentMatch | null;
+}) {
+  const rounds = Array.from({ length: tournament.rounds }, (_, i) => i + 1);
+  const roundLabel = (round: number): string => {
+    const fromEnd = tournament.rounds - round;
+    if (fromEnd === 0) return 'Final';
+    if (fromEnd === 1) return 'Semifinals';
+    if (fromEnd === 2) return 'Quarterfinals';
+    return `Round ${round}`;
+  };
+
+  return (
+    <View style={styles.card}>
+      <Text style={styles.cardHeading}>Bracket</Text>
+      {rounds.map((round) => (
+        <View key={round} style={styles.bracketRound}>
+          <Text style={styles.bracketRoundLabel}>{roundLabel(round)}</Text>
+          {tournament.matches
+            .filter((m) => m.round === round)
+            .map((m) => {
+              const isActive = activeMatch?.id === m.id;
+              const decided = !!m.winner;
+              return (
+                <View key={m.id} style={[styles.bracketMatch, isActive && styles.bracketMatchActive]}>
+                  <BracketSlot name={nameFor(m.a)} won={decided && m.winner === m.a} />
+                  <Text style={styles.bracketVs}>vs</Text>
+                  <BracketSlot name={nameFor(m.b)} won={decided && m.winner === m.b} />
+                  {isActive ? <Text style={styles.bracketNow}>▶</Text> : null}
+                </View>
+              );
+            })}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function BracketSlot({ name, won }: { name: string; won: boolean }) {
+  return (
+    <Text style={[styles.bracketName, won && styles.bracketNameWon]} numberOfLines={1}>
+      {won ? '✓ ' : ''}
+      {name}
+    </Text>
+  );
+}
+
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { alignItems: 'center', paddingHorizontal: spacing(5), gap: spacing(5) },
@@ -878,6 +1121,48 @@ const styles = StyleSheet.create({
   lineupHintText: { color: colors.textMuted, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
   lineupRemoveText: { color: colors.danger, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
   nextUpText: { color: colors.accentBlue, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
+
+  // Tournament mode
+  tourPill: {
+    paddingHorizontal: spacing(3),
+    paddingVertical: spacing(1),
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceAlt,
+  },
+  tourPillOn: { backgroundColor: colors.accent, borderColor: colors.accent },
+  tourPillText: { color: colors.textSecondary, fontSize: fontSize.sm, fontWeight: fontWeight.heavy },
+  tourPillTextOn: { color: colors.bg },
+  champCard: { borderColor: colors.accent, alignItems: 'center', gap: spacing(2) },
+  champLabel: {
+    color: colors.textMuted,
+    fontSize: fontSize.xs,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  champName: { color: colors.textPrimary, fontSize: fontSize.xl, fontWeight: fontWeight.heavy },
+  bracketRound: { marginTop: spacing(2), gap: spacing(1) },
+  bracketRoundLabel: {
+    color: colors.textMuted,
+    fontSize: fontSize.xs,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  bracketMatch: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing(2),
+    paddingVertical: spacing(1.5),
+    paddingHorizontal: spacing(2),
+    borderRadius: radius.md,
+    backgroundColor: colors.surfaceAlt,
+  },
+  bracketMatchActive: { borderWidth: 1, borderColor: colors.accentBlue },
+  bracketName: { flex: 1, color: colors.textSecondary, fontSize: fontSize.sm },
+  bracketNameWon: { color: colors.textPrimary, fontWeight: fontWeight.bold },
+  bracketVs: { color: colors.textMuted, fontSize: fontSize.xs },
+  bracketNow: { color: colors.accentBlue, fontSize: fontSize.sm, fontWeight: fontWeight.heavy },
 
   pressed: { opacity: 0.7 },
 });

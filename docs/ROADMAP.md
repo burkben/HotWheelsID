@@ -19,7 +19,7 @@ direction set in the [ADRs](adr/) (React Native + Expo, shared TS protocol packa
 | 2 — Attractive UI | ✅ Done | Skia speedometer, flames, haptics, reduce-motion, mock generator, recent passes. |
 | 3 — Persistence: garage, history, races | ✅ Done | **Race Mode, Garage, History, and Settings all durable** on a shared `expo-sqlite` db (PRs #15/#16/#18/#19). Restart-safe and device-validated. |
 | 4 — iOS distribution | ✅ Done | Installed through TestFlight and race-validated end-to-end on iPhone. |
-| 5 — Delight & depth | 🟡 In progress | Achievements shipped; richer car identity, initial race-night lineup, and race sound cues shipped; "TV/host mode" and advanced multiplayer remain. |
+| 5 — Delight & depth | 🟡 In progress | Achievements shipped; richer car identity, race-night lineup with tournament mode, and race sound cues shipped; "TV/host mode" and simultaneous multi-lane remain. |
 
 > The headline goal — a polished, hardware-validated live speedometer on iOS — is **achieved**.
 > The app is now **installed through TestFlight and race-validated end-to-end on iPhone**,
@@ -160,9 +160,11 @@ Pulls in the upstream roadmap's "future features" and more.
   validates it and majority-vote aggregation (`python/tools/build_seed.py`) regenerates the bundled
   seed — no hosted service, no runtime network. The seed ships empty at cold start and grows as
   contributions pool.
-- 🟡 Multiplayer/turn-based race nights. **Initial race-night lineup shipped** — queue racers,
-  choose who is up next, rotate turns after each heat. Next slice is per-lineup car assignment and
-  deeper multi-racer race semantics.
+- 🟡 Multiplayer/turn-based race nights. **Lineup + per-racer cars + tournament mode shipped** —
+  queue racers, choose who is up next, assign each a car, and now run the lineup as an opt-in
+  **single-elimination bracket**: each pairing races a heat, the faster time advances, byes are
+  seeded onto top seeds, and a champion is crowned. Bracket logic is a pure, tested engine
+  (`race/tournament.ts`). Next slice is simultaneous multi-lane semantics.
 - ✅ Share race & session results to the native share sheet (PR #26).
 - 🟡 Sound design; optional "TV/host mode." **Race sound cues shipped** — countdown ticks/go,
   per-lap and new-best chirps, and a finish triad, gated by a new **Sound** setting and mirroring
