@@ -1,19 +1,22 @@
 # HotWheelsID — Architecture Overview
 
-This document describes the **target architecture** for HotWheelsID: a cross-platform
-React Native (Expo) app, installable on iOS, that talks to the Hot Wheels id Race Portal
+This document describes the current architecture for Redline ID: a React Native (Expo)
+iOS app that talks to the Hot Wheels id Race Portal
 over BLE. For the *why* behind these choices, see the [ADRs](../adr/). For the byte-level
 protocol, see [`PROTOCOL.md`](../../PROTOCOL.md) and [BLE & Protocol](ble-and-protocol.md).
 For how the app looks and feels, see [UI & Design](ui-and-design.md) (screen intent) and the
 [Design Language](design-language.md) (colors, type, components, navigation, connection UX).
 
-> **Status:** planning. The Python tools exist today; the mobile app and shared protocol
-> package are being scaffolded per the [Roadmap](../ROADMAP.md).
+> **Status:** implemented and hardware validated. The iOS app is distributed through
+> TestFlight, the shared protocol package is in production use, and both supported portal
+> firmware families have been exercised against real hardware. Android remains backlog
+> work until test hardware is available.
 
 ## 1. Goals & constraints
 
 - **Attractive, animated UI** (live speedometer, races, garage, history).
-- **Installable on iOS** (and Android, for free).
+- **Installable and validated on iOS**; preserve a portable React Native design for future
+  Android work.
 - **Hard constraint:** Python/`bleak` can't run on iOS, and iOS Safari has no Web
   Bluetooth. The only portable asset is the protocol spec → re-implement BLE natively via
   React Native. (See [ADR-0002](../adr/0002-adopt-react-native-and-expo.md).)
@@ -28,8 +31,8 @@ flowchart LR
         Car -- "NFC tap / pass" --> Portal
     end
 
-    subgraph Phone["iOS / Android device"]
-        App["HotWheelsID app<br/>(React Native + Expo)"]
+    subgraph Phone["iOS device"]
+        App["Redline ID app<br/>(React Native + Expo)"]
     end
 
     Portal -- "BLE GATT (indications: car, speed, serial)" --> App
@@ -44,10 +47,11 @@ flowchart LR
 ```mermaid
 flowchart TB
     subgraph mobile["apps/mobile (Expo app)"]
-        UI["UI layer<br/>Expo Router screens · Reanimated · Skia gauge"]
+        UI["UI layer<br/>Expo Router screens · Reanimated · SVG gauge"]
         Store["Runtime state<br/>(Zustand + Reanimated shared values)"]
         BLE["BLE service<br/>react-native-ble-plx · scan/connect/monitor"]
-        Persist["Persistence<br/>expo-sqlite + MMKV settings"]
+        Persist["Persistence<br/>shared expo-sqlite database"]
+        Catalog["Identity catalog<br/>bundled metadata · local placeholders"]
     end
 
     subgraph pkg["packages/protocol (@redlineid/protocol)"]
@@ -64,35 +68,37 @@ flowchart TB
     Store --> UI
     Store --> Persist
     UI --> Persist
+    Catalog --> UI
 ```
 
 **Layer responsibilities**
 
 | Layer | Package | Responsibility | Key deps |
 |-------|---------|----------------|----------|
-| UI | `apps/mobile` | Screens, navigation, animated gauge, theming | Expo Router, Reanimated, Skia, expo-image |
+| UI | `apps/mobile` | Screens, navigation, animated gauge, theming | Expo Router, Reanimated, react-native-svg |
 | Runtime state | `apps/mobile` | Connection/car/race state; dispatch parsed events | Zustand |
 | BLE transport | `apps/mobile` | Scan, connect, subscribe, base64⇄bytes, reconnect | react-native-ble-plx |
 | Protocol | `packages/protocol` | UUIDs + pure parsers (no RN/UI deps) | — (plain TS) |
-| Persistence | `apps/mobile` | Cars, sessions, passes, races, leaderboard | expo-sqlite, react-native-mmkv |
+| Persistence | `apps/mobile` | Cars, sessions, passes, races, identities, settings, leaderboard | expo-sqlite |
+| Catalog | `apps/mobile` | Pinned casting metadata, search, provenance, local placeholders | bundled JSON |
 | Reference | `python/` | Hardware validation & desktop utility | bleak, rich |
 
-## 4. Tech stack (target)
+## 4. Tech stack
 
 | Concern | Choice | ADR |
 |--------|--------|-----|
 | App framework | React Native + Expo (TypeScript) | [0002](../adr/0002-adopt-react-native-and-expo.md) |
 | Navigation | Expo Router | [0005](../adr/0005-ui-stack-reanimated-skia-expo-router.md) |
 | Animation | react-native-reanimated | [0005](../adr/0005-ui-stack-reanimated-skia-expo-router.md) |
-| Custom graphics (gauge) | @shopify/react-native-skia | [0005](../adr/0005-ui-stack-reanimated-skia-expo-router.md) |
+| Custom graphics (gauge) | react-native-svg | [0005](../adr/0005-ui-stack-reanimated-skia-expo-router.md) |
 | Bluetooth | react-native-ble-plx + expo-dev-client | [0003](../adr/0003-bluetooth-with-react-native-ble-plx.md) |
 | Protocol | `@redlineid/protocol` (shared TS) | [0004](../adr/0004-shared-typescript-protocol-package.md) |
 | Runtime state | Zustand | [0006](../adr/0006-state-management-and-persistence.md) |
-| Durable storage | expo-sqlite (+ MMKV settings) | [0006](../adr/0006-state-management-and-persistence.md) |
+| Durable storage | expo-sqlite | [0006](../adr/0006-state-management-and-persistence.md) |
 | Build & distribution | EAS Build → dev client / TestFlight | [0008](../adr/0008-ios-distribution-with-eas-and-testflight.md) |
 | Reference impl | Python (bleak + rich) | [0007](../adr/0007-monorepo-structure-and-python-reference.md) |
 
-## 5. Repository layout (target)
+## 5. Repository layout
 
 ```
 HotWheelsID/
@@ -145,4 +151,6 @@ and iOS-specific BLE behavior (no MAC address, base64 values, permissions).
   buildable against mocked events with no hardware.
 - **Units:** speed is `float32 × 64` ("scale mph") per the spec; treat as relative until
   calibrated, and keep the raw value for re-interpretation.
-- **Privacy/offline:** fully local; no accounts or network required for core play.
+- **Privacy/offline:** no accounts, analytics, ads, application server, or automatic
+  internet requests. Catalog metadata is bundled and art uses local placeholders.
+  Source/privacy/license URLs open only after an explicit user action.

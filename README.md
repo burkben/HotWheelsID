@@ -63,8 +63,9 @@ experience (Speed, Race, Garage, History, More), plus car-identify and detail fl
 - **History tab** — Durable session history with race/pass rollups and drill-in details.
 - **More tab** — Achievements, raw Live portal event log, and Settings (units, calibration, player
   profile, haptics, reduce motion, demo defaults).
-- **Identify flow** — Catalog-backed manual identify picker for car details, including casting
-  coverage messaging ("identify once, label matching copies").
+- **Identify flow** — Offline catalog-backed manual identify picker with casting metadata,
+  local placeholder art, source attribution, and coverage messaging ("identify once, label
+  matching copies").
 
 Under the hood it speaks **both portal firmwares** — the legacy open control service and the
 modern, encrypted **MPID** protocol (ECDH key exchange) — through the shared
@@ -161,6 +162,8 @@ npm install              # install every workspace (apps/* and packages/*)
 npm run typecheck        # typecheck all workspaces (protocol + mobile)
 npm test                 # run all workspace tests
 npm run test:protocol    # just the @redlineid/protocol unit tests
+npm run lint --workspace mobile
+npm run web:export --workspace mobile
 ```
 
 ### Shared protocol package
@@ -181,7 +184,7 @@ firmwares through [`@redlineid/protocol`](packages/protocol/).
 **Preview in a browser** (no device or Xcode needed — fastest way to see the UI):
 
 ```bash
-cd apps/mobile && npx expo start --web
+npm run web --workspace mobile -- --port 8081
 ```
 
 The home screen auto-runs simulated passes in demo mode, so the gauge animates with zero
@@ -240,7 +243,10 @@ If this project helped bring your Hot Wheels Portal back to life, consider suppo
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+Project code is available under the [MIT License](LICENSE). The bundled car catalog contains
+third-party factual metadata with separate source terms and attribution; no third-party catalog
+artwork is redistributed or fetched. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and the
+in-app **Credits & licenses** screen.
 
 ## Disclaimer
 

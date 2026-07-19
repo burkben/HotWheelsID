@@ -9,8 +9,8 @@ builds that catalog from the community wiki.
 
 It reads the ``Hot_Wheels_id`` page wikitext through the MediaWiki API (far
 cleaner than scraping rendered HTML), walks the year/series section headings and
-``wikitable`` rows, and resolves each photo's thumbnail URL. The result is a flat
-JSON array the mobile app bundles at ``apps/mobile/src/catalog/catalog.json``.
+``wikitable`` rows, and writes a reproducible provenance manifest beside the
+flat JSON array bundled by the mobile app.
 
 Stdlib only (``urllib``) — no third-party deps, so it runs anywhere Python 3.10+
 is present without touching the BLE ``requirements.txt``.
@@ -19,20 +19,21 @@ Usage (from the ``python/`` directory)::
 
     python tools/scrape_id_catalog.py            # writes the app's catalog.json
     python tools/scrape_id_catalog.py --out -    # print JSON to stdout
+    python tools/scrape_id_catalog.py --revision 782123
     python tools/scrape_id_catalog.py --limit 5  # quick sample while iterating
 
-Wiki content is community-contributed and CC-BY-SA; photo URLs are hot-linked for
-the prototype. See ``docs/adr/0013-car-identity-catalog.md`` for the licensing and
-attribution notes before bundling any artwork.
+The release catalog deliberately excludes wiki artwork. Individual uploads can
+have licenses that differ from the surrounding page, and this project does not
+have complete per-file provenance. See ``docs/adr/0013-car-identity-catalog.md``.
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import sys
-import time
 import unicodedata
 import urllib.parse
 import urllib.request
@@ -41,11 +42,15 @@ from pathlib import Path
 
 API = "https://hotwheels.fandom.com/api.php"
 PAGE = "Hot_Wheels_id"
+PAGE_URL = "https://hotwheels.fandom.com/wiki/Hot_Wheels_id"
 USER_AGENT = "RedlineID-catalog-scraper/0.1 (+https://github.com/burkben/HotWheelsID)"
 
 # Default output: apps/mobile/src/catalog/catalog.json, two levels up from python/.
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_OUT = REPO_ROOT / "apps" / "mobile" / "src" / "catalog" / "catalog.json"
+DEFAULT_PROVENANCE_OUT = (
+    REPO_ROOT / "apps" / "mobile" / "src" / "catalog" / "catalog-provenance.json"
+)
 
 
 @dataclass
@@ -63,6 +68,15 @@ class CatalogCar:
     wikiPage: str | None
 
 
+@dataclass(frozen=True)
+class SourceRevision:
+    """The exact MediaWiki revision used to build a catalog snapshot."""
+
+    page_id: int
+    revision_id: int
+    revision_timestamp: str
+
+
 # ---------------------------------------------------------------------------
 # HTTP
 # ---------------------------------------------------------------------------
@@ -74,50 +88,51 @@ def _get(params: dict[str, str]) -> dict:
         return json.loads(resp.read().decode("utf-8"))
 
 
-def fetch_wikitext(page: str) -> str:
+def fetch_source_revision(page: str, revision: int | None) -> SourceRevision:
+    """Resolve the requested (or latest) source revision and its timestamp."""
+    params = {
+        "action": "query",
+        "prop": "revisions",
+        "rvprop": "ids|timestamp",
+        "format": "json",
+        "formatversion": "2",
+    }
+    if revision is None:
+        params.update({"titles": page, "rvlimit": "1"})
+    else:
+        params["revids"] = str(revision)
+
+    data = _get(params)
+    pages = data.get("query", {}).get("pages", [])
+    if not pages or not pages[0].get("revisions"):
+        raise ValueError(f"MediaWiki revision not found: {revision or page}")
+
+    page_data = pages[0]
+    revision_data = page_data["revisions"][0]
+    return SourceRevision(
+        page_id=int(page_data["pageid"]),
+        revision_id=int(revision_data["revid"]),
+        revision_timestamp=str(revision_data["timestamp"]),
+    )
+
+
+def fetch_wikitext(revision: SourceRevision) -> str:
+    """Fetch wikitext from one pinned MediaWiki revision."""
     data = _get(
         {
             "action": "parse",
-            "page": page,
+            "oldid": str(revision.revision_id),
             "prop": "wikitext",
             "format": "json",
             "formatversion": "2",
         }
     )
-    return data["parse"]["wikitext"]
-
-
-def resolve_image_urls(filenames: list[str], width: int = 320) -> dict[str, str]:
-    """Map ``File:`` names → thumbnail URLs via imageinfo (batched ≤ 40 titles)."""
-    urls: dict[str, str] = {}
-    unique = [f for f in dict.fromkeys(filenames) if f]
-    for i in range(0, len(unique), 40):
-        chunk = unique[i : i + 40]
-        titles = "|".join(f"File:{name}" for name in chunk)
-        data = _get(
-            {
-                "action": "query",
-                "titles": titles,
-                "prop": "imageinfo",
-                "iiprop": "url",
-                "iiurlwidth": str(width),
-                "format": "json",
-                "formatversion": "2",
-            }
+    parsed = data["parse"]
+    if int(parsed["revid"]) != revision.revision_id:
+        raise ValueError(
+            f"MediaWiki returned revision {parsed['revid']}, expected {revision.revision_id}"
         )
-        pages = data.get("query", {}).get("pages", [])
-        # The API normalises titles (spaces↔underscores, %xx); map normalized → input.
-        norm = {n["to"]: n["from"] for n in data.get("query", {}).get("normalized", [])}
-        for page in pages:
-            info = page.get("imageinfo")
-            if not info:
-                continue
-            title = page.get("title", "")
-            requested = norm.get(title, title)
-            name = requested.split(":", 1)[-1]  # drop "File:"
-            urls[name] = info[0].get("thumburl") or info[0].get("url")
-        time.sleep(0.2)  # be gentle with the public API
-    return urls
+    return parsed["wikitext"]
 
 
 # ---------------------------------------------------------------------------
@@ -126,7 +141,6 @@ def resolve_image_urls(filenames: list[str], width: int = 320) -> dict[str, str]
 SECTION_RE = re.compile(r"^(={2,4})\s*(.*?)\s*\1\s*$")
 YEAR_RE = re.compile(r"\b(20\d{2})\b")
 TOY_RE = re.compile(r"\b([A-Z]{3}\d{2,3})\b")
-FILE_RE = re.compile(r"\[\[(?:File|Image):([^|\]]+)", re.IGNORECASE)
 LINK_RE = re.compile(r"\[\[([^\]]+)\]\]")
 
 
@@ -259,15 +273,6 @@ def _row_to_car(
     if not name:
         return None
 
-    file_match = FILE_RE.search(row)
-    image_file = None
-    if file_match:
-        # Wikitext sometimes pre-encodes apostrophes (%27) inside the filename;
-        # unquote so the API resolves the real File: title.
-        image_file = urllib.parse.unquote(file_match.group(1).strip()).replace(" ", "_")
-        if _is_placeholder_image(image_file):
-            image_file = None
-
     base = slugify(name)
     cid = base
     if cid in seen_ids:
@@ -291,15 +296,9 @@ def _row_to_car(
         year=year,
         wave=wave,
         bodyColor=None,  # filled below from the colour cell if present
-        image=image_file,  # replaced with a resolved URL after batch lookup
+        image=None,
         wikiPage=wiki_page,
     )
-
-
-def _is_placeholder_image(name: str) -> bool:
-    """The wiki uses a stock 'Image Not Available' file for missing photos."""
-    low = name.lower()
-    return "image_not_available" in low or "no_image" in low or low.startswith("placeholder")
 
 
 def _body_color(row: str) -> str | None:
@@ -312,8 +311,11 @@ def _body_color(row: str) -> str | None:
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
-def build_catalog(limit: int | None = None, resolve_images: bool = True) -> list[dict]:
-    wikitext = fetch_wikitext(PAGE)
+def build_catalog(
+    revision_id: int | None = None, limit: int | None = None
+) -> tuple[list[dict], SourceRevision]:
+    revision = fetch_source_revision(PAGE, revision_id)
+    wikitext = fetch_wikitext(revision)
     cars = parse_catalog(wikitext)
 
     # Second pass for body colour (kept out of the row parser to stay readable).
@@ -323,32 +325,86 @@ def build_catalog(limit: int | None = None, resolve_images: bool = True) -> list
     if limit:
         cars = cars[:limit]
 
-    if resolve_images:
-        files = [c.image for c in cars if c.image]
-        urls = resolve_image_urls(files)
-        for c in cars:
-            c.image = urls.get(c.image) if c.image else None
+    return [asdict(c) for c in cars], revision
 
-    return [asdict(c) for c in cars]
+
+def build_provenance(
+    catalog_payload: str, cars: list[dict], revision: SourceRevision
+) -> dict:
+    """Describe the source and redistribution boundary for a generated snapshot."""
+    return {
+        "schemaVersion": 1,
+        "catalog": {
+            "recordCount": len(cars),
+            "sha256": hashlib.sha256(catalog_payload.encode("utf-8")).hexdigest(),
+        },
+        "source": {
+            "name": "Hot Wheels Wiki — Hot Wheels id",
+            "pageId": revision.page_id,
+            "revisionId": revision.revision_id,
+            "revisionTimestamp": revision.revision_timestamp,
+            "revisionUrl": f"{PAGE_URL}?oldid={revision.revision_id}",
+            "contributorsUrl": f"{PAGE_URL}?action=history",
+        },
+        "licensing": [
+            {
+                "name": "Fandom licensing terms",
+                "url": "https://www.fandom.com/licensing",
+            },
+            {
+                "name": "Hot Wheels Wiki copyright notice",
+                "url": "https://hotwheels.fandom.com/wiki/Hot_Wheels_Wiki:Copyrights",
+            },
+        ],
+        "generator": "python/tools/scrape_id_catalog.py",
+        "artwork": {
+            "included": False,
+            "policy": (
+                "No third-party catalog artwork is bundled or fetched. "
+                "The app renders local placeholders."
+            ),
+        },
+    }
 
 
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(description="Scrape Hot Wheels id catalog → JSON.")
     ap.add_argument("--out", default=str(DEFAULT_OUT), help="output path, or - for stdout")
+    ap.add_argument(
+        "--provenance-out",
+        default=str(DEFAULT_PROVENANCE_OUT),
+        help="provenance output path (skipped when --out is -)",
+    )
+    ap.add_argument(
+        "--revision",
+        type=int,
+        default=None,
+        help="MediaWiki revision id (defaults to the latest revision)",
+    )
     ap.add_argument("--limit", type=int, default=None, help="cap rows (for quick runs)")
-    ap.add_argument("--no-images", action="store_true", help="skip image URL resolution")
     args = ap.parse_args(argv)
 
-    cars = build_catalog(limit=args.limit, resolve_images=not args.no_images)
-    payload = json.dumps(cars, indent=2, ensure_ascii=False) + "\n"
+    cars, revision = build_catalog(revision_id=args.revision, limit=args.limit)
+    catalog_payload = json.dumps(cars, indent=2, ensure_ascii=False) + "\n"
 
     if args.out == "-":
-        sys.stdout.write(payload)
+        sys.stdout.write(catalog_payload)
     else:
         out = Path(args.out)
         out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(payload, encoding="utf-8")
-        print(f"Wrote {len(cars)} cars → {out}", file=sys.stderr)
+        out.write_text(catalog_payload, encoding="utf-8")
+
+        provenance = build_provenance(catalog_payload, cars, revision)
+        provenance_payload = json.dumps(provenance, indent=2, ensure_ascii=False) + "\n"
+        provenance_out = Path(args.provenance_out)
+        provenance_out.parent.mkdir(parents=True, exist_ok=True)
+        provenance_out.write_text(provenance_payload, encoding="utf-8")
+
+        print(
+            f"Wrote {len(cars)} cars from revision {revision.revision_id} → {out}",
+            file=sys.stderr,
+        )
+        print(f"Wrote provenance → {provenance_out}", file=sys.stderr)
     return 0
 
 

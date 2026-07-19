@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   build:
-    name: Typecheck & protocol tests
+    name: Typecheck, test, lint & web export
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -41,3 +41,9 @@ jobs:
       - name: Sound assets in sync with generator
         working-directory: python
         run: python tools/gen_sound_cues.py --check
+
+      - name: Lint mobile app
+        run: npm run lint --workspace mobile
+
+      - name: Export web preview
+        run: npm run web:export --workspace mobile
