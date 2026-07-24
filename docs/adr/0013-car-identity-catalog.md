@@ -30,13 +30,18 @@ entry, and that something is the user, once per casting.
 Ship a **bundled catalog** plus a **manual identification** flow, kept deliberately **isolated from
 the Garage schema**.
 
-**1. Scrape the wiki into a static `catalog.json`.** A stdlib-only generator,
+**1. Scrape a pinned wiki revision into static catalog and provenance files.** A stdlib-only generator,
 `python/tools/scrape_id_catalog.py` (per [ADR-0007](0007-monorepo-structure-and-python-reference.md),
 Python stays the reference/tooling language), pulls the Hot Wheels id list from the Fandom MediaWiki
 API and emits `apps/mobile/src/catalog/catalog.json` — 146 cars with name, toy number, series, year,
-wave, and a wiki **photo URL** (136 have usable art). The app **never fetches at runtime**; the
-catalog ships in the bundle. `catalog.ts` is the typed lookup/search surface (`findCatalogCar`,
-`searchCatalog` with name > toy# > series > year ranking).
+wave, and source-page URL — plus `catalog-provenance.json`, which records source revision `782123`,
+timestamp, contributor history, licensing references, record count, and a content hash. The app
+ships this metadata in its bundle. `catalog.ts` is the typed lookup/search surface
+(`findCatalogCar`, `searchCatalog` with name > toy# > series > year ranking).
+
+The public release does **not** bundle or fetch wiki images. The source snapshot lacks reliable
+per-file authorship and license records, and the wiki warns that individual uploads can use
+different licenses or fair-use claims. Catalog surfaces render a local neutral placeholder instead.
 
 **2. Derive a `castingKey` from the `mattelId`, defensively.** `castingKeyFromMattelId()` (in
 `@redlineid/protocol`) hex-encodes model-id bytes `[2..6)`. Because the byte layout is
@@ -59,22 +64,27 @@ table, its repository, and its reducers are **untouched**. This is the cheapest 
 prototype identity without risking the durable garage data.
 
 **4. Surface it in the existing screens with a manual picker.** A modal (`app/identify.tsx`) shows a
-searchable photo grid of the catalog; picking a car records the `uid → castingKey → catalogId` chain
+searchable grid of the catalog; picking a car records the `uid → castingKey → catalogId` chain
 (synthesising a per-uid key for cars seen without a `mattelId`, e.g. demo passes). The Garage list
-and detail screens now show the catalog **name + photo** when identified, with an "Identify / Change"
-call to action. A shared `CarPhoto` component degrades a missing/404 image to a neutral tile.
+and detail screens now show the catalog **name + local placeholder** when identified, with an
+"Identify / Change" call to action.
+
+**5. Make attribution and network boundaries visible.** A Credits & Licenses screen links the
+pinned source revision, contributor history, Fandom licensing page, wiki copyright notice, privacy
+policy, and repository third-party notices. Per-car source links remain explicit user actions that
+open a browser; normal app operation makes no internet requests.
 
 ## Consequences
 
 ### Positive
 
-- The Garage gains **real casting names and art** — the headline UX ask — with a one-tap manual
+- The Garage gains **real casting names and metadata** with a one-tap manual
   match, and identifying one copy of a casting names every copy (when the casting key is learned).
 - **Zero risk to shipped persistence:** identity is additive (new store, new tables, append-only
   migration). The garage schema, reducers, and tests are unchanged; in-memory fallback still works
   in CI/web/simulator.
-- Fully offline and backend-free, consistent with the rest of the app. Protocol stays framework-free
-  and unit-tested (`castingKeyFromMattelId` has its own KAT cases).
+- Fully offline and backend-free during normal operation, consistent with the rest of the app.
+  Protocol stays framework-free and unit-tested (`castingKeyFromMattelId` has its own KAT cases).
 
 ### Negative / costs
 
@@ -83,11 +93,13 @@ call to action. A shared `CarPhoto` component degrades a missing/404 image to a 
 - **Reverse-engineered assumption.** The model-id byte slice is a best guess; the raw-id fallback
   makes a wrong guess safe (degrades to per-id identity) but a wrong-but-decodable offset could
   over- or under-group. Revisit if `PROTOCOL.md` firms up.
-- **Catalog provenance + licensing.** The data and photos come from the Hot Wheels Fandom wiki
-  (**CC-BY-SA**). For the prototype we hot-link wiki CDN image URLs and bundle scraped metadata;
-  before any public release we must add attribution and decide whether to mirror/relicense the
-  images. The catalog is also incomplete (2021 series labels are sparse; a couple of cars lack
-  art/toy#).
+- **No catalog art.** The release-safe placeholder is less visually useful than casting photos.
+  Adding art later requires a separate, reviewable manifest with author, source revision, license,
+  and file hash for every redistributed image.
+- **Source licensing is inconsistent.** Fandom's general page describes CC BY-SA 3.0 defaults,
+  while the Hot Wheels Wiki copyright page references GFDL 1.2+ and warns that it may be outdated.
+  The app and `THIRD_PARTY_NOTICES.md` preserve attribution and both references without claiming
+  that one statement overrides the other.
 - The catalog is a **point-in-time snapshot**; refreshing means re-running the scraper.
 
 ## Alternatives considered
@@ -102,6 +114,9 @@ call to action. A shared `CarPhoto` component degrades a missing/404 image to a 
   once; the per-uid synthetic key is only a fallback for cars with no decodable id.
 - **Fetch the catalog at runtime from the wiki.** Rejected: adds a network dependency and a runtime
   failure mode to a primarily-offline app. A bundled snapshot is simpler and deterministic.
+- **Hot-link or mirror wiki artwork.** Rejected for public release: hot-linking contradicts the
+  offline privacy posture, while mirroring without per-file provenance risks redistributing
+  differently licensed or fair-use material.
 
 ## Addendum (2026-07-09): independent corroboration of the id layout
 

@@ -79,6 +79,10 @@ Security → App-Specific Passwords** if asked.
 
 ## Step 2 — Build a release binary
 
+Apple requires uploads made after April 28, 2026 to be built with **Xcode 26 or
+later** using the iOS 26 SDK. Confirm the selected EAS image satisfies that
+requirement before submission.
+
 ```bash
 cd apps/mobile
 eas build --profile production --platform ios
@@ -152,9 +156,10 @@ ships a small public site (source in [`site/`](../../site)), served by GitHub Pa
 `gh-pages` branch:
 
 - **Privacy Policy URL:** <https://burkben.github.io/HotWheelsID/privacy/>
+- **Support URL:** <https://burkben.github.io/HotWheelsID/support/>
 - **Marketing URL:** <https://burkben.github.io/HotWheelsID/>
 
-Both are optional for TestFlight but required for a public App Store release. Edit the page
+These pages provide the public metadata for App Store Connect. Edit the page
 content under `site/` (the canonical policy text lives in
 [`docs/legal/privacy-policy.md`](../legal/privacy-policy.md)); publish changes by pushing the
 `site/` subtree to the `gh-pages` branch root:
@@ -236,8 +241,10 @@ self-classification questionnaire at upload. Internal TestFlight does not requir
 | `app.json` bundle id, BLE strings, encryption flag | ✅ in repo |
 | This distribution runbook | ✅ you're reading it |
 | Apple Developer Program enrolment | ⬜ **you** ($99/yr) |
-| `eas init` + first production build + submit | ⬜ **you** (Steps 1–3) |
-| First TestFlight tester installs end-to-end | ⬜ **the Phase 4 exit criterion** |
+| EAS project + App Store Connect app record | ✅ configured |
+| Production build + TestFlight upload | ✅ completed |
+| First TestFlight tester installs end-to-end | ✅ completed |
+| Public App Store metadata + release review | 🟡 see `docs/release/app-store-submission.md` |
 
 Everything the agent can do without your Apple account and wallet is done; the remaining steps
 are the ones that inherently require you.

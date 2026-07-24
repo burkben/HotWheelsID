@@ -79,7 +79,7 @@ function CarRow({ car, onPortal }: { car: CarRecord; onPortal: boolean }) {
   return (
     <Link href={{ pathname: '/garage/[uid]', params: { uid: car.uid } }} asChild>
       <Pressable style={({ pressed }) => [styles.row, onPortal && styles.rowOnPortal, pressed && styles.pressed]}>
-        <CarPhoto uri={identity?.image} size={56} rounded={radius.md} ring={!!identity} />
+        <CarPhoto size={56} rounded={radius.md} ring={!!identity} />
         <View style={styles.rowMain}>
           <View style={styles.rowTitleLine}>
             <Text style={styles.carName} numberOfLines={1}>

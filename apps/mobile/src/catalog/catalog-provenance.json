@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "catalog": {
+    "recordCount": 146,
+    "sha256": "b473aa3ede0c018dbd69a698b3f955b87f978982df64498875dfed1fae52081b"
+  },
+  "source": {
+    "name": "Hot Wheels Wiki — Hot Wheels id",
+    "pageId": 83017,
+    "revisionId": 782123,
+    "revisionTimestamp": "2026-06-10T15:05:55Z",
+    "revisionUrl": "https://hotwheels.fandom.com/wiki/Hot_Wheels_id?oldid=782123",
+    "contributorsUrl": "https://hotwheels.fandom.com/wiki/Hot_Wheels_id?action=history"
+  },
+  "licensing": [
+    {
+      "name": "Fandom licensing terms",
+      "url": "https://www.fandom.com/licensing"
+    },
+    {
+      "name": "Hot Wheels Wiki copyright notice",
+      "url": "https://hotwheels.fandom.com/wiki/Hot_Wheels_Wiki:Copyrights"
+    }
+  ],
+  "generator": "python/tools/scrape_id_catalog.py",
+  "artwork": {
+    "included": false,
+    "policy": "No third-party catalog artwork is bundled or fetched. The app renders local placeholders."
+  }
+}
