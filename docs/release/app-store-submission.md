@@ -140,3 +140,41 @@ Mattel logos.
   and export-compliance answers.
 - Add the review notes above and verify all links from App Store Connect.
 - Select the release-candidate build and submit version 1.0.0 for review.
+
+## Physical release smoke test
+
+Run this on TestFlight build **1.0.0 (3)** before selecting it for App Review.
+
+### iPhone and Race Portal
+
+- Launch after a clean install; confirm the tab bar and Speed screen render
+  without an error.
+- Allow Bluetooth, select Live BLE, and connect to the powered-on portal.
+- Pass a car through the portal; confirm the car event and nonzero speed appear.
+- Run a short race to completion; confirm countdown, lap, best-lap, and finish
+  sounds respect the Sound setting.
+- Assign a car to a race-night racer, complete one tournament heat, and confirm
+  the winner advances.
+- Share one race result and cancel from the iOS share sheet; confirm the app
+  remains responsive.
+- Force-quit and reopen; confirm the garage entry, race history, achievements,
+  player settings, sound preference, and tournament state expected to persist
+  are still present.
+- Disconnect, reconnect, and complete one more portal pass.
+
+### Demo and review path
+
+- Switch to Demo and confirm simulated passes start without portal hardware.
+- Complete a short demo race using Trigger pass.
+- Open Garage, History, Achievements, Credits, and Settings.
+- Open the privacy, support, catalog-source, and licensing links and confirm each
+  destination is correct.
+
+### iPad
+
+- Repeat the clean launch and Demo race on a supported iPad.
+- Check portrait layouts for clipped text, overlapping controls, unreachable
+  actions, and unsafe-area problems on Speed, Race, Garage, History, More,
+  tournament, and detail screens.
+- Connect to the portal and complete at least one live pass if the iPad is
+  available near the hardware.
