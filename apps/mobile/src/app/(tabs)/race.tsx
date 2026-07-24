@@ -745,14 +745,14 @@ function Results({
         <LiveStat label={`Worst (lap ${result.worstLapNum})`} value={fmtTime(result.worstLap)} />
       </View>
 
-      <LapList lapTimes={result.lapTimes} bestLap={result.bestLap} />
-
       <Pressable
         onPress={onShare}
         style={({ pressed }) => [styles.shareBtn, pressed && styles.pressed]}
       >
         <Text style={styles.shareBtnText}>Share result</Text>
       </Pressable>
+
+      <LapList lapTimes={result.lapTimes} bestLap={result.bestLap} />
 
       <View style={styles.actionRow}>
         <Pressable
