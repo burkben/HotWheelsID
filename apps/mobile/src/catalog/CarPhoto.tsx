@@ -15,6 +15,16 @@ import { Image, StyleSheet, Text, View } from "react-native";
 import { carArtwork } from "@/catalog/artwork";
 import { colors, radius } from "@/theme/tokens";
 
+/**
+ * The box must end up with a definite height, so the three ways to express one
+ * are mutually exclusive rather than free-form. A width alone would leave the
+ * frame zero-height and the photo invisible.
+ */
+type Box =
+  | { size: number; width?: never; height?: never; aspectRatio?: never }
+  | { size?: never; width: DimensionValue; aspectRatio: number; height?: never }
+  | { size?: never; width: DimensionValue; height: DimensionValue; aspectRatio?: never };
+
 export function CarPhoto({
   carId,
   size,
@@ -24,14 +34,9 @@ export function CarPhoto({
   rounded = radius.md,
   ring = false,
   contentFit = "cover",
-}: {
+}: Box & {
   /** Catalog id whose bundled artwork to show. Omit for an unidentified car. */
   carId?: string | null;
-  /** Square shorthand — sets both width and height. */
-  size?: number;
-  width?: DimensionValue;
-  height?: DimensionValue;
-  aspectRatio?: number;
   rounded?: number;
   /** Accent ring for identified/selected state. */
   ring?: boolean;
@@ -39,8 +44,6 @@ export function CarPhoto({
 }) {
   const source = carArtwork(carId);
 
-  // Only keys common to both ViewStyle and ImageStyle, so the literal stays
-  // assignable to the placeholder View *and* the Image without a style cast.
   const box = {
     ...(size != null ? { width: size, height: size } : null),
     ...(width != null ? { width } : null),
@@ -59,14 +62,22 @@ export function CarPhoto({
     );
   }
 
+  // The photo has to live inside a sized frame rather than carrying the box
+  // itself. Bundled assets are 1x, so an <Image> reports its pixel height as its
+  // intrinsic point height (640x364 -> 364pt); pairing that measurement with
+  // `aspectRatio` makes Yoga derive the width from the height and ignore a
+  // percentage width, blowing the box far past its column. A plain <View> has no
+  // intrinsic size, so the same styles resolve correctly there.
   return (
-    <Image
-      source={source}
-      style={[styles.photo, box]}
-      resizeMode={contentFit}
-      // Decorative: every surface showing a photo also renders the casting name.
-      accessibilityIgnoresInvertColors
-    />
+    <View style={[styles.frame, box]}>
+      <Image
+        source={source}
+        style={styles.photo}
+        resizeMode={contentFit}
+        // Decorative: every surface showing a photo also renders the casting name.
+        accessibilityIgnoresInvertColors
+      />
+    </View>
   );
 }
 
@@ -78,7 +89,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  photo: {
+  frame: {
     backgroundColor: colors.surfaceAlt,
+    // Keeps the photo inside the rounded corners and the accent ring.
+    overflow: "hidden",
+  },
+  photo: {
+    width: "100%",
+    height: "100%",
   },
 });
