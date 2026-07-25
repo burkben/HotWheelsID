@@ -27,6 +27,7 @@ export default function RootLayout() {
             <Stack.Screen name="achievements" />
             <Stack.Screen name="live" />
             <Stack.Screen name="settings" />
+            <Stack.Screen name="credits" />
           </Stack>
           <StatusBar style="light" />
         </PortalControllerProvider>

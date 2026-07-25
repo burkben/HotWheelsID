@@ -24,7 +24,7 @@ const catalogCar: CatalogCar = {
   year: 2020,
   wave: null,
   bodyColor: null,
-  image: "https://example.test/twin-mill.jpg",
+  image: null,
   wikiPage: null,
 };
 
@@ -76,7 +76,7 @@ describe("carHeroModel", () => {
     expect(model).toMatchObject({
       uid: garageCar.uid,
       title: "Twin Mill",
-      image: catalogCar.image,
+      catalogId: catalogCar.id,
       serial: "5678",
       isCurrent: true,
       bestMph: 150,

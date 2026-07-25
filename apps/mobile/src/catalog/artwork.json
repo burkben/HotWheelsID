@@ -1,0 +1,1394 @@
+{
+  "schemaVersion": 1,
+  "generator": "python/tools/fetch_catalog_artwork.py",
+  "source": {
+    "name": "Hot Wheels Wiki — Hot Wheels id",
+    "pageId": 83017,
+    "revisionId": 782123,
+    "revisionUrl": "https://hotwheels.fandom.com/wiki/Hot_Wheels_id?oldid=782123"
+  },
+  "license": {
+    "name": "Creative Commons Attribution-ShareAlike",
+    "abbreviation": "CC BY-SA",
+    "url": "https://www.fandom.com/licensing",
+    "wikiCopyrightUrl": "https://hotwheels.fandom.com/wiki/Hot_Wheels_Wiki:Copyrights",
+    "modifications": "Renditions are resized to a maximum width of 640px by the Fandom CDN thumbnailer and renamed to the catalog id. Image content is otherwise unaltered.",
+    "basisCounts": {
+      "uploader-self": 92,
+      "wiki-default": 43
+    }
+  },
+  "uploaders": [
+    "1steditionman",
+    "Autobot Scamper",
+    "Biddiblush",
+    "BigBadBrad01",
+    "Cyko9",
+    "Disoneiscool8746",
+    "GTRTURTLE",
+    "Grunty89",
+    "JohnW51",
+    "Justinizawesome05",
+    "Kevblokey",
+    "LesneyFan",
+    "MazdaL10B",
+    "Nezz79",
+    "Shnezman",
+    "Skingld",
+    "Tikinet",
+    "WorpeX"
+  ],
+  "imageCount": 135,
+  "images": {
+    "12-ford-fiesta": {
+      "file": "12-ford-fiesta.jpg",
+      "bytes": 62852,
+      "sha256": "a8989f3cf4477c87dca2bd4aaf6b85a373ec2143df82a3180311266d1dce3406",
+      "wikiFile": "HWidFordFiesta.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:HWidFordFiesta.jpg",
+      "uploader": "GTRTURTLE",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "15-dodge-charger-srt": {
+      "file": "15-dodge-charger-srt.jpg",
+      "bytes": 34888,
+      "sha256": "44a36b7bc44ed66265f444f3cc1f11f1fe56b313c120233df1ce6cfe6fb86c5b",
+      "wikiFile": "PursuitCharger.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:PursuitCharger.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "15-dodge-charger-srt-gtd66": {
+      "file": "15-dodge-charger-srt-gtd66.jpg",
+      "bytes": 38517,
+      "sha256": "47a9387fef2b7fd5658d609d1bd7a5cc98f43c7c722dc832792db1407067f5a1",
+      "wikiFile": "IDHellcat.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:IDHellcat.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "wiki-default",
+      "licenseTemplate": null
+    },
+    "15-jaguar-f-type-project-7": {
+      "file": "15-jaguar-f-type-project-7.png",
+      "bytes": 194954,
+      "sha256": "540c5fadd3108f26dcf353eef6004064cbbbb80b9c9005e42e93035a12ef971c",
+      "wikiFile": "15 Jaguar F-Type - 19 HotWheelsID 1200pxOTD.png",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:15_Jaguar_F-Type_-_19_HotWheelsID_1200pxOTD.png",
+      "uploader": "BigBadBrad01",
+      "licenseBasis": "wiki-default",
+      "licenseTemplate": null
+    },
+    "16-bugatti-chiron": {
+      "file": "16-bugatti-chiron.jpg",
+      "bytes": 33370,
+      "sha256": "f1222c11bb6a235b6d1e15838e0e257553e705c26bc806b9048b7c500c37fdbe",
+      "wikiFile": "Chironid.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:Chironid.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "wiki-default",
+      "licenseTemplate": null
+    },
+    "16-lamborghini-centenario-roadster": {
+      "file": "16-lamborghini-centenario-roadster.jpg",
+      "bytes": 41054,
+      "sha256": "4bdab61af3545343279fcdfb5c4dd95077bb20e3a9164b3f41ef3c714dacba89",
+      "wikiFile": "HBF91 '16 Lamborghini Centenario Roadster.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:HBF91_%2716_Lamborghini_Centenario_Roadster.jpg",
+      "uploader": "LesneyFan",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "16-mercedes-amg-gt3": {
+      "file": "16-mercedes-amg-gt3.jpg",
+      "bytes": 34452,
+      "sha256": "fdfb7594e461e4c75da01cf6e70034c888479edfd2de701e68d98fa4f2dd4085",
+      "wikiFile": "'16Mercedes-AMGGT3id.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:%2716Mercedes-AMGGT3id.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "17-nissan-gt-r-r35": {
+      "file": "17-nissan-gt-r-r35.jpg",
+      "bytes": 29915,
+      "sha256": "e8e1190841ecae9bc33cae560b09f3509a249a5a37eaf66f3e35b82b192cfca1",
+      "wikiFile": "FXB13.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:FXB13.jpg",
+      "uploader": "LesneyFan",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "17-nissan-gt-r-r35-gmk79": {
+      "file": "17-nissan-gt-r-r35-gmk79.jpg",
+      "bytes": 34859,
+      "sha256": "1c973e483ed5d0e0cb9341cb6ffe28278b7e390a171cdabbe25c4e8b1d4fe8b4",
+      "wikiFile": "HW GMK79 ’17 Nissan GT-R (R35).jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:HW_GMK79_%E2%80%9917_Nissan_GT-R_%28R35%29.jpg",
+      "uploader": "LesneyFan",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "18-camaro-ss": {
+      "file": "18-camaro-ss.jpg",
+      "bytes": 39319,
+      "sha256": "f868aa4e0bfddf81bdae38ea9e27fb5b9dbd0470929dd8adca6e9809e4f6d1b9",
+      "wikiFile": "FXB16.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:FXB16.jpg",
+      "uploader": "LesneyFan",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "19-acura-nsx": {
+      "file": "19-acura-nsx.jpg",
+      "bytes": 72607,
+      "sha256": "ec19e17afc07c87d772425dee194ff95c26ff385932f6efc964edf6afe909dbd",
+      "wikiFile": "HW GMK78 ’19 Acura NSX.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:HW_GMK78_%E2%80%9919_Acura_NSX.jpg",
+      "uploader": "LesneyFan",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "19-ford-ranger-raptor": {
+      "file": "19-ford-ranger-raptor.jpg",
+      "bytes": 54643,
+      "sha256": "aacf7a3fb7d9cacea70a53bd29a58a95a0d601abd9f86ebe05158cb7250804a7",
+      "wikiFile": "HWidRangerRaptorPattern.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:HWidRangerRaptorPattern.jpg",
+      "uploader": "GTRTURTLE",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "2014-corvette-c7-r": {
+      "file": "2014-corvette-c7-r.jpg",
+      "bytes": 33419,
+      "sha256": "d9e90ac49dbad30f9e0b854ae40a00638da22933bf84a6a6824fcd2d50ddc936",
+      "wikiFile": "'14CorvetteC7.R.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:%2714CorvetteC7.R.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "2016-mercedes-amg-gt": {
+      "file": "2016-mercedes-amg-gt.jpg",
+      "bytes": 40237,
+      "sha256": "2a1bd35f7ca2506f8f921c1db0453c6a60c122b264da946f75933fbb98a46590",
+      "wikiFile": "AMG.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:AMG.jpg",
+      "uploader": "WorpeX",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "2018-honda-civic-type-r": {
+      "file": "2018-honda-civic-type-r.jpg",
+      "bytes": 36000,
+      "sha256": "f89d288354b5963314fb915b57459b86a439ec13eb9b1bc1a2750bab79f69da6",
+      "wikiFile": "2018HondaCivicTypeR.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:2018HondaCivicTypeR.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "2020-corvette": {
+      "file": "2020-corvette.jpg",
+      "bytes": 37209,
+      "sha256": "f3e2bc25f1f7804a2fba9cae6251a2afc2734e36cf6054846fb047300349d570",
+      "wikiFile": "2020Corvette.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:2020Corvette.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "wiki-default",
+      "licenseTemplate": null
+    },
+    "56-chevy-bel-air": {
+      "file": "56-chevy-bel-air.jpg",
+      "bytes": 40692,
+      "sha256": "6de035260c6cfa9cd79eb82a089caeb750d00ff5c4c2ed70ee8234340b68d435",
+      "wikiFile": "'56BelAir.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:%2756BelAir.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "wiki-default",
+      "licenseTemplate": null
+    },
+    "69-copo-camaro": {
+      "file": "69-copo-camaro.jpg",
+      "bytes": 26976,
+      "sha256": "c880c00376496d504325283252ccbb5eb3c184ff1bc2d69e1153f01bfa611d47",
+      "wikiFile": "Chevrolet Camaro 1969 COPO 05a.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:Chevrolet_Camaro_1969_COPO_05a.jpg",
+      "uploader": "JohnW51",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "69-copo-camaro-gtd68": {
+      "file": "69-copo-camaro-gtd68.jpg",
+      "bytes": 29565,
+      "sha256": "619babb196328231fe69e8977cddcc91373b06f606df9e11142cc0517eb1b0a0",
+      "wikiFile": "69 copo camaro id chase.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:69_copo_camaro_id_chase.jpg",
+      "uploader": "Justinizawesome05",
+      "licenseBasis": "wiki-default",
+      "licenseTemplate": null
+    },
+    "70-dodge-charger-r-t": {
+      "file": "70-dodge-charger-r-t.jpg",
+      "bytes": 36591,
+      "sha256": "04b024001eaf1d4b47179a627068425ad637a6bbd132e7c3e266acb45a9a4562",
+      "wikiFile": "'70.Charger.RT.HWiD(eagleye).jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:%2770.Charger.RT.HWiD%28eagleye%29.jpg",
+      "uploader": "1steditionman",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "70-dodge-charger-r-t-gjp07": {
+      "file": "70-dodge-charger-r-t-gjp07.jpg",
+      "bytes": 49592,
+      "sha256": "b1d20bf2c0f1d47077b682ed299c3d73ae9c02ba38285ccd5c5d7f2bcafb5b21",
+      "wikiFile": "2020IDChaseDodgeCharger.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:2020IDChaseDodgeCharger.jpg",
+      "uploader": "MazdaL10B",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "70-ford-escort-rs1600": {
+      "file": "70-ford-escort-rs1600.jpg",
+      "bytes": 38416,
+      "sha256": "2a6490a3fab31d63be4ae21c58e633d8c033a208042ebd6a0203d264563abed5",
+      "wikiFile": "PaulEscordid.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:PaulEscordid.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "70-ford-escort-rs1600-gjp05": {
+      "file": "70-ford-escort-rs1600-gjp05.jpg",
+      "bytes": 54406,
+      "sha256": "e5712edebdc5942473f098352ede916f31d73a1a6673755442e97374476ef866",
+      "wikiFile": "GHB86 - 70 Ford Escort RS1600-1.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:GHB86_-_70_Ford_Escort_RS1600-1.jpg",
+      "uploader": "Skingld",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "71-lamborghini-miura-p400-sv": {
+      "file": "71-lamborghini-miura-p400-sv.jpg",
+      "bytes": 36310,
+      "sha256": "c6546f8b5b844180dd266ba5d38ae552c7121d41406f736f244585d456348c20",
+      "wikiFile": "FXB06.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:FXB06.jpg",
+      "uploader": "LesneyFan",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "71-lamborghini-miura-sv": {
+      "file": "71-lamborghini-miura-sv.jpg",
+      "bytes": 43599,
+      "sha256": "e2495e76a6f5699f4b4914cfbf1ef95771d0b72ee601f14128d8068b93c29f44",
+      "wikiFile": "Miura Green.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:Miura_Green.jpg",
+      "uploader": "Autobot Scamper",
+      "licenseBasis": "wiki-default",
+      "licenseTemplate": null
+    },
+    "95-mazda-rx-7-drift": {
+      "file": "95-mazda-rx-7-drift.jpg",
+      "bytes": 43022,
+      "sha256": "07c816e1d456f356f47ebc193aad6f4852aecbd8a3a9dd5d9f62096c5fe12042",
+      "wikiFile": "'99MazdaRX-7Drift.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:%2799MazdaRX-7Drift.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "wiki-default",
+      "licenseTemplate": null
+    },
+    "arachnorod": {
+      "file": "arachnorod.jpg",
+      "bytes": 48708,
+      "sha256": "16089015b51000ec0b8b7a629286e3e704d0a1a74566907a91cd1bca34d82753",
+      "wikiFile": "Arachnorod. Hot Wheels id.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:Arachnorod._Hot_Wheels_id.jpg",
+      "uploader": "1steditionman",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "arachnorod-gtd67": {
+      "file": "arachnorod-gtd67.jpg",
+      "bytes": 38537,
+      "sha256": "ec0d4761a000a38e26d6f46f7a6a173dd4668538bee4f6733ed0ff621315c673",
+      "wikiFile": "ArachnorodIDChase.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:ArachnorodIDChase.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "asphalt-assault": {
+      "file": "asphalt-assault.jpg",
+      "bytes": 82204,
+      "sha256": "f9259649410cb0bac81cc8edbc749cf4f66977c4c20eaeb1b2c15bffe6342080",
+      "wikiFile": "HBG06 Asphalt Assault.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:HBG06_Asphalt_Assault.jpg",
+      "uploader": "LesneyFan",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "aston-martin-one-77": {
+      "file": "aston-martin-one-77.jpg",
+      "bytes": 36020,
+      "sha256": "1dda676cbbc85553ce388f15f79ac4049296601c866a693c6b2af7a6113615a5",
+      "wikiFile": "177-1.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:177-1.jpg",
+      "uploader": "WorpeX",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "aston-martin-one-77-gjp01": {
+      "file": "aston-martin-one-77-gjp01.jpg",
+      "bytes": 32932,
+      "sha256": "a0fff0a732a8f3b6fd00d761ef54b96226e3eb61aa584566ffbb22e01f9f08da",
+      "wikiFile": "0D90A5D9-27E8-4C62-93C1-2123342C90A1.jpeg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:0D90A5D9-27E8-4C62-93C1-2123342C90A1.jpeg",
+      "uploader": "Biddiblush",
+      "licenseBasis": "wiki-default",
+      "licenseTemplate": null
+    },
+    "aston-martin-vantage-gt3": {
+      "file": "aston-martin-vantage-gt3.jpg",
+      "bytes": 42892,
+      "sha256": "02c190ce998b464d94afea93f93ae1562298c2d2cf661d17cc9330879f0115d9",
+      "wikiFile": "AstonMartinVantageGT3.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:AstonMartinVantageGT3.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "audi-r8-lms": {
+      "file": "audi-r8-lms.jpg",
+      "bytes": 18433,
+      "sha256": "504c1aef983988fce00572a50abb714b47d4a2e5936e58bdcdea16b6d1d39f9a",
+      "wikiFile": "Audi r8 lms id.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:Audi_r8_lms_id.jpg",
+      "uploader": "Tikinet",
+      "licenseBasis": "wiki-default",
+      "licenseTemplate": null
+    },
+    "audi-r8-lms-hbf98": {
+      "file": "audi-r8-lms-hbf98.jpg",
+      "bytes": 40358,
+      "sha256": "049350b89167900ca497ade9d44238b0aa07b3d0db8f96ff40c5a13f04032793",
+      "wikiFile": "AudiR8LMSWR.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:AudiR8LMSWR.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "automobili-pininfarina-battista": {
+      "file": "automobili-pininfarina-battista.jpg",
+      "bytes": 29496,
+      "sha256": "a80b57b3106bcd8aca6a9e64d3af9e5309c67c882d4330a1229da30c9531dc0f",
+      "wikiFile": "PininfarinaBattista.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:PininfarinaBattista.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "back-to-the-future-time-machine": {
+      "file": "back-to-the-future-time-machine.jpg",
+      "bytes": 35945,
+      "sha256": "cc7f109f848ee386fa9bc7b0df3567f4c0dbec3a5d7dc05e535712f5b08c7964",
+      "wikiFile": "TimeMachineid.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:TimeMachineid.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "back-to-the-future-time-machine-hbg26": {
+      "file": "back-to-the-future-time-machine-hbg26.jpg",
+      "bytes": 36231,
+      "sha256": "b024fe8ba8ec8f73018139c189f03374e8b0713447e89bb17915f12cd9c18386",
+      "wikiFile": "DirtyTimeMachine.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:DirtyTimeMachine.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "batman-arkham-asylum-batmobile": {
+      "file": "batman-arkham-asylum-batmobile.jpg",
+      "bytes": 35963,
+      "sha256": "42b579bd35a00f221437411cc358a0517c63e9d45a16da540fba510f9a2dcd4f",
+      "wikiFile": "HBG04 Batman Arkham Asylum Batmobile.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:HBG04_Batman_Arkham_Asylum_Batmobile.jpg",
+      "uploader": "LesneyFan",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "batman-arkham-knight-batmobile": {
+      "file": "batman-arkham-knight-batmobile.jpg",
+      "bytes": 38684,
+      "sha256": "3765328988f06fe1ed8631cf5127f3cee0c3c0b0e9bef509277dc7fa4f2c9203",
+      "wikiFile": "71008513 2411562462444527 4685521849184944128 n.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:71008513_2411562462444527_4685521849184944128_n.jpg",
+      "uploader": "Kevblokey",
+      "licenseBasis": "wiki-default",
+      "licenseTemplate": null
+    },
+    "batman-arkham-knight-batmobile-gtd61": {
+      "file": "batman-arkham-knight-batmobile-gtd61.jpg",
+      "bytes": 42826,
+      "sha256": "253a3320c3c2d8e20220778f76b9ad554588071f8d2915decaaf027ba46acc09",
+      "wikiFile": "ArkhamBatmobileIDChase.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:ArkhamBatmobileIDChase.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "batman-classic-tv-series-batmobile": {
+      "file": "batman-classic-tv-series-batmobile.jpg",
+      "bytes": 45513,
+      "sha256": "8af4886e0f9056a081aed693af6715204e39adba5c05e06ff51793b87867f010",
+      "wikiFile": "HBF93 Batman Classic TV Series Batmobile.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:HBF93_Batman_Classic_TV_Series_Batmobile.jpg",
+      "uploader": "LesneyFan",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "batmobile": {
+      "file": "batmobile.jpg",
+      "bytes": 31537,
+      "sha256": "b734bf590b1b94576abc0e2632af2e267bdd479b7d1ae30aea2430d6efed6f46",
+      "wikiFile": "1980's Batmobile.Hwid2.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:1980%27s_Batmobile.Hwid2.jpg",
+      "uploader": "1steditionman",
+      "licenseBasis": "wiki-default",
+      "licenseTemplate": "undefined"
+    },
+    "bmw-i8-roadster": {
+      "file": "bmw-i8-roadster.jpg",
+      "bytes": 32270,
+      "sha256": "0d2d996a0c4652922013e63fa3d7703093974594e2ba369264cc633a415a9902",
+      "wikiFile": "BMWi8.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:BMWi8.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "wiki-default",
+      "licenseTemplate": null
+    },
+    "bone-shaker": {
+      "file": "bone-shaker.jpg",
+      "bytes": 37739,
+      "sha256": "bf856002b1debbe0a00d21c783b4e730f0facff792c6d990ca5154a2dd4d52f2",
+      "wikiFile": "FXB50.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:FXB50.jpg",
+      "uploader": "LesneyFan",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "bone-shaker-gjp06": {
+      "file": "bone-shaker-gjp06.jpg",
+      "bytes": 40708,
+      "sha256": "d886506e6ca5e5f56630e786cc2c1d7379b8e4204b7b12584b6393b6996dd7ae",
+      "wikiFile": "Bone Shaker Chase id 2020.JPG",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:Bone_Shaker_Chase_id_2020.JPG",
+      "uploader": "Shnezman",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "bone-shaker-gwt05": {
+      "file": "bone-shaker-gwt05.jpg",
+      "bytes": 48365,
+      "sha256": "9dec75420d5bf054ae258da68d340b49f595c49800f50adddd72a8963c7dfe42",
+      "wikiFile": "LegendsTourShakerid.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:LegendsTourShakerid.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "bull-whip": {
+      "file": "bull-whip.jpg",
+      "bytes": 46765,
+      "sha256": "8102a0efca9c9daabf64ccbc3edfe7124b5060453651c44a44b1a40e5109b54e",
+      "wikiFile": "BullWhipID.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:BullWhipID.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "buns-of-steel": {
+      "file": "buns-of-steel.jpg",
+      "bytes": 56764,
+      "sha256": "3b2e2404b8cb1b615e5a4e460274d838a7da6ac4a60fe2f1ae5d27a202938e67",
+      "wikiFile": "BunsofSteelid.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:BunsofSteelid.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "wiki-default",
+      "licenseTemplate": null
+    },
+    "custom-15-ford-mustang": {
+      "file": "custom-15-ford-mustang.jpg",
+      "bytes": 58516,
+      "sha256": "4458d0b44b2776db240513d12abfc9a18f48881d075cf4c72fc723ae5b55b833",
+      "wikiFile": "FXB37 Custom 15 Ford Mustang.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:FXB37_Custom_15_Ford_Mustang.jpg",
+      "uploader": "LesneyFan",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "custom-18-ford-mustang-gt": {
+      "file": "custom-18-ford-mustang-gt.jpg",
+      "bytes": 40017,
+      "sha256": "8fe3c278e7053fb8d9a2252f113bfc17d96ab677372ea0a315b39ad3461833a5",
+      "wikiFile": "HW GML07 Custom ’18 Ford Mustang GT.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:HW_GML07_Custom_%E2%80%9918_Ford_Mustang_GT.jpg",
+      "uploader": "LesneyFan",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "custom-67-pontiac-firebird": {
+      "file": "custom-67-pontiac-firebird.jpg",
+      "bytes": 37576,
+      "sha256": "a2f3a96319c2158b28aa6c382a38b89034071ba80e0d2f7952ed0284e52c696c",
+      "wikiFile": "BVbirdID.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:BVbirdID.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "darth-vader": {
+      "file": "darth-vader.jpg",
+      "bytes": 34937,
+      "sha256": "29efc209595a8260851966c366c8f61d9c192a936a6578294c991c87d00bd488",
+      "wikiFile": "GML53 Darth Vader.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:GML53_Darth_Vader.jpg",
+      "uploader": "LesneyFan",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "driftsta": {
+      "file": "driftsta.jpg",
+      "bytes": 34817,
+      "sha256": "9207791634830317aa221fc1e902c82375d05799daa5bce9645c8712be2c816e",
+      "wikiFile": "Driftstaid.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:Driftstaid.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "dune-daddy": {
+      "file": "dune-daddy.jpg",
+      "bytes": 51950,
+      "sha256": "aca7efe67dfbcec169f6a7376920314993023ee64abc340ba1a984ecddf9d4a1",
+      "wikiFile": "DuneDaddyid.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:DuneDaddyid.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "fiat-500e": {
+      "file": "fiat-500e.jpg",
+      "bytes": 26846,
+      "sha256": "ea40fe43c1346a2e8c0cdd6f46d7227430c42218d9b3b7404fc9b1bff34688b0",
+      "wikiFile": "2019 Hot Wheels Fiat 500 id.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:2019_Hot_Wheels_Fiat_500_id.jpg",
+      "uploader": "Nezz79",
+      "licenseBasis": "wiki-default",
+      "licenseTemplate": null
+    },
+    "ford-bronco-r": {
+      "file": "ford-bronco-r.jpg",
+      "bytes": 40643,
+      "sha256": "d5acac8903aac770448b023b6a20dbe6e3bc3e6a7cccc8455744557d769b99bb",
+      "wikiFile": "FordBroncoRid.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:FordBroncoRid.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "ford-rs200": {
+      "file": "ford-rs200.jpg",
+      "bytes": 57890,
+      "sha256": "b27e3f40ba8c55520c1ec3a60a64d55c1b02d2f8dd9d48de76f5c2fec4182d47",
+      "wikiFile": "HBF88 Ford RS200.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:HBF88_Ford_RS200.jpg",
+      "uploader": "LesneyFan",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "freightliner-race-truck": {
+      "file": "freightliner-race-truck.jpg",
+      "bytes": 62450,
+      "sha256": "054678554b6cd9878990f4b1a04c64b3a558d8c710391e2039b73e46f272ef32",
+      "wikiFile": "FreightlinerRaceTruck.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:FreightlinerRaceTruck.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "gotta-go-2": {
+      "file": "gotta-go-2.jpg",
+      "bytes": 52680,
+      "sha256": "d6ffc819fafd17838eb8aaabb460bd876714f3d8f9aa8866f19c1fea9dd21727",
+      "wikiFile": "IdGottaGo2.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:IdGottaGo2.jpg",
+      "uploader": "GTRTURTLE",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "gt-hunter": {
+      "file": "gt-hunter.jpg",
+      "bytes": 43552,
+      "sha256": "f65e128f100af8373c103539137fbf7e673503e111b0397c911f6477f4f5f83f",
+      "wikiFile": "FXB36 GT Hunter.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:FXB36_GT_Hunter.jpg",
+      "uploader": "LesneyFan",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "gt-hunter-fxb53": {
+      "file": "gt-hunter-fxb53.jpg",
+      "bytes": 30823,
+      "sha256": "a5f3ff4396f5a834864bf5cad3c90426aa3bf92d0752bd8c64df8ef6e332644c",
+      "wikiFile": "66277587 2351137255153715 1839569230572290048 o.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:66277587_2351137255153715_1839569230572290048_o.jpg",
+      "uploader": "Kevblokey",
+      "licenseBasis": "wiki-default",
+      "licenseTemplate": null
+    },
+    "gt-hunter-gtd62": {
+      "file": "gt-hunter-gtd62.jpg",
+      "bytes": 40627,
+      "sha256": "7b2c579af6922e49f8d00609e468d9c86db148f3254a0c434559c356502ae13c",
+      "wikiFile": "GTHunteridChase.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:GTHunteridChase.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "wiki-default",
+      "licenseTemplate": null
+    },
+    "hiway-hauler-3-0": {
+      "file": "hiway-hauler-3-0.jpg",
+      "bytes": 41047,
+      "sha256": "cf0b3c86c3b285c90102a11b9a0c47724cdbe5d9931dbaa0d18ce01242be4e35",
+      "wikiFile": "71086985 2411562449111195 3287430584686608384 n.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:71086985_2411562449111195_3287430584686608384_n.jpg",
+      "uploader": "Kevblokey",
+      "licenseBasis": "wiki-default",
+      "licenseTemplate": null
+    },
+    "howlin-heat": {
+      "file": "howlin-heat.jpg",
+      "bytes": 35541,
+      "sha256": "5bc95fd321f5a40e73b3a4bb12f0ce97c802d75e9f45756d9fcbfa77360507b7",
+      "wikiFile": "Howlin' Heat. Hot Wheels id 2.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:Howlin%27_Heat._Hot_Wheels_id_2.jpg",
+      "uploader": "1steditionman",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "huayra-roadster": {
+      "file": "huayra-roadster.jpg",
+      "bytes": 37982,
+      "sha256": "46f61b329b51b2054437349027684e49aae4188db82ee7e613636454820154c2",
+      "wikiFile": "FXB17.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:FXB17.jpg",
+      "uploader": "LesneyFan",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "hw50-concept": {
+      "file": "hw50-concept.jpg",
+      "bytes": 47309,
+      "sha256": "27d9ef48c39e3596fb5792f4c1cf54d02cfe3dcb82ba4329e8751b8be8404188",
+      "wikiFile": "FXB45.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:FXB45.jpg",
+      "uploader": "MazdaL10B",
+      "licenseBasis": "wiki-default",
+      "licenseTemplate": null
+    },
+    "jaguar-i-pace-etrophy": {
+      "file": "jaguar-i-pace-etrophy.jpg",
+      "bytes": 43721,
+      "sha256": "c583a659843aece8752e37df8a2fe4d0b9ec28105247a2745c46ca8346027e32",
+      "wikiFile": "JaguarIPaceETrophyid.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:JaguarIPaceETrophyid.jpg",
+      "uploader": "GTRTURTLE",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "jeep-dj-express": {
+      "file": "jeep-dj-express.jpg",
+      "bytes": 56724,
+      "sha256": "9d8ca3ab3f24f1fadd0f257ad1ab0fb2872bc8912ccf76dad2dffe73647006e8",
+      "wikiFile": "FXB46 Jeep DJ-Express.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:FXB46_Jeep_DJ-Express.jpg",
+      "uploader": "LesneyFan",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "jurassic-park-jeep": {
+      "file": "jurassic-park-jeep.jpg",
+      "bytes": 43628,
+      "sha256": "5975b5f2bf6308656377f3afdc352b86c39e0c8ceebee98197ee45c2f62fa45b",
+      "wikiFile": "Wranglerid.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:Wranglerid.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "wiki-default",
+      "licenseTemplate": null
+    },
+    "justice-league-batmobile": {
+      "file": "justice-league-batmobile.jpg",
+      "bytes": 47887,
+      "sha256": "88296b6c8a4771bb212f0cf38cfb23bae65ee8518ba1d82df87bcaf87cd359ff",
+      "wikiFile": "FXB24 Justice League Batmobile.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:FXB24_Justice_League_Batmobile.jpg",
+      "uploader": "LesneyFan",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "justice-league-batmobile-hbf92": {
+      "file": "justice-league-batmobile-hbf92.jpg",
+      "bytes": 53274,
+      "sha256": "96c7c3aa4063faa72f9be8ae22cd9f59db18909758921b503b90af0ec657747d",
+      "wikiFile": "HBF92 Justice League Batmobile.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:HBF92_Justice_League_Batmobile.jpg",
+      "uploader": "LesneyFan",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "k-i-t-t": {
+      "file": "k-i-t-t.jpg",
+      "bytes": 26145,
+      "sha256": "381b4966f19aabda8dfc95d2b77b4caf7319e886615c75f0aadf9d481dcc4e7c",
+      "wikiFile": "KITTid.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:KITTid.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "lamborghini-aventador-lp-700-4": {
+      "file": "lamborghini-aventador-lp-700-4.jpg",
+      "bytes": 28259,
+      "sha256": "3b868a2b58fbd271a615117f27923366ac23fc60e0f4c72a4204bcd210ec08c6",
+      "wikiFile": "ShawAventador.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:ShawAventador.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "mach-speeder": {
+      "file": "mach-speeder.jpg",
+      "bytes": 28050,
+      "sha256": "ebd85195cf297b0c73ae653019cf831d4ebcd7d8eb761c794b5c9407b04c07fa",
+      "wikiFile": "MachSpeeder.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:MachSpeeder.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "mclaren-f1-gtr": {
+      "file": "mclaren-f1-gtr.jpg",
+      "bytes": 39711,
+      "sha256": "673a7100bb538eb29d8369575b392bf821e8b9237fd8ab2569a44ad36b20fb40",
+      "wikiFile": "McLarenF1GTR.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:McLarenF1GTR.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "mclaren-senna": {
+      "file": "mclaren-senna.jpg",
+      "bytes": 34460,
+      "sha256": "d8cf7d5004b20a9c83bffcf47946b19bf624ca6c08498f3afbc55fb511b59558",
+      "wikiFile": "McLaren Senna 38a.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:McLaren_Senna_38a.jpg",
+      "uploader": "JohnW51",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "mercedes-benz-unimog-1300l": {
+      "file": "mercedes-benz-unimog-1300l.jpg",
+      "bytes": 56253,
+      "sha256": "38ee088d9451422eb68594a39f2a4e340106611df277650b5bce777b452e534e",
+      "wikiFile": "Unimog1300L.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:Unimog1300L.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "motosaurus": {
+      "file": "motosaurus.jpg",
+      "bytes": 45944,
+      "sha256": "5ff41201b2a351fe1da005a2a00da1211686f289181fb707ffc2d3697006bae3",
+      "wikiFile": "Motosaurus. Hot Wheels id.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:Motosaurus._Hot_Wheels_id.jpg",
+      "uploader": "1steditionman",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "motosaurus-gjp00": {
+      "file": "motosaurus-gjp00.jpg",
+      "bytes": 24418,
+      "sha256": "acc857db26d317b729d140244e19c8cf378d7773893861fe2c5cd3ac70eee4b6",
+      "wikiFile": "Motosaurusidchase.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:Motosaurusidchase.jpg",
+      "uploader": "Disoneiscool8746",
+      "licenseBasis": "wiki-default",
+      "licenseTemplate": null
+    },
+    "night-burner": {
+      "file": "night-burner.jpg",
+      "bytes": 55865,
+      "sha256": "7894fa36ced1e5576e0583481c579b885cf5e38275013662e698ca054c75a73b",
+      "wikiFile": "Night Burner.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:Night_Burner.jpg",
+      "uploader": "Tikinet",
+      "licenseBasis": "wiki-default",
+      "licenseTemplate": null
+    },
+    "night-burner-gml25": {
+      "file": "night-burner-gml25.jpg",
+      "bytes": 48016,
+      "sha256": "478a0aae84b3a8688a9c131b3d064e2603d31f55e11e5b205210be0fa6045d5e",
+      "wikiFile": "GML25 Night Burner.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:GML25_Night_Burner.jpg",
+      "uploader": "LesneyFan",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "night-shifter": {
+      "file": "night-shifter.jpg",
+      "bytes": 40787,
+      "sha256": "324245a8b6a2ac342d471d5d5d9ebe73627fb00220706b2524aedbc31dc5c9fa",
+      "wikiFile": "FXB34 Night Shifter.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:FXB34_Night_Shifter.jpg",
+      "uploader": "LesneyFan",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "night-shifter-gjp04": {
+      "file": "night-shifter-gjp04.jpg",
+      "bytes": 66807,
+      "sha256": "1a8b5ee981317d8bd8c15fa699806226201495459253fb4088e8098b17383ee5",
+      "wikiFile": "2020 Hot Wheels Night Shifter id.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:2020_Hot_Wheels_Night_Shifter_id.jpg",
+      "uploader": "Nezz79",
+      "licenseBasis": "wiki-default",
+      "licenseTemplate": null
+    },
+    "nissan-fairlady-z": {
+      "file": "nissan-fairlady-z.jpg",
+      "bytes": 86961,
+      "sha256": "b3e70d21d607b6490b829f14bcc3e03579f0073cef59e6bacc21572bb9ac8982",
+      "wikiFile": "HBF89 Nissan Fairlady Z.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:HBF89_Nissan_Fairlady_Z.jpg",
+      "uploader": "LesneyFan",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "nissan-silvia-s14-drift": {
+      "file": "nissan-silvia-s14-drift.jpg",
+      "bytes": 43557,
+      "sha256": "022e67dacb773450c5fc236e6c3a89190eddbc4f11fe11c1a219049acd952bfb",
+      "wikiFile": "DriftSilvia.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:DriftSilvia.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "wiki-default",
+      "licenseTemplate": null
+    },
+    "nissan-skyline-gt-r-bnr34": {
+      "file": "nissan-skyline-gt-r-bnr34.jpg",
+      "bytes": 47528,
+      "sha256": "60f942acdb0071d93bc6be40f887451d1f6ef873be72b93bd72ffb723568c465",
+      "wikiFile": "HBG07 Nissan Skyline GT-R BNR34.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:HBG07_Nissan_Skyline_GT-R_BNR34.jpg",
+      "uploader": "LesneyFan",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "nissan-skyline-gt-r-bnr34-hcj08": {
+      "file": "nissan-skyline-gt-r-bnr34-hcj08.jpg",
+      "bytes": 86805,
+      "sha256": "437fe1f7baabcb5ea754e6f8eb9623fb9b53f72fa927e8677940cb880ddaade6",
+      "wikiFile": "HCJ08 Nissan Skyline GT-R (BNR34) Loose.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:HCJ08_Nissan_Skyline_GT-R_%28BNR34%29_Loose.jpg",
+      "uploader": "LesneyFan",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "oval-drive": {
+      "file": "oval-drive.jpg",
+      "bytes": 38507,
+      "sha256": "04b31b39bfd92776b3c567fea417d0ba3127ccd8b8071c27203663a6647a3258",
+      "wikiFile": "71004255 2411562539111186 6464752080648142848 o.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:71004255_2411562539111186_6464752080648142848_o.jpg",
+      "uploader": "Kevblokey",
+      "licenseBasis": "wiki-default",
+      "licenseTemplate": null
+    },
+    "pagani-huayra": {
+      "file": "pagani-huayra.jpg",
+      "bytes": 36063,
+      "sha256": "4ac73508d848f10b47605f7d43a332ae1a53b094210262ca71db181a9cd042f1",
+      "wikiFile": "HW GMK92 Pagani Huayra.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:HW_GMK92_Pagani_Huayra.jpg",
+      "uploader": "LesneyFan",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "pagani-huayra-gtd64": {
+      "file": "pagani-huayra-gtd64.jpg",
+      "bytes": 38070,
+      "sha256": "ca0bec406a6dcc1b1e36e5a3f67287f7de4076be0179b817ad3a20ade3299821",
+      "wikiFile": "IDHuayra.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:IDHuayra.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "wiki-default",
+      "licenseTemplate": null
+    },
+    "porsche-911-gt3-rs": {
+      "file": "porsche-911-gt3-rs.jpg",
+      "bytes": 89393,
+      "sha256": "5d40bcfeb3e52e02afa59d4f91ecbfeed7d164c70fee68ade7bf61a74480b923",
+      "wikiFile": "HBG16 Porsche 911 GT3 RS Loose.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:HBG16_Porsche_911_GT3_RS_Loose.jpg",
+      "uploader": "LesneyFan",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "porsche-918-spyder": {
+      "file": "porsche-918-spyder.jpg",
+      "bytes": 38535,
+      "sha256": "52364690d61470164052ce1212f9b89af8df4eb0307a1e63997f20c1b1e6d3ba",
+      "wikiFile": "HBG09 Porsche 918 Spyder.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:HBG09_Porsche_918_Spyder.jpg",
+      "uploader": "LesneyFan",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "porsche-taycan-turbo-s": {
+      "file": "porsche-taycan-turbo-s.jpg",
+      "bytes": 38784,
+      "sha256": "27b35ba7f7785d9b4a3ef50f3d50bcc988e3639396efd539d15816bf5b185fcb",
+      "wikiFile": "PorscheTaycanSafetyCar.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:PorscheTaycanSafetyCar.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "porsche-taycan-turbo-s-gtd65": {
+      "file": "porsche-taycan-turbo-s-gtd65.jpg",
+      "bytes": 32107,
+      "sha256": "c8bdd8b830bf4c2ae8e11c2d8b5239d168c66f5b746041b436579515b2a1c089",
+      "wikiFile": "PorscheTaycanTurboS.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:PorscheTaycanTurboS.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "wiki-default",
+      "licenseTemplate": null
+    },
+    "power-24-gt": {
+      "file": "power-24-gt.jpg",
+      "bytes": 36369,
+      "sha256": "bdefa768792129f4da570f7c19ae8bec7ea2b3fd3f9ba1caaa2c94e873f75df4",
+      "wikiFile": "Power24-GT.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:Power24-GT.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "wiki-default",
+      "licenseTemplate": null
+    },
+    "rally-finale": {
+      "file": "rally-finale.jpg",
+      "bytes": 41688,
+      "sha256": "ae39dddd82ec52fb375d783bd13b412dee64d85b60ac883847019ea9a08451a8",
+      "wikiFile": "RallyFinale.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:RallyFinale.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "wiki-default",
+      "licenseTemplate": null
+    },
+    "rally-finale-gfp20": {
+      "file": "rally-finale-gfp20.jpg",
+      "bytes": 32310,
+      "sha256": "953bbb2d0e6dc2ea42711e293d7a6ec63aacf1d23021ee4431ccef97aeb2931d",
+      "wikiFile": "127F16AC-0027-42CA-9485-54C35F45031B.jpeg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:127F16AC-0027-42CA-9485-54C35F45031B.jpeg",
+      "uploader": "Biddiblush",
+      "licenseBasis": "wiki-default",
+      "licenseTemplate": null
+    },
+    "rig-heat": {
+      "file": "rig-heat.jpg",
+      "bytes": 46309,
+      "sha256": "e7426fc0b11371b3ce3b88df5adf85e9dd48e164d05f2090600e87a2316271a7",
+      "wikiFile": "RigHeatID.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:RigHeatID.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "rip-rod": {
+      "file": "rip-rod.jpg",
+      "bytes": 49297,
+      "sha256": "f237e8bef2e40d3e2df947990094c3f5b5cc3ae8959256af80130fe72b89a28d",
+      "wikiFile": "FXB51 Rip Rod.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:FXB51_Rip_Rod.jpg",
+      "uploader": "LesneyFan",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "rodger-dodger": {
+      "file": "rodger-dodger.jpg",
+      "bytes": 36409,
+      "sha256": "47a7a32484a3b7f1bf86250ec1aa3ab4ddf8291143968124ed224d842501b080",
+      "wikiFile": "71755286 2416017085332398 4931862438636158976 o.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:71755286_2416017085332398_4931862438636158976_o.jpg",
+      "uploader": "Kevblokey",
+      "licenseBasis": "wiki-default",
+      "licenseTemplate": null
+    },
+    "rodger-dodger-gml39": {
+      "file": "rodger-dodger-gml39.jpg",
+      "bytes": 44708,
+      "sha256": "bb608abfd0fe083f7475407c1ceec8dceddeb1acd3202e54a8c7e23ad7044dd3",
+      "wikiFile": "HW GML39 Rodger Dodger.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:HW_GML39_Rodger_Dodger.jpg",
+      "uploader": "LesneyFan",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "scorpedo": {
+      "file": "scorpedo.jpg",
+      "bytes": 32122,
+      "sha256": "8fcf1ecab326a82ec4904c5d94a029db57a60a1460949c2e87ee9cb0bc8c984a",
+      "wikiFile": "FXB10.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:FXB10.jpg",
+      "uploader": "LesneyFan",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "shark-hammer-2-0": {
+      "file": "shark-hammer-2-0.jpg",
+      "bytes": 43375,
+      "sha256": "d17dfeb15285572a39ef188e66be2d3c11a45e39284ed7022a996670fd3d0681",
+      "wikiFile": "Shark Hammer 2.0. Hot Wheels id. Front.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:Shark_Hammer_2.0._Hot_Wheels_id._Front.jpg",
+      "uploader": "1steditionman",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "solid-muscle": {
+      "file": "solid-muscle.jpg",
+      "bytes": 57002,
+      "sha256": "773f359a7bb78af032d8e8ea22f64d74a4bb5de79996d761fe109961e2b059a0",
+      "wikiFile": "SolidMuscle2019IDPurpleMC.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:SolidMuscle2019IDPurpleMC.jpg",
+      "uploader": "MazdaL10B",
+      "licenseBasis": "wiki-default",
+      "licenseTemplate": null
+    },
+    "speed-dozer": {
+      "file": "speed-dozer.jpg",
+      "bytes": 58245,
+      "sha256": "c6695e2188098a76e871a8b5d97d68a5677b5a81aa6d6cfcc3d4eda4b3eb8232",
+      "wikiFile": "HBG29 Speed Dozer.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:HBG29_Speed_Dozer.jpg",
+      "uploader": "LesneyFan",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "srt-viper-gts-r": {
+      "file": "srt-viper-gts-r.jpg",
+      "bytes": 39393,
+      "sha256": "30e24ac7e80fedf6b077e9180fc37de8f540eb26f6d0997c3de0d2f369b73276",
+      "wikiFile": "Viper-0.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:Viper-0.jpg",
+      "uploader": "WorpeX",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "sting-rod-ii": {
+      "file": "sting-rod-ii.jpg",
+      "bytes": 78482,
+      "sha256": "c1113cec2cc6b1da6c7ef2e58c518deb72e7bca28d37e4b25aeb907af740286d",
+      "wikiFile": "HBG02 Sting Rod II.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:HBG02_Sting_Rod_II.jpg",
+      "uploader": "LesneyFan",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "subaru-brz": {
+      "file": "subaru-brz.jpg",
+      "bytes": 48827,
+      "sha256": "58dce026ef614e1a1e8171ff739d3eea08ddf43ea9448a9c702ce2fb0dfb6f32",
+      "wikiFile": "HBG01 Subaru BRZ.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:HBG01_Subaru_BRZ.jpg",
+      "uploader": "LesneyFan",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "super-blitzen": {
+      "file": "super-blitzen.jpg",
+      "bytes": 48260,
+      "sha256": "abff92e7f7114574d1c3e0edd8afd3c0a2d88cf15e706707b19bab9866c665af",
+      "wikiFile": "71LCyitn09L. SL1500 .jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:71LCyitn09L._SL1500_.jpg",
+      "uploader": "WorpeX",
+      "licenseBasis": "wiki-default",
+      "licenseTemplate": null
+    },
+    "super-blitzen-gfp20": {
+      "file": "super-blitzen-gfp20.jpg",
+      "bytes": 35291,
+      "sha256": "e61ef27582b0d892ab5ea55bb5c3913727bbde4873d2c599079382e907a0ba93",
+      "wikiFile": "9933AC87-8460-402F-8864-C8908327C59C.jpeg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:9933AC87-8460-402F-8864-C8908327C59C.jpeg",
+      "uploader": "Biddiblush",
+      "licenseBasis": "wiki-default",
+      "licenseTemplate": null
+    },
+    "supercharged": {
+      "file": "supercharged.jpg",
+      "bytes": 39566,
+      "sha256": "4a601297cf1e7265a4ee0307e9d2ca93522f467830f9528ba5d7fd3063d4502d",
+      "wikiFile": "Supercharged.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:Supercharged.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "wiki-default",
+      "licenseTemplate": null
+    },
+    "tankful": {
+      "file": "tankful.jpg",
+      "bytes": 52384,
+      "sha256": "a6de38f837fb2022ab148e4534f8542ae3e8fed6c772094c60a0d2c6cac9c5e9",
+      "wikiFile": "HW GMK73 Tankful.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:HW_GMK73_Tankful.jpg",
+      "uploader": "LesneyFan",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "tesla-cybertruck": {
+      "file": "tesla-cybertruck.jpg",
+      "bytes": 33761,
+      "sha256": "afa8835f7bf9b87142c4527497fd3838d671d855e5d1983fe34904d0eb3a3380",
+      "wikiFile": "TeslaCybertruck.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:TeslaCybertruck.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "wiki-default",
+      "licenseTemplate": null
+    },
+    "tesla-model-s": {
+      "file": "tesla-model-s.jpg",
+      "bytes": 14076,
+      "sha256": "6feac5dcebfb051ee92bf7866f827f2f89a4b0be336065cd1575408565c73cff",
+      "wikiFile": "HW ID Tesla.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:HW_ID_Tesla.jpg",
+      "uploader": "1steditionman",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "tesla-roadster": {
+      "file": "tesla-roadster.jpg",
+      "bytes": 32187,
+      "sha256": "51a6ef1b2ef4c658fa131b482e4e6bbd83c97404d4c1204887a86c6e136334b3",
+      "wikiFile": "2022TeslaRoadster.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:2022TeslaRoadster.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "the-dark-knight-batmobile": {
+      "file": "the-dark-knight-batmobile.jpg",
+      "bytes": 48069,
+      "sha256": "c7805a3af907740bb005b27abe84d0c20543b4298111ebc7e6c57af89520cee8",
+      "wikiFile": "FXB26 The Dark Knight Batmobile.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:FXB26_The_Dark_Knight_Batmobile.jpg",
+      "uploader": "LesneyFan",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "the-joker-shaker": {
+      "file": "the-joker-shaker.jpg",
+      "bytes": 43409,
+      "sha256": "07cb4ca1416d05f4448701e46168ffaddadc41abd7d7b8acd90c0ad7d7529516",
+      "wikiFile": "JokerShaker.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:JokerShaker.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "the-mystery-machine": {
+      "file": "the-mystery-machine.jpg",
+      "bytes": 55562,
+      "sha256": "ea0629a5a3c6ed5d165ec90fba3c43dac00b74dc90fc1546c627911c9e1f9c21",
+      "wikiFile": "MysteryMachineid.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:MysteryMachineid.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "the-mystery-machine-gvy30": {
+      "file": "the-mystery-machine-gvy30.jpg",
+      "bytes": 94392,
+      "sha256": "94938509754bd4d7e60aa7cdfe6ca618f6ab9b8977af73e34eaaf4453dd0fad3",
+      "wikiFile": "GVY30 The Mystery Machine.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:GVY30_The_Mystery_Machine.jpg",
+      "uploader": "LesneyFan",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "time-attaxi": {
+      "file": "time-attaxi.jpg",
+      "bytes": 38863,
+      "sha256": "d4c2e3576b2cab032a087aa7432056a2e66a120675c9d42c73d9277e67857255",
+      "wikiFile": "71380219 2411562522444521 7688041199856254976 n.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:71380219_2411562522444521_7688041199856254976_n.jpg",
+      "uploader": "Kevblokey",
+      "licenseBasis": "wiki-default",
+      "licenseTemplate": null
+    },
+    "time-attaxi-gjp02": {
+      "file": "time-attaxi-gjp02.jpg",
+      "bytes": 46190,
+      "sha256": "eada11659e0fac7354ccfd1dd722a60d4a455ca94531cdedc1c83905ab9d74b2",
+      "wikiFile": "2020TimeAttaxiID1.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:2020TimeAttaxiID1.jpg",
+      "uploader": "Cyko9",
+      "licenseBasis": "wiki-default",
+      "licenseTemplate": null
+    },
+    "time-shifter": {
+      "file": "time-shifter.jpg",
+      "bytes": 74416,
+      "sha256": "2b759681605c985079c59dd4e6c73a7009dafcb1a1e0dc1daf58cf722249bb22",
+      "wikiFile": "HW GMK98 Time Shifter.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:HW_GMK98_Time_Shifter.jpg",
+      "uploader": "LesneyFan",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "track-manga": {
+      "file": "track-manga.jpg",
+      "bytes": 54385,
+      "sha256": "f20de0d67ccff0ff5108f1ce8ab83a4b6cba9db6788877ea40397d09bcfaa22b",
+      "wikiFile": "HBF90 Track Manga.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:HBF90_Track_Manga.jpg",
+      "uploader": "LesneyFan",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "track-ripper": {
+      "file": "track-ripper.jpg",
+      "bytes": 74755,
+      "sha256": "c2e6932f4b50737aa555605549957f5f9fe7b018a98a275cddbd55d751a2dbe1",
+      "wikiFile": "HW GMK35 Track Ripper.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:HW_GMK35_Track_Ripper.jpg",
+      "uploader": "LesneyFan",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "tv-series-batmobile": {
+      "file": "tv-series-batmobile.jpg",
+      "bytes": 37615,
+      "sha256": "a7b6724679910c0946bce128fbe6885246732652be359e5153ab9a3c2a1b515e",
+      "wikiFile": "FXB25 TV Series Batmobile.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:FXB25_TV_Series_Batmobile.jpg",
+      "uploader": "LesneyFan",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "tv-series-batmobile-gjp03": {
+      "file": "tv-series-batmobile-gjp03.jpg",
+      "bytes": 38569,
+      "sha256": "cb06cb44c9aafa84f51e73de80f9c73813929337677f8477f0fdc3f85afcfe1c",
+      "wikiFile": "Chase id TV Series Batmobile 2020.JPG",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:Chase_id_TV_Series_Batmobile_2020.JPG",
+      "uploader": "Shnezman",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "twin-mill": {
+      "file": "twin-mill.jpg",
+      "bytes": 36495,
+      "sha256": "e2342a03c7ce3fa3326e0307a0679c913cc5caac8ab4a2613ee0e90e8d431613",
+      "wikiFile": "FXB52 Twin Mill.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:FXB52_Twin_Mill.jpg",
+      "uploader": "LesneyFan",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "twin-mill-fxb53": {
+      "file": "twin-mill-fxb53.jpg",
+      "bytes": 30058,
+      "sha256": "68fd77df08666e8a75153072ae60953a4a40de7c9073557368fe52ba22edc8e9",
+      "wikiFile": "65827718 2351137241820383 3943821713455710208 o.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:65827718_2351137241820383_3943821713455710208_o.jpg",
+      "uploader": "Kevblokey",
+      "licenseBasis": "wiki-default",
+      "licenseTemplate": null
+    },
+    "twin-mill-gml08": {
+      "file": "twin-mill-gml08.jpg",
+      "bytes": 36338,
+      "sha256": "34ef7a30f9cb3f80f28a4af92032f2a52ba94684013a56191ea10e10e8918342",
+      "wikiFile": "HW GML08 Twin Mill.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:HW_GML08_Twin_Mill.jpg",
+      "uploader": "LesneyFan",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "twin-mill-gtd63": {
+      "file": "twin-mill-gtd63.jpg",
+      "bytes": 30626,
+      "sha256": "292e90020b677d785adadf23213d881eadb131b6fdf4374313e21654ee064960",
+      "wikiFile": "TwinMillID.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:TwinMillID.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "volkswagen-beetle": {
+      "file": "volkswagen-beetle.jpg",
+      "bytes": 59494,
+      "sha256": "ce28e45580c408fcbd27870e92263a706a4a7c63857f6d1998b6722926482476",
+      "wikiFile": "HW GML05 Volkswagen Beetle.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:HW_GML05_Volkswagen_Beetle.jpg",
+      "uploader": "LesneyFan",
+      "licenseBasis": "uploader-self",
+      "licenseTemplate": "Self"
+    },
+    "volkswagen-t1-gtr": {
+      "file": "volkswagen-t1-gtr.jpg",
+      "bytes": 48780,
+      "sha256": "780c82c30d29541e5735bb88c308c5ed0a693134da20e86f96d4ef9a4ba16491",
+      "wikiFile": "T1GTR.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:T1GTR.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "wiki-default",
+      "licenseTemplate": null
+    },
+    "volkswagen-t1-gtr-gml27": {
+      "file": "volkswagen-t1-gtr-gml27.jpg",
+      "bytes": 42728,
+      "sha256": "84c6e73f440e5ece75f512624f97b95b539922dada66b62c95c592e2c43b3754",
+      "wikiFile": "2020 Hot Wheels VW GTR id.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:2020_Hot_Wheels_VW_GTR_id.jpg",
+      "uploader": "Nezz79",
+      "licenseBasis": "wiki-default",
+      "licenseTemplate": null
+    },
+    "west-coast-flyer": {
+      "file": "west-coast-flyer.jpg",
+      "bytes": 46139,
+      "sha256": "68efda3983fe409183c2cd5b1149d84353648e505a40ae93e89bf58737980fa0",
+      "wikiFile": "WestCoastFlyer.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:WestCoastFlyer.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "wiki-default",
+      "licenseTemplate": null
+    },
+    "x-steam": {
+      "file": "x-steam.jpg",
+      "bytes": 38232,
+      "sha256": "7de8798bfe0f990519a61fec87cc31d1d20e12276c3090c655705860eba8cf63",
+      "wikiFile": "X-Steamid.jpg",
+      "filePage": "https://hotwheels.fandom.com/wiki/File:X-Steamid.jpg",
+      "uploader": "Grunty89",
+      "licenseBasis": "wiki-default",
+      "licenseTemplate": null
+    }
+  }
+}

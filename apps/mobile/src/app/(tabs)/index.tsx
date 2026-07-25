@@ -132,6 +132,8 @@ export default function SpeedometerScreen() {
     if (Platform.OS !== 'web' && useSettingsStore.getState().haptics) {
       Haptics.selectionAsync().catch(() => {});
     }
+    // The object also carries mutable timestamps; haptics should fire only for a new UID.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [car?.uid]);
 
   useEffect(() => {

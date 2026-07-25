@@ -129,7 +129,8 @@ export interface CarHeroModel {
   readonly uid: string;
   readonly title: string;
   readonly serial: string | null;
-  readonly image: string | null;
+  /** Catalog id whose bundled artwork to show, or null when the car is unidentified. */
+  readonly catalogId: string | null;
   readonly isCurrent: boolean;
   readonly bestMph: number;
   readonly lastMph: number | null;
@@ -157,7 +158,7 @@ export function carHeroModel(input: {
     uid: candidate.uid,
     title: catalogCar?.name ?? garageCar?.name ?? shortUid(candidate.uid),
     serial: candidate.serial ?? garageCar?.serial ?? null,
-    image: catalogCar?.image ?? null,
+    catalogId: catalogCar?.id ?? null,
     isCurrent: currentCar?.uid === candidate.uid,
     bestMph: Math.max(sessionBestMph, garageCar?.bestMph ?? 0),
     lastMph: lastMph ?? null,

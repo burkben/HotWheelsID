@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Support - Redline ID</title>
+    <meta
+      name="description"
+      content="Help, compatibility information, and issue reporting for Redline ID."
+    />
+    <link rel="icon" href="../assets/favicon.png" type="image/png" />
+    <style>
+      :root {
+        --bg: #0b0f1a;
+        --surface: #111827;
+        --border: #1e2a44;
+        --text: #ffffff;
+        --text-secondary: #8aa0c6;
+        --accent: #26c6ff;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+          Arial, sans-serif;
+        line-height: 1.65;
+      }
+      a { color: var(--accent); }
+      .wrap { max-width: 720px; margin: 0 auto; padding: 0 24px; }
+      header { border-bottom: 1px solid var(--border); padding: 18px 0; }
+      header a { color: var(--text); font-weight: 700; text-decoration: none; }
+      main { padding: 44px 0 72px; }
+      h1 { margin: 0 0 8px; font-size: clamp(30px, 6vw, 40px); }
+      h2 { margin: 32px 0 10px; font-size: 20px; }
+      p, li { color: var(--text-secondary); }
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 18px;
+        margin: 18px 0;
+      }
+      footer {
+        border-top: 1px solid var(--border);
+        padding: 26px 0 60px;
+        color: var(--text-secondary);
+        text-align: center;
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <header><div class="wrap"><a href="../">Redline ID</a></div></header>
+    <main class="wrap">
+      <h1>Support</h1>
+      <p>
+        Redline ID is a free, open-source companion for the discontinued Hot Wheels id
+        Race Portal. It supports iPhone and iPad and does not require an account.
+      </p>
+
+      <h2>Quick checks</h2>
+      <ul>
+        <li>Turn on the Race Portal before tapping Connect portal.</li>
+        <li>Allow Bluetooth access when iOS asks.</li>
+        <li>Keep the iPhone or iPad close to the portal during the first connection.</li>
+        <li>Use Demo mode on the Speed tab to explore the app without portal hardware.</li>
+        <li>If a connection stops responding, power-cycle the portal and reconnect.</li>
+      </ul>
+
+      <div class="card">
+        <strong>Need help or found a bug?</strong>
+        <p>
+          Open a public issue with your device model, iOS version, portal firmware if
+          known, and the steps that led to the problem.
+        </p>
+        <a href="https://github.com/burkben/HotWheelsID/issues/new/choose"
+          >Open a support issue</a
+        >
+      </div>
+
+      <h2>Compatibility</h2>
+      <p>
+        Live telemetry requires a physical Hot Wheels id Race Portal and Bluetooth.
+        Redline ID supports both known legacy and modern portal firmware transports.
+        Demo mode, the garage, history, and app settings can be reviewed without
+        hardware.
+      </p>
+
+      <p><a href="../privacy/">Privacy Policy</a></p>
+    </main>
+    <footer>
+      <div class="wrap">
+        Redline ID is independent and is not affiliated with, endorsed by, or sponsored
+        by Mattel, Inc.
+      </div>
+    </footer>
+  </body>
+</html>

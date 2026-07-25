@@ -8,11 +8,9 @@ import type { CarHeroModel } from "../portal/selectors";
 export function CurrentCarHero({
   model,
   display,
-  reduceMotion,
 }: {
   model: CarHeroModel | null;
   display: SpeedDisplay;
-  reduceMotion: boolean;
 }) {
   if (!model) {
     return (
@@ -21,7 +19,7 @@ export function CurrentCarHero({
         accessible
         accessibilityLabel="No car scanned yet. Place a car on the portal."
       >
-        <CarPhoto uri={null} size={92} reduceMotion={reduceMotion} accessibilityLabel="No car photo" />
+        <CarPhoto size={92} accessibilityLabel="No car photo" />
         <View style={styles.copy}>
           <Text style={styles.eyebrow}>Ready for a car</Text>
           <Text style={styles.title}>No car scanned yet</Text>
@@ -43,10 +41,9 @@ export function CurrentCarHero({
   return (
     <View style={[styles.hero, model.isCurrent && styles.heroCurrent]} accessible accessibilityLabel={label}>
       <CarPhoto
-        uri={model.image}
+        carId={model.catalogId}
         size={92}
         ring={model.isCurrent}
-        reduceMotion={reduceMotion}
         accessibilityLabel={`${model.title} car photo`}
       />
       <View style={styles.copy}>
