@@ -140,8 +140,9 @@ carries no attribution. The low-risk options, in order:
    media shown inside a product UI.
 3. Avoid a screenshot whose subject *is* a single car photo blown up full-bleed.
 
-Note: the screenshots captured before build 5 show emoji placeholder tiles. Recapture
-any Garage or Identify shots against build 5 or later, or they will not match the
+Note: screenshots captured before build 5 show emoji placeholder tiles, and build 5
+itself renders car photos oversized on Garage detail and Identify. Recapture any
+Garage or Identify shots against build 6 or later, or they will not match the
 shipped app.
 
 ## Final submission checklist
@@ -157,7 +158,7 @@ shipped app.
 
 ## Physical release smoke test
 
-Run this on TestFlight build **1.0.0 (3)** before selecting it for App Review.
+Run this on TestFlight build **1.0.0 (6)** before selecting it for App Review.
 
 ### iPhone and Race Portal
 
@@ -181,6 +182,10 @@ Run this on TestFlight build **1.0.0 (3)** before selecting it for App Review.
 - Switch to Demo and confirm simulated passes start without portal hardware.
 - Complete a short demo race using Trigger pass.
 - Open Garage, History, Achievements, Credits, and Settings.
+- Identify a car, then open its Garage detail screen. Confirm the photo sits fully
+  inside its rounded frame with nothing running past either edge, and that the
+  Identify grid tiles are square. Bundled artwork is 1x, so a regression here
+  reads as a car cropped in half rather than as an obviously broken image.
 - Open the privacy, support, catalog-source, and licensing links and confirm each
   destination is correct.
 
@@ -190,5 +195,7 @@ Run this on TestFlight build **1.0.0 (3)** before selecting it for App Review.
 - Check portrait layouts for clipped text, overlapping controls, unreachable
   actions, and unsafe-area problems on Speed, Race, Garage, History, More,
   tournament, and detail screens.
+- Confirm car photos scale with the wider layout instead of overflowing, on both
+  the Garage detail hero and the Identify grid.
 - Connect to the portal and complete at least one live pass if the iPad is
   available near the hardware.
