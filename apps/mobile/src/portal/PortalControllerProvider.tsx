@@ -3,7 +3,7 @@ import {
   type ReactNode,
   useContext,
   useEffect,
-  useRef,
+  useState,
   useSyncExternalStore,
 } from "react";
 import * as Device from "expo-device";
@@ -23,11 +23,12 @@ const PortalControllerContext = createContext<PortalController | null>(null);
 export function PortalControllerProvider({ children }: { children: ReactNode }) {
   const settingsHydrated = useSettingsStore((state) => state.hydrated);
   const mockModeDefault = useSettingsStore((state) => state.mockModeDefault);
-  const controllerRef = useRef<PortalController | null>(null);
-
-  if (!controllerRef.current) {
+  // A lazy `useState` initialiser rather than a ref: the controller owns the BLE
+  // transport, so it must be constructed exactly once, and reading it back during
+  // render has to be legal (a ref's `current` is not).
+  const [controller] = useState(() => {
     const canBle = isBleAvailable() && Device.isDevice;
-    controllerRef.current = new PortalController({
+    return new PortalController({
       canBle,
       createBle: ({ onPhase, onLog }) => {
         const { dispatch, setConnection } = usePortalStore.getState();
@@ -40,21 +41,21 @@ export function PortalControllerProvider({ children }: { children: ReactNode }) 
       persistDemoDefault: (enabled) => useSettingsStore.getState().setMockModeDefault(enabled),
       prewarmLive: prewarmBle,
     });
-  }
+  });
 
   useEffect(() => {
-    if (settingsHydrated) void controllerRef.current?.configure(mockModeDefault);
-  }, [settingsHydrated, mockModeDefault]);
+    if (settingsHydrated) void controller.configure(mockModeDefault);
+  }, [controller, settingsHydrated, mockModeDefault]);
 
   useEffect(
     () => () => {
-      void controllerRef.current?.destroy();
+      void controller.destroy();
     },
-    [],
+    [controller],
   );
 
   return (
-    <PortalControllerContext.Provider value={controllerRef.current}>
+    <PortalControllerContext.Provider value={controller}>
       {children}
     </PortalControllerContext.Provider>
   );

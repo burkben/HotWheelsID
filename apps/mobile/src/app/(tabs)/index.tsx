@@ -223,7 +223,7 @@ export default function SpeedometerScreen() {
         </View>
       )}
 
-      <CurrentCarHero model={hero} display={speedDisplay} reduceMotion={reduceMotion} />
+      <CurrentCarHero model={hero} display={speedDisplay} />
 
       <Speedometer
         value={needleValue}
