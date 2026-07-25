@@ -17,6 +17,8 @@
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import type { SpeedSample } from '@redlineid/protocol';
+
 import { CarPhoto } from '@/catalog/CarPhoto';
 import { useCarIdentity } from '@/catalog/useCarIdentity';
 import { Speedometer } from '@/components/gauge/Speedometer';
@@ -27,6 +29,9 @@ import { useRaceStore } from '@/store/raceStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { colors, fontWeight, radius, spacing, speedGauge } from '@/theme/tokens';
 import { resolveTvScale, type TvScale } from './tvScale';
+
+/** How long the needle holds a pass before easing back toward zero. */
+const NEEDLE_HOLD_MS = 1300;
 
 /** "12.34" / "1:02.34" — the unit-less form, since the TV labels it separately. */
 function fmtTime(seconds: number): string {
@@ -88,7 +93,7 @@ export function TvStage() {
             ) : (
               <SpeedHero
                 scale={scale}
-                lastMph={lastSpeed?.scaleMph ?? 0}
+                pass={lastSpeed ?? null}
                 bestMph={bestMph}
                 display={display}
               />
@@ -151,29 +156,40 @@ function TvHeader({
 
 function SpeedHero({
   scale,
-  lastMph,
+  pass,
   bestMph,
   display,
 }: {
   scale: TvScale;
-  lastMph: number;
+  pass: SpeedSample | null;
   bestMph: number;
   display: SpeedDisplay;
 }) {
+  const lastMph = pass?.scaleMph ?? 0;
+
   // The gauge needle springs to each pass then eases back, mirroring the phone
-  // so both screens tell the same story.
-  const [needle, setNeedle] = useState(0);
+  // so both screens tell the same story. It is keyed on the pass itself — the
+  // store allocates a fresh sample per pass — rather than the speed, so a repeat
+  // of an identical time still springs, and it is derived while rendering rather
+  // than folded in from an effect.
+  const [held, setHeld] = useState<{ pass: SpeedSample | null; mph: number }>({
+    pass,
+    mph: 0,
+  });
+  if (held.pass !== pass) {
+    setHeld({ pass, mph: lastMph >= 1 ? lastMph : 0 });
+  }
+
   useEffect(() => {
-    if (lastMph < 1) return;
-    setNeedle(lastMph);
-    const id = setTimeout(() => setNeedle(0), 1300);
+    if (held.mph < 1) return;
+    const id = setTimeout(() => setHeld((prev) => ({ ...prev, mph: 0 })), NEEDLE_HOLD_MS);
     return () => clearTimeout(id);
-  }, [lastMph]);
+  }, [held]);
 
   return (
     <View style={styles.heroCenter}>
       <Speedometer
-        value={needle}
+        value={held.mph}
         readoutMph={lastMph}
         max={speedGauge.maxMph}
         zones={speedGauge.zones}

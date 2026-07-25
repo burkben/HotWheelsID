@@ -8,7 +8,7 @@
  * and the Simulator the module is simply absent and everything reports
  * "unsupported / not connected" rather than throwing.
  */
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 import ExternalDisplay, {
   type ExternalDisplayInfo,
@@ -24,20 +24,40 @@ export function isExternalDisplaySupported(): boolean {
 /**
  * Live external-display state.
  *
- * Seeded synchronously from the native module so a screen mounted *after* the TV
- * was attached still renders the connected state on its first frame, then kept
- * fresh by the `onDisplayChange` event.
+ * The native module is an external store, so it is read through
+ * `useSyncExternalStore`: React re-reads the snapshot right after subscribing,
+ * which closes the gap where a TV attaches between the first render and the
+ * listener being attached — without folding native events into local state.
  */
 export function useExternalDisplay(): ExternalDisplayInfo {
-  const [info, setInfo] = useState<ExternalDisplayInfo>(() => ExternalDisplay.getDisplayInfo());
+  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+}
 
-  useEffect(() => {
-    // Re-read on mount: the display may have connected between the initial
-    // `useState` evaluation and the subscription being attached.
-    setInfo(ExternalDisplay.getDisplayInfo());
-    const subscription = ExternalDisplay.addDisplayListener(setInfo);
-    return () => subscription.remove();
-  }, []);
+function subscribe(onStoreChange: () => void): () => void {
+  const subscription = ExternalDisplay.addDisplayListener(onStoreChange);
+  return () => subscription.remove();
+}
 
-  return info;
+/**
+ * `useSyncExternalStore` compares snapshots by identity, and the native call
+ * returns a fresh object every time, so the last value is cached and only
+ * replaced when a field actually changed. Returning a new object each read
+ * would re-render forever.
+ */
+let cached: ExternalDisplayInfo | null = null;
+
+function getSnapshot(): ExternalDisplayInfo {
+  const next = ExternalDisplay.getDisplayInfo();
+  if (cached === null || !sameInfo(cached, next)) cached = next;
+  return cached;
+}
+
+function sameInfo(a: ExternalDisplayInfo, b: ExternalDisplayInfo): boolean {
+  return (
+    a.connected === b.connected &&
+    a.supported === b.supported &&
+    a.width === b.width &&
+    a.height === b.height &&
+    a.name === b.name
+  );
 }
