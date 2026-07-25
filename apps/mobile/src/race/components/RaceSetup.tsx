@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 
 import { colors } from "../../theme/tokens";
@@ -22,6 +23,10 @@ interface RaceSetupProps {
   readonly liveCarUid: string | null;
   readonly resolveCar: ResolveCar;
   readonly canStart: boolean;
+  /** Overrides the race-night start button label (tournament mode uses this). */
+  readonly startLabel?: string;
+  /** Tournament toggle or champion banner, rendered under the lineup. */
+  readonly tournamentSlot?: ReactNode;
   readonly onModeChange: (mode: RaceMode) => void;
   readonly onLapsChange: (laps: LapOption) => void;
   readonly onSoloPlayerChange: (name: string) => void;
@@ -42,6 +47,8 @@ export function RaceSetup({
   liveCarUid,
   resolveCar,
   canStart,
+  startLabel,
+  tournamentSlot,
   onModeChange,
   onLapsChange,
   onSoloPlayerChange,
@@ -207,10 +214,12 @@ export function RaceSetup({
             resolveCar={resolveCar}
             canStart={canStart}
             onStart={onStart}
+            startLabel={startLabel}
             onChooseNext={onChooseNext}
             onRemove={onRemove}
             onAssignCar={onAssignCar}
           />
+          {tournamentSlot}
         </>
       )}
     </View>

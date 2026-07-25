@@ -26,6 +26,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Link } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import * as WebBrowser from 'expo-web-browser';
 
 import { buildIdentityExport, exportIdentifications } from '@/catalog/identityExport';
 import { LAP_OPTIONS } from '@/race/raceEngine';
@@ -41,12 +42,20 @@ import {
 } from '@/speed/format';
 import { colors, fontSize, fontWeight, radius, spacing } from '@/theme/tokens';
 
+/**
+ * Sharing emits a JSON payload through the OS share sheet, which on its own
+ * gives no clue where the file is meant to go. This guide is the other half of
+ * the loop: it explains the pull-request flow that folds a payload into the seed.
+ */
+const CONTRIBUTING_URL = 'https://github.com/burkben/HotWheelsID/blob/main/community/README.md';
+
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
 
   const playerName = useSettingsStore((s) => s.playerName);
   const defaultLaps = useSettingsStore((s) => s.defaultLaps);
   const haptics = useSettingsStore((s) => s.haptics);
+  const sound = useSettingsStore((s) => s.sound);
   const reduceMotion = useSettingsStore((s) => s.reduceMotion);
   const mockModeDefault = useSettingsStore((s) => s.mockModeDefault);
   const speedUnit = useSettingsStore((s) => s.speedUnit);
@@ -55,6 +64,7 @@ export default function SettingsScreen() {
   const setPlayerName = useSettingsStore((s) => s.setPlayerName);
   const setDefaultLaps = useSettingsStore((s) => s.setDefaultLaps);
   const setHaptics = useSettingsStore((s) => s.setHaptics);
+  const setSound = useSettingsStore((s) => s.setSound);
   const setReduceMotion = useSettingsStore((s) => s.setReduceMotion);
   const setMockModeDefault = useSettingsStore((s) => s.setMockModeDefault);
   const setSpeedUnit = useSettingsStore((s) => s.setSpeedUnit);
@@ -271,6 +281,13 @@ export default function SettingsScreen() {
           />
           <View style={styles.divider} />
           <ToggleRow
+            label="Sound"
+            hint="Play race cues on the countdown, each lap, new-best laps, and finish."
+            value={sound}
+            onValueChange={setSound}
+          />
+          <View style={styles.divider} />
+          <ToggleRow
             label="Reduce motion"
             hint="Skip the countdown pulse and other animations (also honors the system setting)."
             value={reduceMotion}
@@ -292,8 +309,9 @@ export default function SettingsScreen() {
         <View style={styles.card}>
           <Text style={styles.rowLabel}>Share car identities</Text>
           <Text style={styles.hint}>
-            Contribute the castings you've identified to the community seed so everyone's cars
-            auto-name. Only casting → catalog facts are shared — never your tags or collection.
+            {
+              "Contribute the castings you've identified to the community seed so everyone's cars auto-name. Only casting → catalog facts are shared — never your tags or collection."
+            }
           </Text>
           <Pressable
             onPress={shareIdentifications}
@@ -306,9 +324,21 @@ export default function SettingsScreen() {
           >
             <Text style={styles.shareBtnText}>
               {shareableCount === 0
-                ? 'No identified castings yet'
+                ? 'Identify a car to share'
                 : `Share ${shareableCount} identified casting${shareableCount === 1 ? '' : 's'}`}
             </Text>
+          </Pressable>
+          <Text style={styles.hint}>
+            Sharing hands you a JSON file. Add it to the community folder on GitHub and open a
+            pull request — the guide has the steps.
+          </Text>
+          <Pressable
+            onPress={() => {
+              void WebBrowser.openBrowserAsync(CONTRIBUTING_URL);
+            }}
+            style={({ pressed }) => [styles.link, pressed && styles.pressed]}
+          >
+            <Text style={styles.linkText}>How to contribute ↗</Text>
           </Pressable>
         </View>
 
@@ -444,6 +474,12 @@ const styles = StyleSheet.create({
     paddingVertical: spacing(3),
   },
   shareBtnText: { color: colors.accentBlue, fontSize: fontSize.md, fontWeight: fontWeight.bold },
+  link: {
+    alignSelf: 'flex-start',
+    paddingVertical: spacing(1),
+    paddingRight: spacing(2),
+  },
+  linkText: { color: colors.accentBlue, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
   resetBtn: {
     marginTop: spacing(6),
     alignItems: 'center',

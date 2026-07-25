@@ -4,7 +4,7 @@
  * Demo) on Speed, then portal passes flow through the shared portal store.
  */
 import { useCallback, useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useReducedMotion } from "react-native-reanimated";
 
@@ -18,6 +18,11 @@ import {
 import { RaceProgress } from "@/race/components/RaceProgress";
 import { RaceResults } from "@/race/components/RaceResults";
 import { RaceSetup } from "@/race/components/RaceSetup";
+import {
+  BracketCard,
+  ChampionBanner,
+  TournamentToggle,
+} from "@/race/components/RaceTournament";
 import { raceStyles as styles } from "@/race/components/styles";
 import { LAP_OPTIONS, type LapOption } from "@/race/raceEngine";
 import {
@@ -30,6 +35,7 @@ import {
   nextUpRacer,
   removeRacer,
   type RaceNightLineup,
+  type RaceNightRacer,
 } from "@/race/raceNight";
 import {
   canStartRace,
@@ -38,12 +44,30 @@ import {
   type RaceCarPresentation,
   type RaceMode,
 } from "@/race/presentation";
+import {
+  createTournament,
+  currentMatch,
+  reportTimes,
+  type Tournament,
+  type TournamentMatch,
+} from "@/race/tournament";
 import { useRaceSession } from "@/race/useRaceSession";
 import { catalogIdForUid, useIdentityStore } from "@/store/identityStore";
 import { usePortalStore } from "@/store/portalStore";
 import { useRaceStore } from "@/store/raceStore";
 import { useSettingsStore } from "@/store/settingsStore";
 import { spacing } from "@/theme/tokens";
+
+/** Heat times accumulated per match until both racers are in and it can be decided. */
+type MatchTimes = Record<string, { a?: number; b?: number }>;
+
+/** Racer id that still owes a heat in `match` (A before B), or null if both are in. */
+function runnerId(match: TournamentMatch, times: MatchTimes): string | null {
+  const heat = times[match.id] ?? {};
+  if (match.a && heat.a == null) return match.a;
+  if (match.b && heat.b == null) return match.b;
+  return null;
+}
 
 function initialLapOption(): LapOption {
   const configured = useSettingsStore.getState().defaultLaps;
@@ -52,7 +76,9 @@ function initialLapOption(): LapOption {
 
 export default function RaceScreen() {
   const insets = useSafeAreaInsets();
-  const reduceMotion = useReducedMotion() || useSettingsStore((state) => state.reduceMotion);
+  const systemReduceMotion = useReducedMotion();
+  const settingReduceMotion = useSettingsStore((state) => state.reduceMotion);
+  const reduceMotion = systemReduceMotion || settingReduceMotion;
 
   const race = useRaceStore((state) => state.race);
   const leaderboard = useRaceStore((state) => state.leaderboard);
@@ -75,6 +101,12 @@ export default function RaceScreen() {
   );
   const [racerDraft, setRacerDraft] = useState("");
   const [lineup, setLineup] = useState<RaceNightLineup>([]);
+
+  // Tournament mode (Phase 5): opt-in single-elimination bracket over the lineup.
+  // `null` = casual rotating-queue mode (unchanged).
+  const [tournamentOn, setTournamentOn] = useState(false);
+  const [tournament, setTournament] = useState<Tournament | null>(null);
+  const [matchTimes, setMatchTimes] = useState<MatchTimes>({});
 
   const links = useIdentityStore((state) => state.links);
   const identifications = useIdentityStore((state) => state.identifications);
@@ -121,6 +153,84 @@ export default function RaceScreen() {
     abort();
   };
 
+  // --- Tournament mode -------------------------------------------------------
+  const nameForRacer = useCallback(
+    (racerId: string | null): string =>
+      racerId ? (lineup.find((racer) => racer.id === racerId)?.name ?? "—") : "Bye",
+    [lineup],
+  );
+
+  const beginHeatFor = (racer: RaceNightRacer) => {
+    configure({
+      targetLaps: laps,
+      player: racer.name,
+      carUid: racer.carUid ?? liveCarUid,
+    });
+    startCountdown();
+  };
+
+  /** The racer who still owes a heat in the current match, with that match. */
+  const runnerFor = (
+    bracket: Tournament,
+    times: MatchTimes,
+  ): { racer: RaceNightRacer; match: TournamentMatch } | null => {
+    const match = currentMatch(bracket);
+    if (!match) return null;
+    const id = runnerId(match, times);
+    const racer = id ? (lineup.find((entry) => entry.id === id) ?? null) : null;
+    return racer ? { racer, match } : null;
+  };
+
+  const onStartTournament = () => {
+    const bracket = createTournament(lineup.map((racer) => racer.id));
+    setTournament(bracket);
+    setMatchTimes({});
+    const next = runnerFor(bracket, {});
+    if (next) beginHeatFor(next.racer);
+  };
+
+  const onResetTournament = () => {
+    setTournament(null);
+    setMatchTimes({});
+    abort();
+  };
+
+  /** Record the just-finished heat's time, decide/advance the bracket, run next. */
+  const onTournamentContinue = () => {
+    if (!tournament || !race.result) return;
+    const active = currentMatch(tournament);
+    if (!active) return;
+
+    const runner = runnerFor(tournament, matchTimes);
+    if (!runner) return;
+    const times = { ...(matchTimes[active.id] ?? {}) };
+    if (runner.racer.id === active.a) times.a = race.result.totalTime;
+    else if (runner.racer.id === active.b) times.b = race.result.totalTime;
+    const nextTimes = { ...matchTimes, [active.id]: times };
+
+    let bracket = tournament;
+    if (times.a != null && times.b != null) {
+      bracket = reportTimes(tournament, active.id, times.a, times.b);
+    }
+    setTournament(bracket);
+    setMatchTimes(nextTimes);
+
+    const next = runnerFor(bracket, nextTimes);
+    if (next) beginHeatFor(next.racer);
+    else abort(); // champion decided — fall back to setup, which shows the banner
+  };
+
+  const onResumeTournament = () => {
+    if (!tournament) return;
+    const next = runnerFor(tournament, matchTimes);
+    if (next) beginHeatFor(next.racer);
+  };
+
+  const activeMatch = tournament ? currentMatch(tournament) : null;
+  const tournamentReady = mode === "raceNight" && lineup.length >= 2;
+  const tournamentArmed = tournamentOn && tournamentReady;
+  const inTournament = !!tournament && !tournament.championId;
+
   const resultCar = race.result
     ? resolveCar(race.result.carUid, "Unknown car")
     : null;
@@ -131,6 +241,19 @@ export default function RaceScreen() {
     nextRacer?.name ?? null,
   );
   const shouldAdvance = mode === "raceNight" && lineup.length > 1;
+
+  const tournamentSlot = tournament?.championId ? (
+    <ChampionBanner
+      name={nameForRacer(tournament.championId)}
+      onReset={onResetTournament}
+    />
+  ) : (
+    <TournamentToggle
+      on={tournamentArmed}
+      enabled={tournamentReady}
+      onToggle={() => setTournamentOn((on) => !on)}
+    />
+  );
 
   return (
     <ScrollView
@@ -162,7 +285,47 @@ export default function RaceScreen() {
         </Text>
       ) : null}
 
-      {race.phase === "idle" ? (
+      {race.phase === "idle" && inTournament && tournament ? (
+        <View style={styles.section}>
+          <BracketCard
+            tournament={tournament}
+            nameFor={nameForRacer}
+            activeMatch={activeMatch}
+          />
+          <View style={styles.actionRow}>
+            <Pressable
+              onPress={onResetTournament}
+              accessibilityRole="button"
+              accessibilityLabel="End tournament"
+              style={({ pressed }) => [
+                styles.ghostBtn,
+                styles.flex1,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Text style={styles.ghostBtnText}>End tournament</Text>
+            </Pressable>
+            <Pressable
+              onPress={onResumeTournament}
+              accessibilityRole="button"
+              accessibilityLabel="Race the next heat"
+              style={({ pressed }) => [
+                styles.primaryBtn,
+                styles.flex1,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Text style={styles.primaryBtnText}>
+                {activeMatch
+                  ? `Race ${nameForRacer(runnerId(activeMatch, matchTimes))}`
+                  : "Resume"}
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      ) : null}
+
+      {race.phase === "idle" && !inTournament ? (
         <RaceSetup
           mode={mode}
           laps={laps}
@@ -172,12 +335,14 @@ export default function RaceScreen() {
           liveCarUid={liveCarUid}
           resolveCar={resolveCar}
           canStart={canStart}
+          startLabel={tournamentArmed ? "Start tournament" : undefined}
+          tournamentSlot={tournamentSlot}
           onModeChange={setMode}
           onLapsChange={setLaps}
           onSoloPlayerChange={setSoloPlayer}
           onRacerDraftChange={setRacerDraft}
           onAddRacer={onAddRacer}
-          onStart={onStart}
+          onStart={tournamentArmed ? onStartTournament : onStart}
           onChooseNext={(racerId) =>
             setLineup((current) => chooseNextRacer(current, racerId))
           }
@@ -213,13 +378,28 @@ export default function RaceScreen() {
       ) : null}
 
       {race.phase === "finished" && race.result && resultCar ? (
-        <RaceResults
-          result={race.result}
-          car={resultCar}
-          nextRacerName={nextRacer?.name ?? null}
-          primaryActionLabel={primaryActionLabel}
-          onPrimaryAction={shouldAdvance ? onAdvanceLineup : abort}
-        />
+        <>
+          <RaceResults
+            result={race.result}
+            car={resultCar}
+            nextRacerName={tournament ? null : (nextRacer?.name ?? null)}
+            primaryActionLabel={tournament ? "Continue" : primaryActionLabel}
+            onPrimaryAction={
+              tournament
+                ? onTournamentContinue
+                : shouldAdvance
+                  ? onAdvanceLineup
+                  : abort
+            }
+          />
+          {tournament ? (
+            <BracketCard
+              tournament={tournament}
+              nameFor={nameForRacer}
+              activeMatch={activeMatch}
+            />
+          ) : null}
+        </>
       ) : null}
 
       {race.phase === "idle" || race.phase === "finished" ? (

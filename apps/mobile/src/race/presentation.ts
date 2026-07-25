@@ -16,7 +16,8 @@ export interface PortalReadiness {
 export interface RaceCarPresentation {
   readonly uid: string | null;
   readonly name: string;
-  readonly image: string | null;
+  /** Catalog id whose bundled artwork to show, or null when unidentified. */
+  readonly catalogId: string | null;
   readonly identified: boolean;
 }
 
@@ -61,12 +62,12 @@ export function presentRaceCar(
   emptyLabel = "Car on portal at start",
 ): RaceCarPresentation {
   if (!uid) {
-    return { uid: null, name: emptyLabel, image: null, identified: false };
+    return { uid: null, name: emptyLabel, catalogId: null, identified: false };
   }
   return {
     uid,
     name: catalogCar?.name ?? shortUid(uid),
-    image: catalogCar?.image ?? null,
+    catalogId: catalogCar?.id ?? null,
     identified: catalogCar != null,
   };
 }

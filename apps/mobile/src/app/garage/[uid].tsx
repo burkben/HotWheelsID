@@ -18,6 +18,7 @@ import { speedUnitLabel } from '@/speed/format';
 import { carLabel, formatLap, formatLastSeen, formatMph, shortUid } from '@/garage/format';
 import { colors, elevation, fontSize, fontWeight, radius, spacing } from '@/theme/tokens';
 import { CarPhoto } from '@/catalog/CarPhoto';
+import { carArtworkCredit } from '@/catalog/artwork';
 import { useCarIdentity, useCastingCoverage } from '@/catalog/useCarIdentity';
 
 export default function CarDetailScreen() {
@@ -29,6 +30,7 @@ export default function CarDetailScreen() {
   const rename = useGarageStore((s) => s.rename);
   const onPortal = usePortalStore((s) => s.car?.uid === uid);
   const identity = useCarIdentity(uid);
+  const photoCredit = carArtworkCredit(identity?.id);
   const coverage = useCastingCoverage(uid);
   const speedUnit = useSettingsStore((s) => s.speedUnit);
   const speedCalibration = useSettingsStore((s) => s.speedCalibration);
@@ -84,7 +86,7 @@ export default function CarDetailScreen() {
             <Link href={{ pathname: '/identify', params: { uid } }} asChild>
               <Pressable style={({ pressed }) => [styles.heroPhoto, pressed && styles.pressed]}>
                 <CarPhoto
-                  uri={identity.image}
+                  carId={identity?.id}
                   width="100%"
                   aspectRatio={16 / 10}
                   rounded={radius.lg}
@@ -97,6 +99,20 @@ export default function CarDetailScreen() {
             </Link>
           ) : null}
 
+          {photoCredit?.uploader ? (
+            <Pressable
+              onPress={() => {
+                void WebBrowser.openBrowserAsync(photoCredit.filePage);
+              }}
+              hitSlop={6}
+              style={({ pressed }) => [pressed && styles.pressed]}
+            >
+              <Text style={styles.photoCredit}>
+                Photo by {photoCredit.uploader} · CC BY-SA ↗
+              </Text>
+            </Pressable>
+          ) : null}
+
           <Text style={styles.title} numberOfLines={2}>
             {identity?.name ?? carLabel(car)}
           </Text>
@@ -107,7 +123,7 @@ export default function CarDetailScreen() {
           {!identity ? (
             <Link href={{ pathname: '/identify', params: { uid } }} asChild>
               <Pressable style={({ pressed }) => [styles.identityCard, pressed && styles.pressed]}>
-                <CarPhoto uri={null} size={64} rounded={radius.md} />
+                <CarPhoto size={64} rounded={radius.md} />
                 <View style={styles.identityText}>
                   <Text style={styles.identityName} numberOfLines={1}>
                     Unidentified car
@@ -222,6 +238,11 @@ const styles = StyleSheet.create({
     marginTop: spacing(1),
     borderRadius: radius.lg,
     ...elevation.card,
+  },
+  photoCredit: {
+    color: colors.textMuted,
+    fontSize: fontSize.xs,
+    marginTop: spacing(1),
   },
   changeBadge: {
     position: 'absolute',

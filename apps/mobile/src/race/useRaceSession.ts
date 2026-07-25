@@ -9,6 +9,8 @@ import * as Haptics from "expo-haptics";
 
 import { useSettingsStore } from "../store/settingsStore";
 import { usePortalStore, type Pass } from "../store/portalStore";
+import { nextLapCue } from "../sound/cues";
+import { playCue } from "../sound/player";
 import { getActiveTransportControls } from "../transport/active";
 import { currentLapElapsed, type RaceState } from "./raceEngine";
 import {
@@ -45,7 +47,9 @@ export function useRaceSession({
   const phase = race.phase;
   const lastSeenPassId = useRef(0);
   const [count, setCount] = useState(3);
-  const pulse = useRef(new Animated.Value(1)).current;
+  // Animated.Value is a stable mutable object. Holding it in lazy state rather
+  // than a ref keeps it out of render-time ref reads.
+  const [pulse] = useState(() => new Animated.Value(1));
   const [now, setNow] = useState(() => Date.now());
   const [webAnnouncement, setWebAnnouncement] = useState<string | null>(
     Platform.OS === "web" ? "" : null,
@@ -85,17 +89,20 @@ export function useRaceSession({
     setCount(nextCount);
     announce(countdownAnnouncement(nextCount));
     raceHaptic(() => Haptics.selectionAsync());
+    playCue("countdownTick");
     const interval = setInterval(() => {
       nextCount -= 1;
       if (nextCount <= 0) {
         clearInterval(interval);
         announce(countdownAnnouncement(0));
         raceHaptic(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy));
+        playCue("countdownGo");
         startRacing();
       } else {
         setCount(nextCount);
         announce(countdownAnnouncement(nextCount));
         raceHaptic(() => Haptics.selectionAsync());
+        playCue("countdownTick");
       }
     }, COUNTDOWN_STEP_MS);
     return () => clearInterval(interval);
@@ -128,6 +135,7 @@ export function useRaceSession({
       const isBest = lapTime < priorBest;
       announce(lapAnnouncement(lapCount, lapTime, isBest));
       raceHaptic(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium));
+      playCue(nextLapCue(race.lapTimes));
     }
     previousLapCount.current = lapCount;
   }, [announce, phase, race.lapTimes]);
@@ -137,6 +145,7 @@ export function useRaceSession({
     if (phase === "finished" && previousPhase.current !== "finished" && race.result) {
       announce(finishAnnouncement(race.result, nextRacerName));
       raceHaptic(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success));
+      playCue("finish");
     }
     previousPhase.current = phase;
   }, [announce, nextRacerName, phase, race.result]);

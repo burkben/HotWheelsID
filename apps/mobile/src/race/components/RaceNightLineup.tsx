@@ -2,7 +2,7 @@ import { Pressable, Text, View } from "react-native";
 
 import {
   carForCurrentRacer,
-  type RaceNightLineup,
+  type RaceNightLineup as Lineup,
   type RaceNightRacer,
 } from "../raceNight";
 import type { RaceCarPresentation } from "../presentation";
@@ -15,11 +15,13 @@ type ResolveCar = (
 ) => RaceCarPresentation;
 
 interface RaceNightLineupProps {
-  readonly lineup: RaceNightLineup;
+  readonly lineup: Lineup;
   readonly liveCarUid: string | null;
   readonly resolveCar: ResolveCar;
   readonly canStart: boolean;
   readonly onStart: () => void;
+  /** Overrides the default `Start {racer}` label (tournament mode uses this). */
+  readonly startLabel?: string;
   readonly onChooseNext: (racerId: string) => void;
   readonly onRemove: (racerId: string) => void;
   readonly onAssignCar: (racerId: string) => void;
@@ -83,6 +85,7 @@ export function RaceNightLineup({
   resolveCar,
   canStart,
   onStart,
+  startLabel,
   onChooseNext,
   onRemove,
   onAssignCar,
@@ -133,7 +136,7 @@ export function RaceNightLineup({
           onPress={onStart}
           disabled={!canStart}
           accessibilityRole="button"
-          accessibilityLabel={`Start race for ${current.name}`}
+          accessibilityLabel={startLabel ?? `Start race for ${current.name}`}
           accessibilityHint={
             canStart ? "Begins the race countdown" : "Connect the portal before starting"
           }
@@ -145,7 +148,7 @@ export function RaceNightLineup({
           ]}
         >
           <Text style={[styles.primaryBtnText, !canStart && styles.btnDisabledText]}>
-            Start {current.name}
+            {startLabel ?? `Start ${current.name}`}
           </Text>
         </Pressable>
       </View>

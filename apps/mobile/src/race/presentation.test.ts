@@ -20,7 +20,7 @@ const catalogCar: CatalogCar = {
   year: 2019,
   wave: null,
   bodyColor: "Red",
-  image: "https://example.com/twin-mill.jpg",
+  image: null,
   wikiPage: null,
 };
 
@@ -63,11 +63,11 @@ describe("canStartRace", () => {
 });
 
 describe("presentRaceCar", () => {
-  it("uses identified catalog names and photos", () => {
+  it("uses identified catalog names and bundled artwork ids", () => {
     expect(presentRaceCar("car:aa", catalogCar)).toEqual({
       uid: "car:aa",
       name: "Twin Mill",
-      image: "https://example.com/twin-mill.jpg",
+      catalogId: "twin-mill",
       identified: true,
     });
   });

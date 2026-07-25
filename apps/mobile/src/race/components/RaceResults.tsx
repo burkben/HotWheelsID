@@ -65,8 +65,6 @@ export function RaceResults({
         <LiveStat label={`Worst · lap ${result.worstLapNum}`} value={formatLapTime(result.worstLap)} />
       </View>
 
-      <LapList lapTimes={result.lapTimes} bestLap={result.bestLap} />
-
       <Pressable
         onPress={onShare}
         accessibilityRole="button"
@@ -75,6 +73,8 @@ export function RaceResults({
       >
         <Text style={styles.shareBtnText}>Share result</Text>
       </Pressable>
+
+      <LapList lapTimes={result.lapTimes} bestLap={result.bestLap} />
 
       <View style={styles.actionRow}>
         <Pressable

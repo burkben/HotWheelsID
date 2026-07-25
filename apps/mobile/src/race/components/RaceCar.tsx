@@ -20,7 +20,7 @@ export function RaceCar({
       accessible
       accessibilityLabel={`${car.name}. ${meta}`}
     >
-      <CarPhoto key={car.image ?? car.uid ?? "unassigned"} uri={car.image} size={size} />
+      <CarPhoto carId={car.catalogId} size={size} />
       <View style={styles.carText}>
         <Text style={styles.carName} numberOfLines={2}>
           {car.name}
