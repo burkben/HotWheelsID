@@ -25,9 +25,11 @@ describe("catalog data", () => {
     }
   });
 
-  it("never bundles or fetches third-party artwork", () => {
+  it("keeps artwork out of the catalog snapshot", () => {
+    // Images live in artwork.json keyed by catalog id, so re-fetching artwork
+    // never invalidates the pinned catalog hash.
     expect(CATALOG.every((car) => car.image === null)).toBe(true);
-    expect(CATALOG_PROVENANCE.artwork.included).toBe(false);
+    expect(CATALOG_PROVENANCE.artwork.included).toBe(true);
   });
 
   it("matches the pinned source provenance", () => {

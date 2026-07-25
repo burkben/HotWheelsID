@@ -1,6 +1,6 @@
 # Privacy Policy — Redline ID
 
-_Last updated: 2026-07-18_
+_Last updated: 2026-07-25_
 
 Redline ID ("the app") is a free, open-source utility that connects over Bluetooth
 Low Energy (BLE) to a discontinued toy car race portal and shows live speed and lap
@@ -40,8 +40,10 @@ data, and it does not use Bluetooth to determine your location.
 
 ## Catalog and external links
 
-The car catalog is bundled with the app as a fixed metadata snapshot. Catalog artwork
-is not bundled or downloaded; the app uses local placeholder tiles.
+The car catalog is bundled with the app as a fixed metadata snapshot, along with 135
+car photographs. Both ship inside the app. No catalog metadata or artwork is
+downloaded, at first launch or afterwards. Photo credits appear on the Credits
+screen and on each car's detail screen.
 
 Catalog cards, car details, and the Credits screen contain optional links to source,
 contributor, licensing, privacy, and project pages. These links make no request until

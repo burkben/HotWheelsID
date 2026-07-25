@@ -20,10 +20,36 @@ unless a community uses an approved alternate license. The Hot Wheels Wiki's own
 notice may be outdated. This project preserves both references rather than
 overstating which source term controls. Reusers should review the source terms.
 
-No Hot Wheels Wiki images or other third-party catalog artwork are included in the
-app or repository. The app renders local placeholders and does not fetch catalog
-images. Individual wiki uploads may have licenses or fair-use claims that differ
-from the surrounding page, so they are intentionally outside this distribution.
+## Hot Wheels id catalog artwork
+
+The app bundles 135 car photographs from the same wiki. They are redistributed
+under the Creative Commons Attribution-ShareAlike terms that Fandom applies to
+user contributions.
+
+- **Photographers:** 1steditionman, Autobot Scamper, Biddiblush, BigBadBrad01,
+  Cyko9, Disoneiscool8746, GTRTURTLE, Grunty89, JohnW51, Justinizawesome05,
+  Kevblokey, LesneyFan, MazdaL10B, Nezz79, Shnezman, Skingld, Tikinet, WorpeX
+- **Per-image provenance:**
+  [`apps/mobile/src/catalog/artwork.json`](apps/mobile/src/catalog/artwork.json)
+  records the original `File:` page, uploader, licensing basis, source URL, and a
+  SHA-256 of the bundled bytes for every photo
+- **Modifications:** photos are scaled to a maximum width of 640px and renamed to
+  the catalog car id. Image content is otherwise unaltered
+- **Reproducible:** [`python/tools/fetch_catalog_artwork.py`](python/tools/fetch_catalog_artwork.py)
+  regenerates the assets and the manifest from the wiki
+- **Never fetched at runtime:** the photos ship inside the app binary. The app
+  makes no network request to display them
+
+Two licensing bases are recorded separately, because they are different claims:
+
+| Basis | Images | Meaning |
+| --- | --- | --- |
+| `uploader-self` | 92 | The file page carries a `{{Self}}` template — the uploader asserts the photo is their own work, released under CC BY-SA |
+| `wiki-default` | 43 | The file page carries no licensing template. Fandom's Terms of Use license user contributions under CC BY-SA, which is the basis relied on here |
+
+Neither basis independently verifies that an uploader held the rights they
+granted. If you are a rights holder and object to an image, please open an issue.
+Each photo is isolated in `artwork.json`, so removing one is a single change.
 
 “Hot Wheels” and “Hot Wheels id” are trademarks of Mattel, Inc. They are used only
 to identify compatible discontinued hardware. Redline ID is not affiliated with,

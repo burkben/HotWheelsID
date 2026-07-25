@@ -244,9 +244,10 @@ If this project helped bring your Hot Wheels Portal back to life, consider suppo
 ## License
 
 Project code is available under the [MIT License](LICENSE). The bundled car catalog contains
-third-party factual metadata with separate source terms and attribution; no third-party catalog
-artwork is redistributed or fetched. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and the
-in-app **Credits & licenses** screen.
+third-party factual metadata with separate source terms and attribution, and the app bundles 135
+Hot Wheels Wiki car photographs reused under CC BY-SA with per-image credit. Nothing is fetched at
+runtime. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and the in-app
+**Credits & licenses** screen.
 
 ## Disclaimer
 

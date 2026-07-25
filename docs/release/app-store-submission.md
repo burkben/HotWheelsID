@@ -127,8 +127,22 @@ required iPhone and iPad sizes:
 | 5 | Tournament bracket | Run a complete elimination tournament |
 | 6 | History or Achievements | Keep the moments worth remembering |
 
-Use only app UI in the screenshots. Do not use third-party catalog artwork or
-Mattel logos.
+Do not use Mattel logos or packaging in screenshots.
+
+Catalog car photos now appear in the app UI (Identify, Garage, car detail). They are
+CC BY-SA wiki photographs, and App Store screenshots are a distribution surface that
+carries no attribution. The low-risk options, in order:
+
+1. Prefer screens where photos are absent or incidental — Speed, Race, Tournament,
+   History, Achievements. These carry the product story anyway.
+2. If you want a Garage or Identify shot, keep it and rely on the in-app Credits
+   screen, which names every photographer. This is the common practice for CC BY-SA
+   media shown inside a product UI.
+3. Avoid a screenshot whose subject *is* a single car photo blown up full-bleed.
+
+Note: the screenshots captured before build 5 show emoji placeholder tiles. Recapture
+any Garage or Identify shots against build 5 or later, or they will not match the
+shipped app.
 
 ## Final submission checklist
 

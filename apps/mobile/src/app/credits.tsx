@@ -4,6 +4,7 @@ import { Link } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 
 import { CATALOG, CATALOG_PROVENANCE } from '@/catalog/catalog';
+import { ARTWORK, ARTWORK_COUNT, ARTWORK_UPLOADERS } from '@/catalog/artwork';
 import { colors, fontSize, fontWeight, radius, spacing } from '@/theme/tokens';
 
 const PRIVACY_URL =
@@ -13,7 +14,7 @@ const NOTICES_URL =
 
 export default function CreditsScreen() {
   const insets = useSafeAreaInsets();
-  const { source, licensing, artwork } = CATALOG_PROVENANCE;
+  const { source, licensing } = CATALOG_PROVENANCE;
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top + spacing(2) }]}>
@@ -43,14 +44,25 @@ export default function CreditsScreen() {
           <ExternalLink label="View contributor history" url={source.contributorsUrl} />
         </View>
 
-        <Text style={styles.sectionLabel}>Artwork policy</Text>
+        <Text style={styles.sectionLabel}>Catalog artwork</Text>
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Local placeholders only</Text>
-          <Text style={styles.body}>{artwork.policy}</Text>
-          <Text style={styles.body}>
-            Source links open in a browser only when you choose them. Normal app operation does not
-            download catalog content.
+          <Text style={styles.cardTitle}>
+            {ARTWORK_COUNT} photos under {ARTWORK.license.abbreviation}
           </Text>
+          <Text style={styles.body}>
+            Car photos are bundled with the app and are never downloaded. They come from the
+            Hot Wheels Wiki and are reused under the {ARTWORK.license.name} license.
+          </Text>
+          <Text style={styles.body}>{ARTWORK.license.modifications}</Text>
+          <Text style={styles.body}>
+            Photographs by {ARTWORK_UPLOADERS.join(', ')}.
+          </Text>
+          <Text style={styles.meta}>
+            {CATALOG.length - ARTWORK_COUNT} catalog entries have no wiki photo and show a
+            placeholder instead.
+          </Text>
+          <ExternalLink label={`${ARTWORK.license.abbreviation} license terms`} url={ARTWORK.license.url} />
+          <ExternalLink label="Photo source page" url={ARTWORK.source.revisionUrl} />
         </View>
 
         <Text style={styles.sectionLabel}>Source licensing</Text>
