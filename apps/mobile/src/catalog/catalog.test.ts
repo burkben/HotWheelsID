@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 
 import {
   CATALOG,
+  CATALOG_PROVENANCE,
   CATALOG_WAVES,
   CATALOG_YEARS,
   catalogMeta,
@@ -25,6 +26,19 @@ describe("catalog data", () => {
       expect(car.id).toBeTruthy();
       expect(car.name).toBeTruthy();
     }
+  });
+
+  it("keeps artwork out of the catalog snapshot", () => {
+    // Images live in artwork.json keyed by catalog id, so re-fetching artwork
+    // never invalidates the pinned catalog hash.
+    expect(CATALOG.every((car) => car.image === null)).toBe(true);
+    expect(CATALOG_PROVENANCE.artwork.included).toBe(true);
+  });
+
+  it("matches the pinned source provenance", () => {
+    expect(CATALOG_PROVENANCE.catalog.recordCount).toBe(CATALOG.length);
+    expect(CATALOG_PROVENANCE.source.revisionId).toBe(782123);
+    expect(CATALOG_PROVENANCE.source.revisionUrl).toContain("oldid=782123");
   });
 });
 

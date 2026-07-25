@@ -1,0 +1,35 @@
+name: Seed
+
+# Validate crowd-sourced car-identity contributions and prove the bundled seed is
+# in sync (ADR-0014). Runs on PRs so bad data can't merge and a contribution can't
+# land without its regenerated identity-seed.json.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: seed-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  seed:
+    name: Validate contributions & seed
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Validate contributions
+        working-directory: python
+        run: python tools/validate_seed_contributions.py
+
+      - name: Check bundled seed is up to date
+        working-directory: python
+        run: python tools/build_seed.py --check

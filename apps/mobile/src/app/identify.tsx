@@ -303,7 +303,7 @@ function CarCard({
       ]}
     >
       <View style={styles.cardPhotoWrap}>
-        <CarPhoto uri={car.image} width="100%" aspectRatio={1} rounded={radius.sm} ring={selected} />
+        <CarPhoto carId={car.id} width="100%" aspectRatio={1} rounded={radius.sm} ring={selected} />
         {selected ? (
           <View style={styles.checkBadge}>
             <MaterialCommunityIcons name="check" size={15} color={colors.bg} />

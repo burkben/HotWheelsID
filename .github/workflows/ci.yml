@@ -12,16 +12,11 @@ concurrency:
 
 jobs:
   build:
-    name: Typecheck & protocol tests
+    name: Typecheck, test, lint & web export
     runs-on: ubuntu-latest
-    env:
-      # Trust metadata introduced by this change cannot vote until a later revision.
-      IDENTITY_TRUST_REF: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -37,3 +32,22 @@ jobs:
 
       - name: Unit tests (all workspaces)
         run: npm test
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Sound assets in sync with generator
+        working-directory: python
+        run: python tools/gen_sound_cues.py --check
+
+      - name: Identity research tool tests
+        working-directory: python/tools
+        run: python -m unittest test_analyze_mattel_ids.py test_inspect_hwid_apk.py
+
+      - name: Lint mobile app
+        run: npm run lint --workspace mobile
+
+      - name: Export web preview
+        run: npm run web:export --workspace mobile

@@ -58,19 +58,8 @@ fallbacks are filtered out. A raw Mattel ID can embed a tag UID, so it is never 
 freshly-scanned car then **auto-names with zero taps** if anyone has ever identified that casting.
 Merge rule: the **user's own pick always wins** over the seed (seed only fills gaps).
 
-**3. Aggregate in the repository.** Contributors add an unmodified app export under
-`identity-contributions/`. Repository-only attestations bind a stable non-personal source ID and
-HotWheelsID review PR to the exact normalized payload SHA-256 and exact reviewed
-`castingKey -> catalogId` mappings. The tool validates exports and attestations, reports conflicts,
-and deterministically regenerates the seed. A mapping is promoted only when two independently
-reviewed source IDs agree and none conflict. No runtime network dependency is added to the app.
-
-Attestations are activated in two phases. A contribution/review PR may register an attestation, but
-CI takes trust only from the immutable PR base revision (or the pre-push revision on `main`), so that
-new or edited attestation cannot vote in the same change. A later generation PR can use it after it
-has passed review and landed on the base. Attestation filtering occurs before observations are
-counted. The digest and exact mapping binding prevents copied payloads, appended padding rows, or
-editable provenance fields from borrowing another source's vote.
+**3. Aggregate later.** Contributions are pooled out-of-band (a repo/gist) and the bundled seed is
+regenerated on a cadence. No runtime network dependency is added to the app.
 
 **Privacy boundary (the crux).** Only the `identifications` map (`castingKey → catalogId`) ever
 leaves the device. The `links` map (`uid → castingKey`) — the per-tag, per-device data — **never**
@@ -93,12 +82,9 @@ isolated from the garage schema.
 ### Negative / costs
 
 - **Cold start.** Until contributions accumulate, the seed is small; early users still pick manually.
-- **Trust & moderation.** Pooled entries can be wrong or adversarial. The seed requires agreement
-  from two independently reviewed, base-trusted source IDs and blocks on conflicting mappings.
-  Identical payloads can corroborate when distinct trusted sources independently submitted them;
-  repeats within one source still count once. The app prefers the user's own pick, which limits blast
-  radius, but maintainers must verify that distinct source IDs represent independently checked
-  physical/package evidence.
+- **Trust & moderation.** Pooled entries can be wrong or adversarial. The seed must be curated
+  (reviewed / majority-voted) before it is bundled; the app already prefers the user's own pick, which
+  limits blast radius, but a bad seed row could mislabel a casting a user hasn't identified.
 - **Catalog licensing still applies.** Names/photos derive from the CC-BY-SA Fandom wiki
   ([ADR-0013](0013-car-identity-catalog.md)); sharing the `catalogId` map inherits that attribution
   obligation before any public release.
@@ -117,24 +103,36 @@ isolated from the garage schema.
 - **Stay fully manual (status quo).** Rejected as a ceiling: it caps identity at what each user
   personally scans, and discards reusable knowledge the app already collects.
 
-## Operational addendum (2026-07-10)
+## Addendum (2026-07-12): aggregation is a repo, not a service
 
-The repository loop is now implemented:
+The original decision left "aggregate later … pooled out-of-band (a repo/gist)" open. Having priced
+a hosted API against the expected (very low) usage, the aggregation mechanism is now settled: the
+seed is managed **as this repo**, with no hosted service and no runtime network dependency.
 
-- `identity-contributions/README.md` defines the contribution convention, two-phase review workflow,
-  and privacy boundary. `sources.json` records stable non-personal source handles, pull-request URLs,
-  immutable normalized payload digests, and exact mapping attestations outside device exports.
-- `tools/identity-seed.mjs` provides `validate`, `report`, `generate`, and `check`.
-- Validation uses an allowlist, so NFC UIDs, `links`, collection data, and unknown fields fail rather
-  than being silently ignored. The 8-hex casting key must agree with its unsigned 32-bit product ID,
-  but no speculative product-ID range is imposed.
-- Generation is deterministic and part of the root test command. Conflicts block generation instead
-  of choosing a plurality. Filename and `generatedAt` do not affect payload digests, but distinct
-  base-trusted sources can corroborate identical exports. Repeats within one source count once.
-  Current-only or digest/mapping-mismatched attestations are ignored or rejected before votes are
-  computed, so copied payloads plus padding and forged provenance cannot manufacture consensus.
-- Current state: **0 contribution observations, 0 pending mappings, 0 conflicts, and 0 promoted seed
-  rows**. `identity-seed.json` correctly remains empty.
+- **Why not a hosted API.** At this project's scale a serverless API (e.g. Cloudflare Workers + D1)
+  would sit on a free tier at ~$0/mo, but it still means *owning a service* — auth, spam handling,
+  uptime, and a live network dependency the app is deliberately designed without. The repo path
+  delivers the same crowd-sourced seed for $0 and no ops, and PR review doubles as moderation.
+- **Contribution flow.** The app's **Settings › Community › Share** emits an `IdentityExportPayload`
+  (schema `redlineid.identity-seed/1`). A contributor adds it under
+  [`community/contributions/`](../../community/) and opens a PR. See
+  [`community/README.md`](../../community/README.md) for the format and rules.
+- **CI gate.** `python/tools/validate_seed_contributions.py` rejects malformed payloads (bad schema,
+  synthetic `uid:` keys, off-catalog ids, `productId`↔`castingKey` mismatches); `build_seed.py
+  --check` proves the committed `identity-seed.json` is in sync with the contributions. Both run in
+  the `Seed` workflow on every PR.
+- **Aggregation = majority vote per casting** (one vote per contribution file), regenerated by
+  `python/tools/build_seed.py`. A tie for a casting is a genuine disagreement, so it is **omitted**
+  from the seed (not guessed) and flagged for review — bounding the blast radius the Consequences
+  section warned about. The regenerated seed ships in the next app build.
+- **Moderation.** Human PR review is the gate; the app's user-pick-wins rule and the tie-omission
+  rule limit the damage of a bad row until a reviewer catches it. This satisfies the "must be
+  curated before it is bundled" cost noted above without standing up a voting service.
+
+## Addendum (2026-07-10): what the tag itself can and cannot tell us
+
+Two investigations bounded how much identity the decoder can recover on its own, and therefore how
+much the crowd-sourced seed still has to carry.
 
 ### Manufacture-date evidence
 
@@ -157,3 +155,6 @@ remote asset bundles, and content catalogs, but no bundled packaging toy numbers
 `productId -> catalog` records. The archive item has no OBB/content bundle. No mapping was added.
 Hashes, commands, boundaries, and the negative result are recorded in
 [`docs/research/hwid-apk-identity.md`](../research/hwid-apk-identity.md).
+
+This is the negative result that keeps the crowd-sourced seed on the critical path: there is no
+offline `productId -> name` table to ship, so the seed remains the only route to automatic naming.
