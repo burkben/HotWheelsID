@@ -18,6 +18,7 @@ import { speedUnitLabel } from '@/speed/format';
 import { carLabel, formatLap, formatLastSeen, formatMph, shortUid } from '@/garage/format';
 import { colors, elevation, fontSize, fontWeight, radius, spacing } from '@/theme/tokens';
 import { CarPhoto } from '@/catalog/CarPhoto';
+import { carArtworkCredit } from '@/catalog/artwork';
 import { useCarIdentity, useCastingCoverage } from '@/catalog/useCarIdentity';
 
 export default function CarDetailScreen() {
@@ -29,6 +30,7 @@ export default function CarDetailScreen() {
   const rename = useGarageStore((s) => s.rename);
   const onPortal = usePortalStore((s) => s.car?.uid === uid);
   const identity = useCarIdentity(uid);
+  const photoCredit = carArtworkCredit(identity?.id);
   const coverage = useCastingCoverage(uid);
   const speedUnit = useSettingsStore((s) => s.speedUnit);
   const speedCalibration = useSettingsStore((s) => s.speedCalibration);
@@ -84,6 +86,7 @@ export default function CarDetailScreen() {
             <Link href={{ pathname: '/identify', params: { uid } }} asChild>
               <Pressable style={({ pressed }) => [styles.heroPhoto, pressed && styles.pressed]}>
                 <CarPhoto
+                  carId={identity?.id}
                   width="100%"
                   aspectRatio={16 / 10}
                   rounded={radius.lg}
@@ -94,6 +97,20 @@ export default function CarDetailScreen() {
                 </View>
               </Pressable>
             </Link>
+          ) : null}
+
+          {photoCredit?.uploader ? (
+            <Pressable
+              onPress={() => {
+                void WebBrowser.openBrowserAsync(photoCredit.filePage);
+              }}
+              hitSlop={6}
+              style={({ pressed }) => [pressed && styles.pressed]}
+            >
+              <Text style={styles.photoCredit}>
+                Photo by {photoCredit.uploader} · CC BY-SA ↗
+              </Text>
+            </Pressable>
           ) : null}
 
           <Text style={styles.title} numberOfLines={2}>
@@ -221,6 +238,11 @@ const styles = StyleSheet.create({
     marginTop: spacing(1),
     borderRadius: radius.lg,
     ...elevation.card,
+  },
+  photoCredit: {
+    color: colors.textMuted,
+    fontSize: fontSize.xs,
+    marginTop: spacing(1),
   },
   changeBadge: {
     position: 'absolute',

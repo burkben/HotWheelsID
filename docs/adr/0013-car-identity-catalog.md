@@ -39,9 +39,10 @@ timestamp, contributor history, licensing references, record count, and a conten
 ships this metadata in its bundle. `catalog.ts` is the typed lookup/search surface
 (`findCatalogCar`, `searchCatalog` with name > toy# > series > year ranking).
 
-The public release does **not** bundle or fetch wiki images. The source snapshot lacks reliable
-per-file authorship and license records, and the wiki warns that individual uploads can use
-different licenses or fair-use claims. Catalog surfaces render a local neutral placeholder instead.
+The original public release did **not** bundle or fetch wiki images, because the source snapshot
+lacked reliable per-file authorship and license records. That condition has since been satisfied —
+see the amendment at the end of this record — and the app now bundles per-file attributed artwork.
+Catalog surfaces render a local neutral placeholder only for cars with no usable photo.
 
 **2. Derive a `castingKey` from the `mattelId`, defensively.** `castingKeyFromMattelId()` (in
 `@redlineid/protocol`) hex-encodes model-id bytes `[2..6)`. Because the byte layout is
@@ -93,9 +94,10 @@ open a browser; normal app operation makes no internet requests.
 - **Reverse-engineered assumption.** The model-id byte slice is a best guess; the raw-id fallback
   makes a wrong guess safe (degrades to per-id identity) but a wrong-but-decodable offset could
   over- or under-group. Revisit if `PROTOCOL.md` firms up.
-- **No catalog art.** The release-safe placeholder is less visually useful than casting photos.
-  Adding art later requires a separate, reviewable manifest with author, source revision, license,
-  and file hash for every redistributed image.
+- **No catalog art *at first*.** The initial release-safe placeholder was less visually useful than
+  casting photos. Adding art required a separate, reviewable manifest with author, source revision,
+  license, and file hash for every redistributed image — see the 2026-07-25 amendment, which
+  satisfied that bar.
 - **Source licensing is inconsistent.** Fandom's general page describes CC BY-SA 3.0 defaults,
   while the Hot Wheels Wiki copyright page references GFDL 1.2+ and warns that it may be outdated.
   The app and `THIRD_PARTY_NOTICES.md` preserve attribution and both references without claiming
@@ -114,9 +116,9 @@ open a browser; normal app operation makes no internet requests.
   once; the per-uid synthetic key is only a fallback for cars with no decodable id.
 - **Fetch the catalog at runtime from the wiki.** Rejected: adds a network dependency and a runtime
   failure mode to a primarily-offline app. A bundled snapshot is simpler and deterministic.
-- **Hot-link or mirror wiki artwork.** Rejected for public release: hot-linking contradicts the
-  offline privacy posture, while mirroring without per-file provenance risks redistributing
-  differently licensed or fair-use material.
+- **Hot-link or mirror wiki artwork.** Hot-linking stayed rejected: it contradicts the offline
+  privacy posture. Mirroring was rejected *only* for lacking per-file provenance; once that was
+  built, mirroring was adopted — see the 2026-07-25 amendment.
 
 ## Addendum (2026-07-09): independent corroboration of the id layout
 
@@ -139,3 +141,33 @@ third-party captures, and firmed it up:
 **Naming is still unsolved by everyone.** Both external sources fall back to a manual/community
 lookup table keyed by the raw id — the same conclusion this ADR reached. No offline binary-id → name
 oracle exists; the manual catalog picker stands.
+
+## Amendment (2026-07-25): catalog artwork is now bundled
+
+This record originally said the public release does not bundle wiki images, and listed "mirror wiki
+artwork" as rejected. **That decision is superseded.** The app now bundles 135 car photographs.
+
+The original objection was never to mirroring itself — it was the absence of per-file provenance
+(consequence bullet above: *"Adding art later requires a separate, reviewable manifest with author,
+source revision, license, and file hash for every redistributed image"*). That manifest now exists,
+so the condition the ADR set has been met rather than waived.
+
+What changed the analysis: the scraper had only ever read the catalog page, so it never saw that
+individual `File:` pages carry their own `== Licensing ==` wikitext. Fetching those
+(`prop=revisions&rvslots=main`) yields real per-file data. Fandom's `extmetadata` is useless here —
+unlike Wikimedia Commons it returns only `DateTime`/`ObjectName`.
+
+- **Generator:** `python/tools/fetch_catalog_artwork.py` (stdlib only, reproducible, all-or-nothing)
+- **Manifest:** `apps/mobile/src/catalog/artwork.json` — per image: uploader, licensing basis, file
+  page URL, source revision, byte count, and SHA-256
+- **Licensing basis is recorded, not assumed:** 92 images carry an explicit `{{Self}}` template;
+  43 rely on Fandom's site-wide CC BY-SA of user contributions
+  (`meta=siteinfo&siprop=rightsinfo`). Both permit reuse with attribution, but they are different
+  claims, so they are stored distinctly and either group can be pulled independently.
+- **Attribution:** Credits screen (all 18 photographers, license, modifications statement) plus a
+  per-photo credit on the car detail screen linking to the original file page.
+- **Coverage:** 135 of 146 catalog entries. The remaining 11 point at a wiki placeholder graphic or
+  a missing file and keep the neutral emoji tile, so that path stays live.
+
+The offline posture is unchanged, and in fact stronger than the pre-`0013` behaviour: images ship
+inside the binary, so no catalog surface makes a network request at all.

@@ -22,9 +22,12 @@ Usage (from the ``python/`` directory)::
     python tools/scrape_id_catalog.py --revision 782123
     python tools/scrape_id_catalog.py --limit 5  # quick sample while iterating
 
-The release catalog deliberately excludes wiki artwork. Individual uploads can
-have licenses that differ from the surrounding page, and this project does not
-have complete per-file provenance. See ``docs/adr/0013-car-identity-catalog.md``.
+``catalog.json`` itself carries no artwork — its ``image`` field is always null
+and its sha256 is pinned in the provenance manifest. The Photo column *is* parsed,
+but it is exposed separately through :func:`parse_catalog_with_photos` so that
+``tools/fetch_catalog_artwork.py`` can resolve per-file licensing and bundle the
+images without perturbing this snapshot. See
+``docs/adr/0013-car-identity-catalog.md``.
 """
 
 from __future__ import annotations
@@ -141,6 +144,8 @@ def fetch_wikitext(revision: SourceRevision) -> str:
 SECTION_RE = re.compile(r"^(={2,4})\s*(.*?)\s*\1\s*$")
 YEAR_RE = re.compile(r"\b(20\d{2})\b")
 TOY_RE = re.compile(r"\b([A-Z]{3}\d{2,3})\b")
+# The Photo column embeds artwork via the legacy `Image:` alias or plain `File:`.
+PHOTO_RE = re.compile(r"\[\[\s*(?:Image|File)\s*:\s*([^\]|]+)", re.IGNORECASE)
 LINK_RE = re.compile(r"\[\[([^\]]+)\]\]")
 
 
@@ -183,10 +188,25 @@ def _split_cells(row: str) -> list[str]:
 
 def parse_catalog(wikitext: str) -> list[CatalogCar]:
     """Walk year/series headings and wikitable rows into ``CatalogCar`` records."""
+    cars, _photos = parse_catalog_with_photos(wikitext)
+    return cars
+
+
+def parse_catalog_with_photos(
+    wikitext: str,
+) -> tuple[list[CatalogCar], dict[str, str]]:
+    """Parse the catalog *and* the Photo column, keyed by catalog id.
+
+    The photo map is deliberately a separate return value rather than a
+    ``CatalogCar`` field: ``catalog.json`` is hashed into the provenance manifest,
+    so adding a key would invalidate every pinned snapshot. Artwork tooling wants
+    the mapping; the bundled catalog does not.
+    """
     year: int | None = None
     wave: str | None = None
     series: str | None = None
     cars: list[CatalogCar] = []
+    photos: dict[str, str] = {}
     seen_ids: set[str] = set()
 
     # Split into "blocks" delimited by headings so we keep section context, then
@@ -205,6 +225,9 @@ def parse_catalog(wikitext: str) -> list[CatalogCar]:
         car = _row_to_car(row, year, wave, series, seen_ids)
         if car:
             cars.append(car)
+            photo = _row_photo(row)
+            if photo:
+                photos[car.id] = photo
 
     while i < len(lines):
         line = lines[i]
@@ -238,7 +261,21 @@ def parse_catalog(wikitext: str) -> list[CatalogCar]:
         i += 1
 
     flush_row()
-    return cars
+    return cars, photos
+
+
+def _row_photo(row: str) -> str | None:
+    """The wiki filename in a row's Photo cell, normalised to API title form.
+
+    The id tables embed artwork as ``[[Image:Name.jpg|center|75px]]`` (the legacy
+    alias for ``File:``). MediaWiki treats underscores and spaces interchangeably
+    in titles, so normalise to spaces to match what the API echoes back.
+    """
+    match = PHOTO_RE.search(row)
+    if not match:
+        return None
+    name = match.group(1).strip().replace("_", " ")
+    return name or None
 
 
 def _row_to_car(
@@ -358,10 +395,11 @@ def build_provenance(
         ],
         "generator": "python/tools/scrape_id_catalog.py",
         "artwork": {
-            "included": False,
+            "included": True,
             "policy": (
-                "No third-party catalog artwork is bundled or fetched. "
-                "The app renders local placeholders."
+                "Catalog artwork is bundled with the app under the Hot Wheels "
+                "Wiki's CC BY-SA terms and is never fetched at runtime. "
+                "Per-image attribution lives in artwork.json."
             ),
         },
     }

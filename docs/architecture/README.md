@@ -51,7 +51,7 @@ flowchart TB
         Store["Runtime state<br/>(Zustand + Reanimated shared values)"]
         BLE["BLE service<br/>react-native-ble-plx · scan/connect/monitor"]
         Persist["Persistence<br/>shared expo-sqlite database"]
-        Catalog["Identity catalog<br/>bundled metadata · local placeholders"]
+        Catalog["Identity catalog<br/>bundled metadata · bundled artwork"]
     end
 
     subgraph pkg["packages/protocol (@redlineid/protocol)"]
@@ -80,7 +80,7 @@ flowchart TB
 | BLE transport | `apps/mobile` | Scan, connect, subscribe, base64⇄bytes, reconnect | react-native-ble-plx |
 | Protocol | `packages/protocol` | UUIDs + pure parsers (no RN/UI deps) | — (plain TS) |
 | Persistence | `apps/mobile` | Cars, sessions, passes, races, identities, settings, leaderboard | expo-sqlite |
-| Catalog | `apps/mobile` | Pinned casting metadata, search, provenance, local placeholders | bundled JSON |
+| Catalog | `apps/mobile` | Pinned casting metadata, search, provenance, attributed artwork | bundled JSON + images |
 | Reference | `python/` | Hardware validation & desktop utility | bleak, rich |
 
 ## 4. Tech stack
@@ -152,5 +152,5 @@ and iOS-specific BLE behavior (no MAC address, base64 values, permissions).
 - **Units:** speed is `float32 × 64` ("scale mph") per the spec; treat as relative until
   calibrated, and keep the raw value for re-interpretation.
 - **Privacy/offline:** no accounts, analytics, ads, application server, or automatic
-  internet requests. Catalog metadata is bundled and art uses local placeholders.
+  internet requests. Catalog metadata and car photos are both bundled; neither is fetched.
   Source/privacy/license URLs open only after an explicit user action.

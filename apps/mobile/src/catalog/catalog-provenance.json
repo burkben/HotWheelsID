@@ -24,7 +24,7 @@
   ],
   "generator": "python/tools/scrape_id_catalog.py",
   "artwork": {
-    "included": false,
-    "policy": "No third-party catalog artwork is bundled or fetched. The app renders local placeholders."
+    "included": true,
+    "policy": "Catalog artwork is bundled with the app under the Hot Wheels Wiki's CC BY-SA terms and is never fetched at runtime. Per-image attribution lives in artwork.json."
   }
 }
