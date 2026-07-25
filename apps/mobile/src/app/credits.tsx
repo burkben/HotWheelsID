@@ -5,6 +5,7 @@ import * as WebBrowser from 'expo-web-browser';
 
 import { CATALOG, CATALOG_PROVENANCE } from '@/catalog/catalog';
 import { ARTWORK, ARTWORK_COUNT, ARTWORK_UPLOADERS } from '@/catalog/artwork';
+import { useLayout } from '@/layout/useLayout';
 import { colors, fontSize, fontWeight, radius, spacing } from '@/theme/tokens';
 
 const PRIVACY_URL =
@@ -14,11 +15,13 @@ const NOTICES_URL =
 
 export default function CreditsScreen() {
   const insets = useSafeAreaInsets();
+  const layout = useLayout();
   const { source, licensing } = CATALOG_PROVENANCE;
+  const column = { maxWidth: layout.contentMaxWidth };
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top + spacing(2) }]}>
-      <View style={styles.header}>
+      <View style={[styles.header, column]}>
         <Link href="/" asChild>
           <Pressable hitSlop={12} style={({ pressed }) => [styles.back, pressed && styles.pressed]}>
             <Text style={styles.backText}>‹ Home</Text>
@@ -28,7 +31,11 @@ export default function CreditsScreen() {
       </View>
 
       <ScrollView
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + spacing(8) }]}
+        contentContainerStyle={[
+          styles.content,
+          column,
+          { paddingBottom: insets.bottom + spacing(8) },
+        ]}
       >
         <Text style={styles.sectionLabel}>Car catalog</Text>
         <View style={styles.card}>
@@ -121,11 +128,19 @@ const styles = StyleSheet.create({
     gap: spacing(3),
     paddingHorizontal: spacing(5),
     paddingBottom: spacing(3),
+    width: '100%',
+    alignSelf: 'center',
   },
   back: { paddingVertical: spacing(1), paddingRight: spacing(1) },
   backText: { color: colors.accentBlue, fontSize: fontSize.md, fontWeight: fontWeight.medium },
   title: { color: colors.textPrimary, fontSize: fontSize.xl, fontWeight: fontWeight.heavy, flex: 1 },
-  content: { paddingHorizontal: spacing(5), gap: spacing(2), paddingTop: spacing(1) },
+  content: {
+    paddingHorizontal: spacing(5),
+    gap: spacing(2),
+    paddingTop: spacing(1),
+    width: '100%',
+    alignSelf: 'center',
+  },
   sectionLabel: {
     color: colors.textMuted,
     fontSize: fontSize.xs,

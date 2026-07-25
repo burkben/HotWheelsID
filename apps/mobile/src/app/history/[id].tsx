@@ -16,6 +16,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { speedUnitLabel } from '@/speed/format';
 import { sessionShareText } from '@/share/summary';
 import { carLabel, shortUid } from '@/garage/format';
+import { useLayout } from '@/layout/useLayout';
 import { colors, fontSize, fontWeight, radius, spacing } from '@/theme/tokens';
 import {
   formatClock,
@@ -29,6 +30,8 @@ import {
 export default function SessionDetailScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const layout = useLayout();
+  const column = { maxWidth: layout.contentMaxWidth };
   const { id } = useLocalSearchParams<{ id: string }>();
   const sessionId = Number(id);
 
@@ -81,7 +84,7 @@ export default function SessionDetailScreen() {
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top + spacing(2) }]}>
-      <View style={styles.header}>
+      <View style={[styles.header, column]}>
         <Pressable
           hitSlop={12}
           onPress={() => router.back()}
@@ -101,7 +104,7 @@ export default function SessionDetailScreen() {
         )}
       </View>
 
-      <View style={styles.summary}>
+      <View style={[styles.summary, column]}>
         <Text style={styles.summaryDate}>
           {session ? formatSessionDate(session.startedAt) : 'Session'}
         </Text>
@@ -121,6 +124,7 @@ export default function SessionDetailScreen() {
         keyExtractor={(p) => String(p.id)}
         contentContainerStyle={[
           styles.list,
+          column,
           { paddingBottom: insets.bottom + spacing(6) },
           (passes?.length ?? 0) === 0 && styles.listEmpty,
         ]}
@@ -168,16 +172,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: spacing(5),
     paddingBottom: spacing(2),
+    width: '100%',
+    alignSelf: 'center',
   },
   back: { paddingVertical: spacing(1), paddingRight: spacing(1) },
   backText: { color: colors.accentBlue, fontSize: fontSize.md, fontWeight: fontWeight.medium },
   headerSpacer: { flex: 1 },
   share: { paddingVertical: spacing(1), paddingLeft: spacing(1) },
   shareText: { color: colors.accent, fontSize: fontSize.md, fontWeight: fontWeight.bold },
-  summary: { paddingHorizontal: spacing(5), paddingBottom: spacing(3), gap: 4 },
+  summary: {
+    paddingHorizontal: spacing(5),
+    paddingBottom: spacing(3),
+    gap: 4,
+    width: '100%',
+    alignSelf: 'center',
+  },
   summaryDate: { color: colors.textPrimary, fontSize: fontSize.xl, fontWeight: fontWeight.heavy },
   summaryMeta: { color: colors.textSecondary, fontSize: fontSize.sm },
-  list: { paddingHorizontal: spacing(5), gap: spacing(2) },
+  list: { paddingHorizontal: spacing(5), gap: spacing(2), width: '100%', alignSelf: 'center' },
   listEmpty: { flexGrow: 1, justifyContent: 'center' },
   row: {
     flexDirection: 'row',

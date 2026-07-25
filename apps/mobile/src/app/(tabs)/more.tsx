@@ -16,11 +16,15 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { summarize } from '@/achievements/engine';
 import { useAchievementsStore } from '@/store/achievementsStore';
 import { colors, fontSize, fontWeight, radius, spacing } from '@/theme/tokens';
+import { useLayout } from '@/layout/useLayout';
+import { useExternalDisplay } from '@/tv/useExternalDisplay';
 
 type IconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
 
 export default function MoreScreen() {
   const insets = useSafeAreaInsets();
+  const layout = useLayout();
+  const display = useExternalDisplay();
   const unlocked = useAchievementsStore((s) => s.unlocked);
   const { unlockedCount, total } = summarize(unlocked);
 
@@ -31,7 +35,10 @@ export default function MoreScreen() {
       </View>
 
       <ScrollView
-        contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + spacing(6) }]}
+        contentContainerStyle={[
+          styles.list,
+          { paddingBottom: insets.bottom + spacing(6), maxWidth: layout.contentMaxWidth },
+        ]}
       >
         <MoreRow
           href="/achievements"
@@ -44,6 +51,16 @@ export default function MoreScreen() {
           icon="access-point"
           title="Live portal"
           subtitle="Raw decoded BLE event log"
+        />
+        <MoreRow
+          href="/tv"
+          icon="television-play"
+          title="TV mode"
+          subtitle={
+            display.connected
+              ? `Playing on ${display.name ?? 'an external display'}`
+              : 'Big-screen stage for a TV or AirPlay'
+          }
         />
         <MoreRow
           href="/settings"
@@ -68,7 +85,7 @@ function MoreRow({
   title,
   subtitle,
 }: {
-  href: '/achievements' | '/live' | '/settings' | '/credits';
+  href: '/achievements' | '/live' | '/tv' | '/settings' | '/credits';
   icon: IconName;
   title: string;
   subtitle: string;
@@ -96,7 +113,7 @@ const styles = StyleSheet.create({
     paddingBottom: spacing(3),
   },
   title: { color: colors.textPrimary, fontSize: fontSize.xl, fontWeight: fontWeight.heavy },
-  list: { paddingHorizontal: spacing(5), gap: spacing(3) },
+  list: { paddingHorizontal: spacing(5), gap: spacing(3), width: '100%', alignSelf: 'center' },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
