@@ -26,6 +26,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Link } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import * as WebBrowser from 'expo-web-browser';
 
 import { buildIdentityExport, exportIdentifications } from '@/catalog/identityExport';
 import { LAP_OPTIONS } from '@/race/raceEngine';
@@ -40,6 +41,13 @@ import {
   type SpeedUnit,
 } from '@/speed/format';
 import { colors, fontSize, fontWeight, radius, spacing } from '@/theme/tokens';
+
+/**
+ * Sharing emits a JSON payload through the OS share sheet, which on its own
+ * gives no clue where the file is meant to go. This guide is the other half of
+ * the loop: it explains the pull-request flow that folds a payload into the seed.
+ */
+const CONTRIBUTING_URL = 'https://github.com/burkben/HotWheelsID/blob/main/community/README.md';
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -316,9 +324,21 @@ export default function SettingsScreen() {
           >
             <Text style={styles.shareBtnText}>
               {shareableCount === 0
-                ? 'No identified castings yet'
+                ? 'Identify a car to share'
                 : `Share ${shareableCount} identified casting${shareableCount === 1 ? '' : 's'}`}
             </Text>
+          </Pressable>
+          <Text style={styles.hint}>
+            Sharing hands you a JSON file. Add it to the community folder on GitHub and open a
+            pull request — the guide has the steps.
+          </Text>
+          <Pressable
+            onPress={() => {
+              void WebBrowser.openBrowserAsync(CONTRIBUTING_URL);
+            }}
+            style={({ pressed }) => [styles.link, pressed && styles.pressed]}
+          >
+            <Text style={styles.linkText}>How to contribute ↗</Text>
           </Pressable>
         </View>
 
@@ -454,6 +474,12 @@ const styles = StyleSheet.create({
     paddingVertical: spacing(3),
   },
   shareBtnText: { color: colors.accentBlue, fontSize: fontSize.md, fontWeight: fontWeight.bold },
+  link: {
+    alignSelf: 'flex-start',
+    paddingVertical: spacing(1),
+    paddingRight: spacing(2),
+  },
+  linkText: { color: colors.accentBlue, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
   resetBtn: {
     marginTop: spacing(6),
     alignItems: 'center',

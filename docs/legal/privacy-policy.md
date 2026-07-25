@@ -45,11 +45,11 @@ car photographs. Both ship inside the app. No catalog metadata or artwork is
 downloaded, at first launch or afterwards. Photo credits appear on the Credits
 screen and on each car's detail screen.
 
-Catalog cards, car details, and the Credits screen contain optional links to source,
-contributor, licensing, privacy, and project pages. These links make no request until
-you tap them. Tapping opens the selected URL in a browser, where the destination's own
-privacy policy applies. Redline ID passes only the public URL and does not add your
-garage, race, Bluetooth, or settings data.
+Catalog cards, car details, the Credits screen, and Settings contain optional links to
+source, contributor, licensing, privacy, contribution-guide, and project pages. These
+links make no request until you tap them. Tapping opens the selected URL in a browser,
+where the destination's own privacy policy applies. Redline ID passes only the public
+URL and does not add your garage, race, Bluetooth, or settings data.
 
 You can permanently remove all stored data at any time by deleting the app from your
 device.
