@@ -14,8 +14,8 @@
  *
  * The file ships empty at cold start (no confirmed community data yet) and is
  * regenerated out-of-band on a cadence. Entries are sanitised on load:
- *  - synthetic `uid:`-prefixed keys (device-local, cars seen without a Mattel id)
- *    are stripped — they must never appear in a shared seed;
+ *  - only 8-hex product keys are accepted; synthetic `uid:` keys and raw fallback
+ *    Mattel IDs may contain device-local tag identity and must never be shared;
  *  - entries pointing at a `catalogId` that isn't in the bundled {@link CATALOG}
  *    are dropped, so a stale/foreign id can't mislabel anything.
  */
@@ -26,7 +26,7 @@ import seedJson from "./identity-seed.json";
 export function sanitizeSeed(raw: Record<string, unknown>): Record<string, string> {
   const out: Record<string, string> = {};
   for (const [castingKey, catalogId] of Object.entries(raw)) {
-    if (!castingKey || castingKey.startsWith("uid:")) continue;
+    if (!/^[0-9a-f]{8}$/.test(castingKey)) continue;
     if (typeof catalogId !== "string" || catalogId.length === 0) continue;
     if (!findCatalogCar(catalogId)) continue;
     out[castingKey] = catalogId;

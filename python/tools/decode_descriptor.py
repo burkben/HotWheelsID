@@ -6,10 +6,14 @@ The descriptor is stored as a base64 string literal in global-metadata.dat
 (Google.Protobuf C# codegen). We locate it, base64-decode, and walk the
 FileDescriptorProto wire format.
 """
+import argparse
 import base64
 import struct
+import zipfile
+from pathlib import Path
 
-META = ("hwid_apk_src/resources/assets/bin/Data/Managed/Metadata/global-metadata.dat")
+DEFAULT_META = Path("hwid_apk_src/resources/assets/bin/Data/Managed/Metadata/global-metadata.dat")
+APK_META = "assets/bin/Data/Managed/Metadata/global-metadata.dat"
 START = b"CgpIV2lELnByb3Rv"        # base64 of "\n\nHWiD.proto" -> start of descriptor
 B64 = set(b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=")
 
@@ -104,8 +108,17 @@ def parse_message(dp, indent=""):
     return lines
 
 
-def main():
-    data = open(META, "rb").read()
+def read_metadata(path):
+    if zipfile.is_zipfile(path):
+        with zipfile.ZipFile(path) as apk:
+            try:
+                return apk.read(APK_META)
+            except KeyError as error:
+                raise SystemExit(f"{APK_META} not found in {path}") from error
+    return path.read_bytes()
+
+
+def decode_descriptor(data):
     s = data.find(START)
     if s < 0:
         raise SystemExit("descriptor start not found")
@@ -140,7 +153,16 @@ def main():
             out.append("")
         if f == 12:
             break
-    print("\n".join(out))
+    return "\n".join(out)
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Decode the embedded HWiD protobuf descriptor from an APK or global-metadata.dat"
+    )
+    parser.add_argument("source", nargs="?", type=Path, default=DEFAULT_META)
+    args = parser.parse_args()
+    print(decode_descriptor(read_metadata(args.source)))
 
 
 if __name__ == "__main__":

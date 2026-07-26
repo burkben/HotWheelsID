@@ -33,6 +33,20 @@ describe("InMemoryIdentityRepository", () => {
     expect(first.links["uid-1"]).toBe("key-1");
   });
 
+  it("deletes one identification without clearing links or other identifications", async () => {
+    const repo = new InMemoryIdentityRepository();
+    await repo.saveLink("uid-1", "key-1");
+    await repo.saveIdentification("key-1", "car-1");
+    await repo.saveIdentification("key-2", "car-2");
+
+    await repo.deleteIdentification("key-1");
+
+    expect(await repo.load()).toEqual({
+      links: { "uid-1": "key-1" },
+      identifications: { "key-2": "car-2" },
+    });
+  });
+
   it("clear forgets everything", async () => {
     const repo = new InMemoryIdentityRepository();
     await repo.saveLink("uid-1", "key-1");

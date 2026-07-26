@@ -3,12 +3,14 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { createRace, type RaceResult } from "../../race/raceEngine";
 import { useAchievementsStore } from "../achievementsStore";
 import { useGarageStore } from "../garageStore";
+import { useIdentityStore } from "../identityStore";
 import { usePortalStore } from "../portalStore";
 import { useRaceStore } from "../raceStore";
 import { DEFAULT_SETTINGS, useSettingsStore } from "../settingsStore";
 import { InMemoryAchievementsRepository } from "./achievementsRepository";
 import { InMemoryCarRepository } from "./carRepository";
 import { getSessionRepository } from "./historyAccess";
+import { InMemoryIdentityRepository } from "./identityRepository";
 import { initPersistence, resetPersistenceForTests } from "./initPersistence";
 import { InMemoryRaceRepository, type RaceRepository } from "./raceRepository";
 import { InMemorySessionRepository } from "./sessionRepository";
@@ -39,6 +41,7 @@ beforeEach(() => {
   resetPersistenceForTests();
   useRaceStore.setState({ race: createRace(), leaderboard: [] });
   useGarageStore.setState({ cars: [] });
+  useIdentityStore.setState({ links: {}, identifications: {}, seed: {}, hydrated: false });
   useSettingsStore.setState({ ...DEFAULT_SETTINGS, hydrated: false });
   useAchievementsStore.setState({ unlocked: {}, stats: emptyStats(), hydrated: false });
   usePortalStore.getState().reset();
@@ -138,6 +141,21 @@ describe("initPersistence", () => {
     await Promise.resolve();
 
     expect((await car.getCars())[0].name).toBe("Twin Mill");
+  });
+
+  it("wires identity removal so Undo persists without clearing casting links", async () => {
+    const identity = new InMemoryIdentityRepository();
+    await identity.saveLink("uid-1", "key-1");
+    await identity.saveIdentification("key-1", "car-1");
+    await initPersistence({ identity });
+
+    useIdentityStore.getState().forgetIdentification("key-1");
+    await flush();
+
+    expect(await identity.load()).toEqual({
+      links: { "uid-1": "key-1" },
+      identifications: {},
+    });
   });
 
   it("bridges portal car detections and passes into the garage", async () => {
