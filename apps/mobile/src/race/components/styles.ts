@@ -2,6 +2,9 @@ import { StyleSheet } from "react-native";
 
 import { colors, fontSize, fontWeight, radius, spacing } from "../../theme/tokens";
 
+/** Shared max column width; the split layout widens only the header past it. */
+const COLUMN_MAX_WIDTH = 620;
+
 export const raceStyles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   screenReaderOnly: {
@@ -14,14 +17,30 @@ export const raceStyles = StyleSheet.create({
   content: { alignItems: "center", paddingHorizontal: spacing(5), gap: spacing(5) },
   header: {
     width: "100%",
-    maxWidth: 420,
+    maxWidth: COLUMN_MAX_WIDTH,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     gap: spacing(3),
   },
   title: { color: colors.textPrimary, fontSize: fontSize.lg, fontWeight: fontWeight.heavy },
-  section: { width: "100%", maxWidth: 420, gap: spacing(3) },
+  headerWide: { maxWidth: 9999, paddingBottom: spacing(3) },
+  headerRight: { flexDirection: "row", alignItems: "center", gap: spacing(3) },
+
+  // Two-pane landscape layout.
+  splitRoot: { paddingHorizontal: spacing(5) },
+  splitBody: { flex: 1, flexDirection: "row", gap: spacing(6) },
+  splitLeft: { flex: 5 },
+  splitRight: { flex: 4 },
+  splitPane: {
+    gap: spacing(5),
+    paddingBottom: spacing(8),
+    // Centre the pane's content when it is shorter than the window; once it
+    // overflows this is a no-op and the pane scrolls from the top as usual.
+    flexGrow: 1,
+    justifyContent: "center",
+  },
+  section: { width: "100%", maxWidth: COLUMN_MAX_WIDTH, gap: spacing(3) },
   sectionLabel: {
     color: colors.textMuted,
     fontSize: fontSize.xs,
@@ -76,7 +95,7 @@ export const raceStyles = StyleSheet.create({
   },
   card: {
     width: "100%",
-    maxWidth: 420,
+    maxWidth: COLUMN_MAX_WIDTH,
     backgroundColor: colors.surface,
     borderColor: colors.border,
     borderWidth: 1,
@@ -130,7 +149,7 @@ export const raceStyles = StyleSheet.create({
   readinessLabel: { color: colors.textPrimary, fontSize: fontSize.sm, fontWeight: fontWeight.medium },
   readinessCard: {
     width: "100%",
-    maxWidth: 420,
+    maxWidth: COLUMN_MAX_WIDTH,
     backgroundColor: colors.surface,
     borderColor: colors.warn,
     borderWidth: 1,
@@ -215,7 +234,7 @@ export const raceStyles = StyleSheet.create({
   queueActions: { flexDirection: "row", flexWrap: "wrap", justifyContent: "flex-end", gap: spacing(1.5) },
   countdown: {
     width: "100%",
-    maxWidth: 420,
+    maxWidth: COLUMN_MAX_WIDTH,
     alignItems: "center",
     gap: spacing(4),
     paddingVertical: spacing(6),
@@ -227,6 +246,7 @@ export const raceStyles = StyleSheet.create({
     fontVariant: ["tabular-nums"],
   },
   countLabel: { color: colors.textSecondary, fontSize: fontSize.md },
+  countNumLarge: { fontSize: 200 },
   racerEyebrow: {
     color: colors.accent,
     fontSize: fontSize.xs,
@@ -243,6 +263,7 @@ export const raceStyles = StyleSheet.create({
     fontVariant: ["tabular-nums"],
   },
   lapHeroOf: { color: colors.textMuted, fontSize: fontSize.xl, fontWeight: fontWeight.bold },
+  lapHeroNumLarge: { fontSize: 148 },
   lapHeroLabel: {
     color: colors.textSecondary,
     fontSize: fontSize.sm,

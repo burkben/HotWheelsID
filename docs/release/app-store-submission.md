@@ -115,8 +115,10 @@ function.
 
 ## Screenshots
 
-Keep iPad support enabled. Capture the same set in portrait on the largest
-required iPhone and iPad sizes:
+Keep iPad support enabled. Capture the iPhone set in portrait on the largest
+required iPhone size. **Capture the iPad set in landscape** — the iPad build
+rotates freely and lays out in two panes above 900pt, so a portrait iPad
+screenshot no longer represents the experience being shipped.
 
 | Order | Screen | Caption |
 |---|---|---|
@@ -126,6 +128,13 @@ required iPhone and iPad sizes:
 | 4 | Race-night lineup | Put every racer and car in the queue |
 | 5 | Tournament bracket | Run a complete elimination tournament |
 | 6 | History or Achievements | Keep the moments worth remembering |
+
+iPad-only additions, both landscape:
+
+| Order | Screen | Caption |
+|---|---|---|
+| 7 | Race tab, two panes, mid-race | The whole race night on one screen |
+| 8 | TV mode preview (More → TV mode) | Put the race on the big screen |
 
 Do not use Mattel logos or packaging in screenshots.
 
@@ -191,7 +200,19 @@ Run this on TestFlight build **1.0.0 (6)** before selecting it for App Review.
 
 ### iPad
 
-- Repeat the clean launch and Demo race on a supported iPad.
+- Repeat the clean launch and Demo race on a supported iPad, **in landscape**,
+  and confirm the Speed and Race tabs render two panes rather than a centred
+  phone column.
+- Rotate the iPad through all four orientations mid-race and confirm the lap
+  clock keeps running (regions are shared across the layout branches so nothing
+  should remount).
+- Open a second app window from the iPad multitasking menu and confirm it shows
+  the TV stage rather than a blank window (`UIApplicationSupportsMultipleScenes`
+  is required for the external display and also enables multi-window).
+- With a TV or Apple TV on the network, start AirPlay and confirm the TV shows
+  the dedicated stage — the lap clock and standings, not a mirror of the iPad.
+  The Simulator cannot emulate an external display, so this check is
+  device-only.
 - Check portrait layouts for clipped text, overlapping controls, unreachable
   actions, and unsafe-area problems on Speed, Race, Garage, History, More,
   tournament, and detail screens.

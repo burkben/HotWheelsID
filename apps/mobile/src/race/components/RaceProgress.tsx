@@ -67,6 +67,8 @@ export function RaceProgress({
   car,
   liveLap,
   canTriggerDemo,
+  large = false,
+  showLaps = true,
   onTriggerDemo,
   onFinish,
 }: {
@@ -74,6 +76,10 @@ export function RaceProgress({
   readonly car: RaceCarPresentation;
   readonly liveLap: number;
   readonly canTriggerDemo: boolean;
+  /** Oversized lap counter for the two-pane landscape layout. */
+  readonly large?: boolean;
+  /** Off when the lap list is placed in the split layout's second pane. */
+  readonly showLaps?: boolean;
   readonly onTriggerDemo: () => void;
   readonly onFinish: () => void;
 }) {
@@ -101,7 +107,7 @@ export function RaceProgress({
             : `Lap ${displayedLap} of ${race.targetLaps}`
         }
       >
-        <Text style={styles.lapHeroNum}>
+        <Text style={[styles.lapHeroNum, large && styles.lapHeroNumLarge]}>
           {displayedLap}
           <Text style={styles.lapHeroOf}> / {race.targetLaps}</Text>
         </Text>
@@ -123,7 +129,7 @@ export function RaceProgress({
         <LiveStat label="Best" value={bestSoFar != null ? formatLapTime(bestSoFar) : "—"} />
       </View>
 
-      <LapList lapTimes={race.lapTimes} bestLap={bestSoFar} />
+      {showLaps ? <LapList lapTimes={race.lapTimes} bestLap={bestSoFar} /> : null}
 
       <View style={styles.actionRow}>
         {canTriggerDemo ? (

@@ -16,12 +16,15 @@ export function RaceResults({
   car,
   nextRacerName,
   primaryActionLabel,
+  showLaps = true,
   onPrimaryAction,
 }: {
   readonly result: RaceResult;
   readonly car: RaceCarPresentation;
   readonly nextRacerName: string | null;
   readonly primaryActionLabel: string;
+  /** Off when the lap list is placed in the split layout's second pane. */
+  readonly showLaps?: boolean;
   readonly onPrimaryAction: () => void;
 }) {
   const garageName = useGarageStore(
@@ -74,7 +77,7 @@ export function RaceResults({
         <Text style={styles.shareBtnText}>Share result</Text>
       </Pressable>
 
-      <LapList lapTimes={result.lapTimes} bestLap={result.bestLap} />
+      {showLaps ? <LapList lapTimes={result.lapTimes} bestLap={result.bestLap} /> : null}
 
       <View style={styles.actionRow}>
         <Pressable

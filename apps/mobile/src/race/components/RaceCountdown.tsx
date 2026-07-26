@@ -10,6 +10,7 @@ export function RaceCountdown({
   reduceMotion,
   player,
   car,
+  large = false,
   onCancel,
 }: {
   readonly count: number;
@@ -17,6 +18,8 @@ export function RaceCountdown({
   readonly reduceMotion: boolean;
   readonly player: string;
   readonly car: RaceCarPresentation;
+  /** Oversized digit for the two-pane landscape layout. */
+  readonly large?: boolean;
   readonly onCancel: () => void;
 }) {
   return (
@@ -30,7 +33,11 @@ export function RaceCountdown({
       </View>
       <RaceCar car={car} size={48} context="Car for this race" />
       <Animated.Text
-        style={[styles.countNum, { transform: [{ scale: reduceMotion ? 1 : pulse }] }]}
+        style={[
+          styles.countNum,
+          large && styles.countNumLarge,
+          { transform: [{ scale: reduceMotion ? 1 : pulse }] },
+        ]}
         accessible={false}
       >
         {count}

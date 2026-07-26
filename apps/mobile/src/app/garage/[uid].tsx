@@ -11,6 +11,7 @@ import * as Haptics from 'expo-haptics';
 import * as WebBrowser from 'expo-web-browser';
 
 import { catalogMeta } from '@/catalog/catalog';
+import { useLayout } from '@/layout/useLayout';
 import { useGarageStore } from '@/store/garageStore';
 import { usePortalStore } from '@/store/portalStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -24,6 +25,7 @@ import { useCarIdentity, useCastingCoverage } from '@/catalog/useCarIdentity';
 export default function CarDetailScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const layout = useLayout();
   const { uid } = useLocalSearchParams<{ uid: string }>();
 
   const car = useGarageStore((s) => s.cars.find((c) => c.uid === uid));
@@ -53,7 +55,11 @@ export default function CarDetailScreen() {
       style={styles.screen}
       contentContainerStyle={[
         styles.content,
-        { paddingTop: insets.top + spacing(2), paddingBottom: insets.bottom + spacing(8) },
+        {
+          maxWidth: layout.contentMaxWidth,
+          paddingTop: insets.top + spacing(2),
+          paddingBottom: insets.bottom + spacing(8),
+        },
       ]}
       keyboardShouldPersistTaps="handled"
     >
@@ -227,7 +233,7 @@ function Stat({ label, value }: { label: string; value: string }) {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
-  content: { paddingHorizontal: spacing(5), gap: spacing(3) },
+  content: { paddingHorizontal: spacing(5), gap: spacing(3), width: '100%', alignSelf: 'center' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   back: { paddingVertical: spacing(1), paddingRight: spacing(2) },
   backText: { color: colors.accentBlue, fontSize: fontSize.md, fontWeight: fontWeight.medium },

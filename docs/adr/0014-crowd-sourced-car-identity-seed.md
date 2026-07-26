@@ -49,8 +49,9 @@ native share sheet:
   "catalogId": "70-dodge-charger-rt", "name": "'70 Dodge Charger R/T", "toyNumber": "GHF45" }
 ```
 
-Only entries whose `castingKey` is a **real** model id are exported; synthetic `uid:`-prefixed keys
-(demo passes / cars seen without a `mattelId`) are device-local and filtered out.
+Only entries whose `castingKey` is a **real lowercase 8-hex model id** are exported; synthetic
+`uid:`-prefixed keys (demo passes / cars seen without a `mattelId`) and undecodable raw Mattel-ID
+fallbacks are filtered out. A raw Mattel ID can embed a tag UID, so it is never shareable.
 
 **2. Bundle a seed and merge it at bootstrap.** Ship a community `identity-seed.json`
 (`castingKey → catalogId`) that pre-populates `identifications` when identity is initialised. A
@@ -127,3 +128,33 @@ seed is managed **as this repo**, with no hosted service and no runtime network 
 - **Moderation.** Human PR review is the gate; the app's user-pick-wins rule and the tie-omission
   rule limit the damage of a bad row until a reviewer catches it. This satisfies the "must be
   curated before it is bundled" cost noted above without standing up a voting service.
+
+## Addendum (2026-07-10): what the tag itself can and cannot tell us
+
+Two investigations bounded how much identity the decoder can recover on its own, and therefore how
+much the crowd-sourced seed still has to carry.
+
+### Manufacture-date evidence
+
+The misc bytes do not yet support a manufacture-date field. In the one full Hot Wheels capture,
+`000006005d13299704` contains at least two plausible Unix windows in the product era:
+
+- offset 7, `0006005d` little-endian: `2019-06-11T19:50:24Z`
+- offset 10, `5d132997` big-endian: `2019-06-26T08:15:19Z`
+
+Project-Genoa documents a timestamp in a related Mattel PID layout, but at a different location and
+endianness, and labels its own interpretation tentatively. The app therefore exposes neither date as
+fact. `python/tools/analyze_mattel_ids.py` reports candidates as `unverified`; promotion requires
+multiple full Hot Wheels captures with UID/serial integrity checks and packaging corroboration.
+
+### Archived official-app inspection
+
+The public Internet Archive copy of package `com.mattel.hwid` was inspected locally without
+executing or committing it. The base APK contains product-ID code symbols and references to OBB,
+remote asset bundles, and content catalogs, but no bundled packaging toy numbers, PID URLs, or direct
+`productId -> catalog` records. The archive item has no OBB/content bundle. No mapping was added.
+Hashes, commands, boundaries, and the negative result are recorded in
+[`docs/research/hwid-apk-identity.md`](../research/hwid-apk-identity.md).
+
+This is the negative result that keeps the crowd-sourced seed on the critical path: there is no
+offline `productId -> name` table to ship, so the seed remains the only route to automatic naming.

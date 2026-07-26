@@ -19,6 +19,10 @@ export interface RecentPassesProps {
   passes: readonly Pass[];
   bestMph: number;
   display?: SpeedDisplay;
+  /** Cap on the card's width; a wide iPad pane passes its own budget. */
+  maxWidth?: number;
+  /** How many rows to show — a taller pane can afford more history. */
+  limit?: number;
 }
 
 function shortUid(uid?: string): string {
@@ -33,14 +37,20 @@ function clockTime(at: number): string {
   return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
 
-export function RecentPasses({ passes, bestMph, display = DEFAULT_SPEED_DISPLAY }: RecentPassesProps) {
+export function RecentPasses({
+  passes,
+  bestMph,
+  display = DEFAULT_SPEED_DISPLAY,
+  maxWidth = 420,
+  limit = 6,
+}: RecentPassesProps) {
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { maxWidth }]}>
       <Text style={styles.heading}>Recent passes</Text>
       {passes.length === 0 ? (
         <Text style={styles.empty}>Waiting for a car to cross the portal…</Text>
       ) : (
-        passes.slice(0, 6).map((pass) => {
+        passes.slice(0, limit).map((pass) => {
           const isBest = pass.scaleMph >= bestMph && bestMph > 0;
           return (
             <View key={pass.id} style={styles.row}>
@@ -66,7 +76,6 @@ export function RecentPasses({ passes, bestMph, display = DEFAULT_SPEED_DISPLAY 
 const styles = StyleSheet.create({
   card: {
     width: "100%",
-    maxWidth: 420,
     backgroundColor: colors.surface,
     borderColor: colors.border,
     borderWidth: 1,

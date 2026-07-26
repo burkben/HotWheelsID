@@ -17,6 +17,7 @@ import type { SessionSummary } from '@/store/persistence/sessionRepository';
 import { useSettingsStore } from '@/store/settingsStore';
 import { speedUnitLabel } from '@/speed/format';
 import { colors, fontSize, fontWeight, radius, spacing } from '@/theme/tokens';
+import { useLayout } from '@/layout/useLayout';
 import {
   formatDuration,
   formatMphLabel,
@@ -26,6 +27,10 @@ import {
 
 export default function HistoryScreen() {
   const insets = useSafeAreaInsets();
+  const layout = useLayout();
+  // Session rows are text-dense, so they get one fewer column than the photo
+  // grid in the Garage — two wide on any iPad, three only on a big landscape one.
+  const columns = Math.max(1, layout.columns - 1);
   const [sessions, setSessions] = useState<SessionSummary[] | null>(null);
 
   const reload = useCallback(() => {
@@ -86,26 +91,38 @@ export default function HistoryScreen() {
       <FlatList
         data={sessions ?? []}
         keyExtractor={(s) => String(s.id)}
+        // FlatList refuses to change `numColumns` in place, so the key forces a
+        // remount when a rotation or Split View resize changes the grid.
+        key={`cols-${columns}`}
+        numColumns={columns}
+        columnWrapperStyle={columns > 1 ? styles.column : undefined}
         contentContainerStyle={[
           styles.list,
-          { paddingBottom: insets.bottom + spacing(6) },
+          { paddingBottom: insets.bottom + spacing(6), paddingHorizontal: layout.gutter },
           !hasSessions && styles.listEmpty,
         ]}
-        renderItem={({ item }) => <SessionRow session={item} />}
+        renderItem={({ item }) => <SessionRow session={item} grid={columns > 1} />}
         ListEmptyComponent={<EmptyHistory />}
       />
     </View>
   );
 }
 
-function SessionRow({ session }: { session: SessionSummary }) {
+function SessionRow({ session, grid }: { session: SessionSummary; grid?: boolean }) {
   const live = session.endedAt == null;
   const speedUnit = useSettingsStore((s) => s.speedUnit);
   const speedCalibration = useSettingsStore((s) => s.speedCalibration);
   const display = { unit: speedUnit, calibration: speedCalibration };
   return (
     <Link href={{ pathname: '/history/[id]', params: { id: String(session.id) } }} asChild>
-      <Pressable style={({ pressed }) => [styles.row, live && styles.rowLive, pressed && styles.pressed]}>
+      <Pressable
+        style={({ pressed }) => [
+          styles.row,
+          grid && styles.rowGrid,
+          live && styles.rowLive,
+          pressed && styles.pressed,
+        ]}
+      >
         <View style={styles.rowMain}>
           <View style={styles.rowTitleLine}>
             <Text style={styles.rowDate} numberOfLines={1}>
@@ -161,7 +178,9 @@ const styles = StyleSheet.create({
   },
   clearText: { color: colors.danger, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
   clearPlaceholder: { width: spacing(1) },
-  list: { paddingHorizontal: spacing(5), gap: spacing(3) },
+  list: { gap: spacing(3) },
+  column: { gap: spacing(3) },
+  rowGrid: { flex: 1, minWidth: 0 },
   listEmpty: { flexGrow: 1, justifyContent: 'center' },
   row: {
     flexDirection: 'row',

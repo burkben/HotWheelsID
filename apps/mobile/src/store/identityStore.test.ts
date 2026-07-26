@@ -28,7 +28,12 @@ describe("identityStore", () => {
 
   it("linkCar records uid → castingKey and fires the sink once", () => {
     const onLink = vi.fn();
-    setIdentityPersistence({ onLink, onIdentify: vi.fn(), onClear: vi.fn() });
+    setIdentityPersistence({
+      onLink,
+      onIdentify: vi.fn(),
+      onForgetIdentification: vi.fn(),
+      onClear: vi.fn(),
+    });
 
     useIdentityStore.getState().linkCar("uid1", "keyA");
     useIdentityStore.getState().linkCar("uid1", "keyA"); // unchanged — no second write
@@ -40,7 +45,12 @@ describe("identityStore", () => {
 
   it("identify records castingKey → catalogId and fires the sink", () => {
     const onIdentify = vi.fn();
-    setIdentityPersistence({ onLink: vi.fn(), onIdentify, onClear: vi.fn() });
+    setIdentityPersistence({
+      onLink: vi.fn(),
+      onIdentify,
+      onForgetIdentification: vi.fn(),
+      onClear: vi.fn(),
+    });
 
     useIdentityStore.getState().identify("keyA", "70-dodge-charger-r-t");
 
@@ -51,7 +61,12 @@ describe("identityStore", () => {
   });
 
   it("ignores empty uid/castingKey/catalogId", () => {
-    const sink = { onLink: vi.fn(), onIdentify: vi.fn(), onClear: vi.fn() };
+    const sink = {
+      onLink: vi.fn(),
+      onIdentify: vi.fn(),
+      onForgetIdentification: vi.fn(),
+      onClear: vi.fn(),
+    };
     setIdentityPersistence(sink);
 
     useIdentityStore.getState().linkCar("", "keyA");
@@ -65,9 +80,35 @@ describe("identityStore", () => {
     expect(sink.onIdentify).not.toHaveBeenCalled();
   });
 
+  it("forgets one user identification and reveals the seed fallback", () => {
+    const onForgetIdentification = vi.fn();
+    setIdentityPersistence({
+      onLink: vi.fn(),
+      onIdentify: vi.fn(),
+      onForgetIdentification,
+      onClear: vi.fn(),
+    });
+    useIdentityStore.setState({
+      links: { uid1: "keyA" },
+      identifications: { keyA: "user-car", keyB: "keep-me" },
+      seed: { keyA: "seed-car" },
+    });
+
+    useIdentityStore.getState().forgetIdentification("keyA");
+
+    expect(useIdentityStore.getState().identifications).toEqual({ keyB: "keep-me" });
+    expect(catalogIdForUid(useIdentityStore.getState(), "uid1")).toBe("seed-car");
+    expect(onForgetIdentification).toHaveBeenCalledWith("keyA");
+  });
+
   it("reset clears both maps and fires onClear", () => {
     const onClear = vi.fn();
-    setIdentityPersistence({ onLink: vi.fn(), onIdentify: vi.fn(), onClear });
+    setIdentityPersistence({
+      onLink: vi.fn(),
+      onIdentify: vi.fn(),
+      onForgetIdentification: vi.fn(),
+      onClear,
+    });
     useIdentityStore.getState().linkCar("uid1", "keyA");
 
     useIdentityStore.getState().reset();
@@ -77,7 +118,12 @@ describe("identityStore", () => {
   });
 
   it("loadSeed stores the seed and reset leaves it intact", () => {
-    setIdentityPersistence({ onLink: vi.fn(), onIdentify: vi.fn(), onClear: vi.fn() });
+    setIdentityPersistence({
+      onLink: vi.fn(),
+      onIdentify: vi.fn(),
+      onForgetIdentification: vi.fn(),
+      onClear: vi.fn(),
+    });
     useIdentityStore.getState().loadSeed({ keyA: "car-a" });
     useIdentityStore.getState().linkCar("uid1", "keyB");
 

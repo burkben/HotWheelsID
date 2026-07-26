@@ -9,13 +9,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useReducedMotion } from "react-native-reanimated";
 
 import { findCatalogCar } from "@/catalog/catalog";
+import { useLayout } from "@/layout/useLayout";
 import { RaceCountdown } from "@/race/components/RaceCountdown";
 import { RaceLeaderboard } from "@/race/components/RaceLeaderboard";
 import {
   PortalRecovery,
   PortalStatusPill,
 } from "@/race/components/PortalReadiness";
-import { RaceProgress } from "@/race/components/RaceProgress";
+import { LapList, RaceProgress } from "@/race/components/RaceProgress";
 import { RaceResults } from "@/race/components/RaceResults";
 import { RaceSetup } from "@/race/components/RaceSetup";
 import {
@@ -56,6 +57,7 @@ import { catalogIdForUid, useIdentityStore } from "@/store/identityStore";
 import { usePortalStore } from "@/store/portalStore";
 import { useRaceStore } from "@/store/raceStore";
 import { useSettingsStore } from "@/store/settingsStore";
+import { TvBadge } from "@/tv/TvBadge";
 import { spacing } from "@/theme/tokens";
 
 /** Heat times accumulated per match until both racers are in and it can be decided. */
@@ -76,6 +78,7 @@ function initialLapOption(): LapOption {
 
 export default function RaceScreen() {
   const insets = useSafeAreaInsets();
+  const layout = useLayout();
   const systemReduceMotion = useReducedMotion();
   const settingReduceMotion = useSettingsStore((state) => state.reduceMotion);
   const reduceMotion = systemReduceMotion || settingReduceMotion;
@@ -242,6 +245,7 @@ export default function RaceScreen() {
   );
   const shouldAdvance = mode === "raceNight" && lineup.length > 1;
 
+
   const tournamentSlot = tournament?.championId ? (
     <ChampionBanner
       name={nameForRacer(tournament.championId)}
@@ -255,6 +259,210 @@ export default function RaceScreen() {
     />
   );
 
+  // Every region is built once and placed by the layout below. Sharing the same
+  // element instances across the phone and split branches keeps the live lap
+  // clock and the countdown animation from remounting on rotation.
+  const header = (
+    <View style={[styles.header, layout.isSplit && styles.headerWide]}>
+      <Text accessibilityRole="header" style={styles.title}>
+        Race Mode
+      </Text>
+      <View style={styles.headerRight}>
+        <TvBadge />
+        <PortalStatusPill connection={connection} />
+      </View>
+    </View>
+  );
+
+  const announcement =
+    session.webAnnouncement != null ? (
+      <Text style={styles.screenReaderOnly} accessibilityLiveRegion="assertive">
+        {session.webAnnouncement}
+      </Text>
+    ) : null;
+
+  const bracket =
+    tournament && (race.phase === "idle" || race.phase === "finished") ? (
+      <BracketCard
+        tournament={tournament}
+        nameFor={nameForRacer}
+        activeMatch={activeMatch}
+      />
+    ) : null;
+
+  const tournamentControls =
+    race.phase === "idle" && inTournament ? (
+      <View style={styles.actionRow}>
+        <Pressable
+          onPress={onResetTournament}
+          accessibilityRole="button"
+          accessibilityLabel="End tournament"
+          style={({ pressed }) => [
+            styles.ghostBtn,
+            styles.flex1,
+            pressed && styles.pressed,
+          ]}
+        >
+          <Text style={styles.ghostBtnText}>End tournament</Text>
+        </Pressable>
+        <Pressable
+          onPress={onResumeTournament}
+          accessibilityRole="button"
+          accessibilityLabel="Race the next heat"
+          style={({ pressed }) => [
+            styles.primaryBtn,
+            styles.flex1,
+            pressed && styles.pressed,
+          ]}
+        >
+          <Text style={styles.primaryBtnText}>
+            {activeMatch
+              ? `Race ${nameForRacer(runnerId(activeMatch, matchTimes))}`
+              : "Resume"}
+          </Text>
+        </Pressable>
+      </View>
+    ) : null;
+
+  const setup =
+    race.phase === "idle" && !inTournament ? (
+      <RaceSetup
+        mode={mode}
+        laps={laps}
+        soloPlayer={soloPlayer}
+        racerDraft={racerDraft}
+        lineup={lineup}
+        liveCarUid={liveCarUid}
+        resolveCar={resolveCar}
+        canStart={canStart}
+        startLabel={tournamentArmed ? "Start tournament" : undefined}
+        tournamentSlot={tournamentSlot}
+        onModeChange={setMode}
+        onLapsChange={setLaps}
+        onSoloPlayerChange={setSoloPlayer}
+        onRacerDraftChange={setRacerDraft}
+        onAddRacer={onAddRacer}
+        onStart={tournamentArmed ? onStartTournament : onStart}
+        onChooseNext={(racerId) =>
+          setLineup((current) => chooseNextRacer(current, racerId))
+        }
+        onRemove={(racerId) =>
+          setLineup((current) => removeRacer(current, racerId))
+        }
+        onAssignCar={(racerId) =>
+          setLineup((current) => assignCar(current, racerId, liveCarUid))
+        }
+      />
+    ) : null;
+
+  const countdown =
+    race.phase === "countdown" ? (
+      <RaceCountdown
+        count={session.count}
+        pulse={session.pulse}
+        reduceMotion={reduceMotion}
+        player={race.player}
+        car={activeCar}
+        large={layout.isSplit}
+        onCancel={abort}
+      />
+    ) : null;
+
+  const progress =
+    race.phase === "racing" ? (
+      <RaceProgress
+        race={race}
+        car={activeCar}
+        liveLap={session.liveLap}
+        canTriggerDemo={session.canTriggerDemo}
+        large={layout.isSplit}
+        showLaps={!layout.isSplit}
+        onTriggerDemo={session.triggerDemoPass}
+        onFinish={() => stop()}
+      />
+    ) : null;
+
+  const results =
+    race.phase === "finished" && race.result && resultCar ? (
+      <RaceResults
+        result={race.result}
+        car={resultCar}
+        nextRacerName={tournament ? null : (nextRacer?.name ?? null)}
+        primaryActionLabel={tournament ? "Continue" : primaryActionLabel}
+        showLaps={!layout.isSplit}
+        onPrimaryAction={
+          tournament
+            ? onTournamentContinue
+            : shouldAdvance
+              ? onAdvanceLineup
+              : abort
+        }
+      />
+    ) : null;
+
+  // In the split layout the lap lists move to the right pane, so a race never
+  // hides its own lap times behind a scroll.
+  const paneLaps = !layout.isSplit ? null : race.phase === "racing" ? (
+    <LapList
+      lapTimes={race.lapTimes}
+      bestLap={race.lapTimes.length > 0 ? Math.min(...race.lapTimes) : null}
+    />
+  ) : race.phase === "finished" && race.result ? (
+    <LapList lapTimes={race.result.lapTimes} bestLap={race.result.bestLap} />
+  ) : null;
+
+  const leaderboardBlock =
+    race.phase === "idle" || race.phase === "finished" ? (
+      <RaceLeaderboard
+        board={leaderboard}
+        resolveCar={resolveCar}
+        onClear={clearLeaderboard}
+      />
+    ) : null;
+
+  // Two panes on a big landscape screen: whatever you're doing *now* on the
+  // left, the record of what happened on the right.
+  if (layout.isSplit) {
+    return (
+      <View
+        style={[
+          styles.screen,
+          styles.splitRoot,
+          {
+            paddingTop: insets.top + spacing(3),
+            paddingBottom: insets.bottom + spacing(3),
+          },
+        ]}
+      >
+        {header}
+        {announcement}
+        <View style={styles.splitBody}>
+          <ScrollView
+            style={styles.splitLeft}
+            contentContainerStyle={styles.splitPane}
+            keyboardShouldPersistTaps="handled"
+          >
+            <PortalRecovery connection={connection} />
+            {setup}
+            {tournamentControls}
+            {countdown}
+            {progress}
+            {results}
+          </ScrollView>
+
+          <ScrollView
+            style={styles.splitRight}
+            contentContainerStyle={styles.splitPane}
+          >
+            {bracket}
+            {paneLaps}
+            {leaderboardBlock}
+          </ScrollView>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <ScrollView
       style={styles.screen}
@@ -267,148 +475,17 @@ export default function RaceScreen() {
       ]}
       keyboardShouldPersistTaps="handled"
     >
-      <View style={styles.header}>
-        <Text accessibilityRole="header" style={styles.title}>
-          Race Mode
-        </Text>
-        <PortalStatusPill connection={connection} />
-      </View>
-
+      {header}
       <PortalRecovery connection={connection} />
-
-      {session.webAnnouncement != null ? (
-        <Text
-          style={styles.screenReaderOnly}
-          accessibilityLiveRegion="assertive"
-        >
-          {session.webAnnouncement}
-        </Text>
-      ) : null}
-
-      {race.phase === "idle" && inTournament && tournament ? (
-        <View style={styles.section}>
-          <BracketCard
-            tournament={tournament}
-            nameFor={nameForRacer}
-            activeMatch={activeMatch}
-          />
-          <View style={styles.actionRow}>
-            <Pressable
-              onPress={onResetTournament}
-              accessibilityRole="button"
-              accessibilityLabel="End tournament"
-              style={({ pressed }) => [
-                styles.ghostBtn,
-                styles.flex1,
-                pressed && styles.pressed,
-              ]}
-            >
-              <Text style={styles.ghostBtnText}>End tournament</Text>
-            </Pressable>
-            <Pressable
-              onPress={onResumeTournament}
-              accessibilityRole="button"
-              accessibilityLabel="Race the next heat"
-              style={({ pressed }) => [
-                styles.primaryBtn,
-                styles.flex1,
-                pressed && styles.pressed,
-              ]}
-            >
-              <Text style={styles.primaryBtnText}>
-                {activeMatch
-                  ? `Race ${nameForRacer(runnerId(activeMatch, matchTimes))}`
-                  : "Resume"}
-              </Text>
-            </Pressable>
-          </View>
-        </View>
-      ) : null}
-
-      {race.phase === "idle" && !inTournament ? (
-        <RaceSetup
-          mode={mode}
-          laps={laps}
-          soloPlayer={soloPlayer}
-          racerDraft={racerDraft}
-          lineup={lineup}
-          liveCarUid={liveCarUid}
-          resolveCar={resolveCar}
-          canStart={canStart}
-          startLabel={tournamentArmed ? "Start tournament" : undefined}
-          tournamentSlot={tournamentSlot}
-          onModeChange={setMode}
-          onLapsChange={setLaps}
-          onSoloPlayerChange={setSoloPlayer}
-          onRacerDraftChange={setRacerDraft}
-          onAddRacer={onAddRacer}
-          onStart={tournamentArmed ? onStartTournament : onStart}
-          onChooseNext={(racerId) =>
-            setLineup((current) => chooseNextRacer(current, racerId))
-          }
-          onRemove={(racerId) =>
-            setLineup((current) => removeRacer(current, racerId))
-          }
-          onAssignCar={(racerId) =>
-            setLineup((current) => assignCar(current, racerId, liveCarUid))
-          }
-        />
-      ) : null}
-
-      {race.phase === "countdown" ? (
-        <RaceCountdown
-          count={session.count}
-          pulse={session.pulse}
-          reduceMotion={reduceMotion}
-          player={race.player}
-          car={activeCar}
-          onCancel={abort}
-        />
-      ) : null}
-
-      {race.phase === "racing" ? (
-        <RaceProgress
-          race={race}
-          car={activeCar}
-          liveLap={session.liveLap}
-          canTriggerDemo={session.canTriggerDemo}
-          onTriggerDemo={session.triggerDemoPass}
-          onFinish={() => stop()}
-        />
-      ) : null}
-
-      {race.phase === "finished" && race.result && resultCar ? (
-        <>
-          <RaceResults
-            result={race.result}
-            car={resultCar}
-            nextRacerName={tournament ? null : (nextRacer?.name ?? null)}
-            primaryActionLabel={tournament ? "Continue" : primaryActionLabel}
-            onPrimaryAction={
-              tournament
-                ? onTournamentContinue
-                : shouldAdvance
-                  ? onAdvanceLineup
-                  : abort
-            }
-          />
-          {tournament ? (
-            <BracketCard
-              tournament={tournament}
-              nameFor={nameForRacer}
-              activeMatch={activeMatch}
-            />
-          ) : null}
-        </>
-      ) : null}
-
-      {race.phase === "idle" || race.phase === "finished" ? (
-        <RaceLeaderboard
-          board={leaderboard}
-          resolveCar={resolveCar}
-          onClear={clearLeaderboard}
-        />
-      ) : null}
+      {announcement}
+      {race.phase === "idle" ? bracket : null}
+      {tournamentControls}
+      {setup}
+      {countdown}
+      {progress}
+      {results}
+      {race.phase === "finished" ? bracket : null}
+      {leaderboardBlock}
     </ScrollView>
   );
 }
