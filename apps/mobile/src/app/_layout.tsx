@@ -26,6 +26,7 @@ export default function RootLayout() {
             <Stack.Screen name="history/[id]" />
             <Stack.Screen name="achievements" />
             <Stack.Screen name="live" />
+            <Stack.Screen name="tv" />
             <Stack.Screen name="settings" />
             <Stack.Screen name="credits" />
           </Stack>

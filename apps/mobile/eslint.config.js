@@ -5,7 +5,11 @@ module.exports = defineConfig([
   globalIgnores(['dist/*', '.expo/*']),
   expoConfig,
   {
-    files: ['src/app/(tabs)/index.tsx', 'src/app/(tabs)/race.tsx'],
+    files: [
+      'src/app/(tabs)/index.tsx',
+      'src/app/(tabs)/race.tsx',
+      'src/race/useRaceSession.ts',
+    ],
     rules: {
       // Existing event-driven effects intentionally fold external store/native
       // events into local UI state after render.

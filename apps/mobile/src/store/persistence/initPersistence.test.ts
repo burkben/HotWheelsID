@@ -159,6 +159,21 @@ describe("initPersistence", () => {
     expect((await car.getCars())[0].name).toBe("Twin Mill");
   });
 
+  it("wires identity removal so Undo persists without clearing casting links", async () => {
+    const identity = new InMemoryIdentityRepository();
+    await identity.saveLink("uid-1", "key-1");
+    await identity.saveIdentification("key-1", "car-1");
+    await initPersistence({ identity });
+
+    useIdentityStore.getState().forgetIdentification("key-1");
+    await flush();
+
+    expect(await identity.load()).toEqual({
+      links: { "uid-1": "key-1" },
+      identifications: {},
+    });
+  });
+
   it("bridges portal car detections and passes into the garage", async () => {
     const car = new InMemoryCarRepository();
     await initPersistence({ car });
@@ -316,6 +331,7 @@ describe("initPersistence", () => {
       load: () => Promise.reject(new Error("identity hydration failed")),
       saveLink: () => Promise.resolve(),
       saveIdentification: () => Promise.resolve(),
+      deleteIdentification: () => Promise.resolve(),
       clear: () => Promise.resolve(),
     };
 

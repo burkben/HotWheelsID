@@ -20,11 +20,14 @@ import {
 } from '@/achievements/catalog';
 import { evaluate, summarize, type AchievementView } from '@/achievements/engine';
 import { goalProgressLabel, formatUnlockedDate, progressPercent } from '@/achievements/format';
+import { useLayout } from '@/layout/useLayout';
 import { useAchievementsStore } from '@/store/achievementsStore';
 import { colors, fontSize, fontWeight, radius, spacing } from '@/theme/tokens';
 
 export default function AchievementsScreen() {
   const insets = useSafeAreaInsets();
+  const layout = useLayout();
+  const column = { maxWidth: layout.contentMaxWidth };
   const unlocked = useAchievementsStore((s) => s.unlocked);
   const stats = useAchievementsStore((s) => s.stats);
 
@@ -43,7 +46,7 @@ export default function AchievementsScreen() {
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top + spacing(2) }]}>
-      <View style={styles.header}>
+      <View style={[styles.header, column]}>
         <Link href="/" asChild>
           <Pressable hitSlop={12} style={({ pressed }) => [styles.back, pressed && styles.pressed]}>
             <Text style={styles.backText}>‹ Home</Text>
@@ -58,7 +61,7 @@ export default function AchievementsScreen() {
       </View>
 
       <ScrollView
-        contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + spacing(6) }]}
+        contentContainerStyle={[styles.list, column, { paddingBottom: insets.bottom + spacing(6) }]}
         showsVerticalScrollIndicator={false}
       >
         {CATEGORY_ORDER.map((cat) => (
@@ -112,6 +115,8 @@ const styles = StyleSheet.create({
     gap: spacing(3),
     paddingHorizontal: spacing(5),
     paddingBottom: spacing(3),
+    width: '100%',
+    alignSelf: 'center',
   },
   back: { paddingVertical: spacing(1), paddingRight: spacing(1) },
   backText: { color: colors.accentBlue, fontSize: fontSize.md, fontWeight: fontWeight.medium },
@@ -125,7 +130,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   countText: { color: colors.accent, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
-  list: { paddingHorizontal: spacing(5), gap: spacing(5) },
+  list: { paddingHorizontal: spacing(5), gap: spacing(5), width: '100%', alignSelf: 'center' },
   section: { gap: spacing(3) },
   sectionTitle: {
     color: colors.textMuted,

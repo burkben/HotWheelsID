@@ -29,6 +29,7 @@ import * as Haptics from 'expo-haptics';
 import * as WebBrowser from 'expo-web-browser';
 
 import { buildIdentityExport, exportIdentifications } from '@/catalog/identityExport';
+import { useLayout } from '@/layout/useLayout';
 import { LAP_OPTIONS } from '@/race/raceEngine';
 import { DEFAULT_SETTINGS, useSettingsStore } from '@/store/settingsStore';
 import { useIdentityStore } from '@/store/identityStore';
@@ -51,6 +52,8 @@ const CONTRIBUTING_URL = 'https://github.com/burkben/HotWheelsID/blob/main/commu
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
+  const layout = useLayout();
+  const column = { maxWidth: layout.contentMaxWidth };
 
   const playerName = useSettingsStore((s) => s.playerName);
   const defaultLaps = useSettingsStore((s) => s.defaultLaps);
@@ -152,7 +155,7 @@ export default function SettingsScreen() {
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top + spacing(2) }]}>
-      <View style={styles.header}>
+      <View style={[styles.header, column]}>
         <Link href="/" asChild>
           <Pressable hitSlop={12} style={({ pressed }) => [styles.back, pressed && styles.pressed]}>
             <Text style={styles.backText}>‹ Home</Text>
@@ -163,7 +166,11 @@ export default function SettingsScreen() {
       </View>
 
       <ScrollView
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + spacing(8) }]}
+        contentContainerStyle={[
+          styles.content,
+          column,
+          { paddingBottom: insets.bottom + spacing(8) },
+        ]}
         keyboardShouldPersistTaps="handled"
       >
         <Text style={styles.sectionLabel}>Profile</Text>
@@ -389,12 +396,20 @@ const styles = StyleSheet.create({
     gap: spacing(3),
     paddingHorizontal: spacing(5),
     paddingBottom: spacing(3),
+    width: '100%',
+    alignSelf: 'center',
   },
   back: { paddingVertical: spacing(1), paddingRight: spacing(1) },
   backText: { color: colors.accentBlue, fontSize: fontSize.md, fontWeight: fontWeight.medium },
   title: { color: colors.textPrimary, fontSize: fontSize.xl, fontWeight: fontWeight.heavy, flex: 1 },
   headerSpacer: { width: spacing(1) },
-  content: { paddingHorizontal: spacing(5), gap: spacing(2), paddingTop: spacing(1) },
+  content: {
+    paddingHorizontal: spacing(5),
+    gap: spacing(2),
+    paddingTop: spacing(1),
+    width: '100%',
+    alignSelf: 'center',
+  },
   sectionLabel: {
     color: colors.textMuted,
     fontSize: fontSize.xs,

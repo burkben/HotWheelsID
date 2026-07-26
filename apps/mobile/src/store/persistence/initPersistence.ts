@@ -317,6 +317,10 @@ async function initializeRepositories(
       void repos.identity
         .saveIdentification(castingKey, catalogId)
         .catch((error) => console.warn("[identity] identify failed", error)),
+    onForgetIdentification: (castingKey) =>
+      void repos.identity
+        .deleteIdentification(castingKey)
+        .catch((error) => console.warn("[identity] forget failed", error)),
     onClear: () =>
       void repos.identity.clear().catch((error) => console.warn("[identity] clear failed", error)),
   });

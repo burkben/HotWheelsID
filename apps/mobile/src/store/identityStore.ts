@@ -22,6 +22,7 @@ import { create } from "zustand";
 export interface IdentityPersistence {
   onLink: (uid: string, castingKey: string) => void;
   onIdentify: (castingKey: string, catalogId: string) => void;
+  onForgetIdentification: (castingKey: string) => void;
   onClear: () => void;
 }
 
@@ -57,6 +58,8 @@ interface IdentityStore extends IdentityState {
   linkCar: (uid: string, castingKey: string) => void;
   /** Confirm which catalog car a casting is (persists). */
   identify: (castingKey: string, catalogId: string) => void;
+  /** Remove the user's pick for one casting so the bundled seed can fill the gap again. */
+  forgetIdentification: (castingKey: string) => void;
   /** Forget all *user* identity data (links + identifications). The seed stays. */
   reset: () => void;
 }
@@ -87,6 +90,16 @@ export const useIdentityStore = create<IdentityStore>((set, get) => ({
     if (!castingKey || !catalogId) return;
     set((s) => ({ identifications: { ...s.identifications, [castingKey]: catalogId } }));
     persistence?.onIdentify(castingKey, catalogId);
+  },
+
+  forgetIdentification: (castingKey) => {
+    if (!castingKey || get().identifications[castingKey] === undefined) return;
+    set((s) => {
+      const identifications = { ...s.identifications };
+      delete identifications[castingKey];
+      return { identifications };
+    });
+    persistence?.onForgetIdentification(castingKey);
   },
 
   reset: () => {
