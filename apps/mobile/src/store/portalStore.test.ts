@@ -30,6 +30,7 @@ describe("portalStore — connection lifecycle", () => {
     const s = state();
     expect(s.connection).toBe("disconnected");
     expect(s.car).toBeNull();
+    expect(s.lastCar).toBeNull();
     expect(s.passes).toEqual([]);
     expect(s.bestMph).toBe(0);
     expect(s.lastSpeed).toBeNull();
@@ -47,7 +48,7 @@ describe("portalStore — connection lifecycle", () => {
     expect(state().car?.uid).toBe("6C:C4:5A:2B:64:81");
   });
 
-  it("disconnecting resets all session state so no data lingers when not connected", () => {
+  it("disconnecting resets session state while retaining the last scanned car", () => {
     dispatch({ kind: "carDetected", uid: "6C:C4:5A:2B:64:81" });
     dispatch(speed(120));
     setConnection("connected");
@@ -57,6 +58,7 @@ describe("portalStore — connection lifecycle", () => {
     const s = state();
     expect(s.connection).toBe("disconnected");
     expect(s.car).toBeNull();
+    expect(s.lastCar?.uid).toBe("6C:C4:5A:2B:64:81");
     expect(s.passes).toEqual([]);
     expect(s.bestMph).toBe(0);
     expect(s.lastSpeed).toBeNull();
@@ -83,6 +85,7 @@ describe("portalStore — car identity", () => {
     dispatch({ kind: "carRemoved" });
     const s = state();
     expect(s.car).toBeNull();
+    expect(s.lastCar?.uid).toBe("6C:C4:5A:2B:64:81");
     expect(s.lastSpeed).toBeNull();
     expect(s.controlStatus).toBe("idle");
   });

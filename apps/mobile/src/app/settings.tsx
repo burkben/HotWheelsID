@@ -306,7 +306,7 @@ export default function SettingsScreen() {
         <View style={styles.card}>
           <ToggleRow
             label="Start in demo mode"
-            hint="Open Home on the in-app mock portal instead of scanning for live BLE."
+            hint="Start the in-app mock portal instead of scanning for live BLE."
             value={mockModeDefault}
             onValueChange={setMockModeDefault}
           />

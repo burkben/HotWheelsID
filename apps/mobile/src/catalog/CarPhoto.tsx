@@ -34,6 +34,7 @@ export function CarPhoto({
   rounded = radius.md,
   ring = false,
   contentFit = "cover",
+  accessibilityLabel,
 }: Box & {
   /** Catalog id whose bundled artwork to show. Omit for an unidentified car. */
   carId?: string | null;
@@ -41,6 +42,8 @@ export function CarPhoto({
   /** Accent ring for identified/selected state. */
   ring?: boolean;
   contentFit?: "cover" | "contain";
+  /** Label for the placeholder tile when a car has no bundled artwork. */
+  accessibilityLabel?: string;
 }) {
   const source = carArtwork(carId);
 
@@ -56,7 +59,7 @@ export function CarPhoto({
   if (!source) {
     const glyph = size != null ? size * 0.4 : 40;
     return (
-      <View style={[styles.placeholder, box]}>
+      <View style={[styles.placeholder, box]} accessible accessibilityLabel={accessibilityLabel}>
         <Text style={{ fontSize: glyph, opacity: 0.5 }}>🏎️</Text>
       </View>
     );

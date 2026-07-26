@@ -71,6 +71,24 @@ These differ from the Python/`bleak` desktop assumptions:
 5. **Background (optional).** Sustained sessions with the screen locked need the
    `bluetooth-central` background mode (config plugin).
 
+### Application lifecycle ownership
+
+`PortalControllerProvider` mounts above the Expo Router stack and owns exactly one transport for
+the application session. Speed, Race, and Live diagnostics consume its state/actions; route mounts
+never create or stop BLE. This preserves the single-central invariant and means Race receives
+passes even when Speed has never mounted.
+
+Live startup is automatic only after Settings hydration confirms that `mockModeDefault` is false.
+Web and Simulator never construct `BleManager` or start a scan. A physical device prewarms
+CoreBluetooth once at startup in both Live and Demo modes so a future live session cannot surface
+its first permission/power prompt inside Guided Access; prewarming never scans or connects.
+
+The transport uses finite scan windows and a finite capped exponential retry budget. Successful
+subscription resets the budget. Bluetooth-off, unauthorized, unsupported, and firmware-locked
+states are terminal until user/device action; an exhausted scan reports `notFound` and the status
+pill starts a fresh bounded cycle. The legacy control-service and modern MPID subscription paths
+below are unchanged by this lifecycle policy.
+
 ## 5. Reference: pure TS parser sketch (`packages/protocol`)
 
 > Illustrative target for `decode.ts` / `events.ts` — pure, no RN imports, unit-testable.

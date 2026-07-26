@@ -11,7 +11,10 @@ import { useSettingsStore } from "../store/settingsStore";
 import { usePortalStore, type Pass } from "../store/portalStore";
 import { nextLapCue } from "../sound/cues";
 import { playCue } from "../sound/player";
-import { getActiveTransportControls } from "../transport/active";
+import {
+  usePortalController,
+  usePortalControllerActions,
+} from "../portal/PortalControllerProvider";
 import { currentLapElapsed, type RaceState } from "./raceEngine";
 import {
   countdownAnnouncement,
@@ -150,14 +153,18 @@ export function useRaceSession({
     previousPhase.current = phase;
   }, [announce, nextRacerName, phase, race.result]);
 
-  const activeControls = getActiveTransportControls();
+  // Demo passes come from the application-level portal controller, which owns
+  // the transport across tabs (Race never opens one of its own).
+  const portalMode = usePortalController((s) => s.mode);
+  const portalConnection = usePortalStore((s) => s.connection);
+  const portalController = usePortalControllerActions();
 
   return {
     count,
     pulse,
     liveLap: currentLapElapsed(race, now),
-    canTriggerDemo: activeControls.triggerPass != null,
-    triggerDemoPass: () => activeControls.triggerPass?.(),
+    canTriggerDemo: portalMode === "demo" && portalConnection === "connected",
+    triggerDemoPass: () => portalController.triggerDemoPass(),
     webAnnouncement,
   };
 }
