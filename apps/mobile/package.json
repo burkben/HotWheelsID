@@ -1,7 +1,12 @@
 {
   "name": "mobile",
-  "main": "expo-router/entry",
+  "main": "./index.js",
   "version": "1.0.0",
+  "expo": {
+    "autolinking": {
+      "nativeModulesDir": "./modules"
+    }
+  },
   "dependencies": {
     "@expo/ui": "~56.0.21",
     "@expo/vector-icons": "^15.0.2",

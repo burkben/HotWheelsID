@@ -18,9 +18,11 @@ import { colors, elevation, fontSize, fontWeight, radius, spacing } from '@/them
 import { carLabel, formatLastSeen, formatLap, formatMph } from '@/garage/format';
 import { CarPhoto } from '@/catalog/CarPhoto';
 import { useCarIdentity } from '@/catalog/useCarIdentity';
+import { useLayout } from '@/layout/useLayout';
 
 export default function GarageScreen() {
   const insets = useSafeAreaInsets();
+  const layout = useLayout();
   const cars = useGarageStore((s) => s.cars);
   const onPortalUid = usePortalStore((s) => s.car?.uid ?? null);
 
@@ -33,6 +35,7 @@ export default function GarageScreen() {
     0,
   );
   const onPortalHere = onPortalUid != null && cars.some((c) => c.uid === onPortalUid);
+  const columns = layout.columns;
 
   const summary =
     cars.length === 0
@@ -56,13 +59,18 @@ export default function GarageScreen() {
       <FlatList
         data={cars}
         keyExtractor={(c) => c.uid}
+        // FlatList refuses to change `numColumns` in place, so the key forces a
+        // remount when a rotation or Split View resize changes the grid.
+        key={`cols-${columns}`}
+        numColumns={columns}
+        columnWrapperStyle={columns > 1 ? styles.column : undefined}
         contentContainerStyle={[
           styles.list,
-          { paddingBottom: insets.bottom + spacing(6) },
+          { paddingBottom: insets.bottom + spacing(6), paddingHorizontal: layout.gutter },
           cars.length === 0 && styles.listEmpty,
         ]}
         renderItem={({ item }) => (
-          <CarRow car={item} onPortal={item.uid === onPortalUid} />
+          <CarRow car={item} onPortal={item.uid === onPortalUid} grid={columns > 1} />
         )}
         ListEmptyComponent={<EmptyGarage />}
       />
@@ -70,7 +78,7 @@ export default function GarageScreen() {
   );
 }
 
-function CarRow({ car, onPortal }: { car: CarRecord; onPortal: boolean }) {
+function CarRow({ car, onPortal, grid }: { car: CarRecord; onPortal: boolean; grid?: boolean }) {
   const speedUnit = useSettingsStore((s) => s.speedUnit);
   const speedCalibration = useSettingsStore((s) => s.speedCalibration);
   const display = { unit: speedUnit, calibration: speedCalibration };
@@ -78,7 +86,14 @@ function CarRow({ car, onPortal }: { car: CarRecord; onPortal: boolean }) {
   const title = identity?.name ?? carLabel(car);
   return (
     <Link href={{ pathname: '/garage/[uid]', params: { uid: car.uid } }} asChild>
-      <Pressable style={({ pressed }) => [styles.row, onPortal && styles.rowOnPortal, pressed && styles.pressed]}>
+      <Pressable
+        style={({ pressed }) => [
+          styles.row,
+          grid && styles.rowGrid,
+          onPortal && styles.rowOnPortal,
+          pressed && styles.pressed,
+        ]}
+      >
         <CarPhoto carId={identity?.id} size={56} rounded={radius.md} ring={!!identity} />
         <View style={styles.rowMain}>
           <View style={styles.rowTitleLine}>
@@ -144,7 +159,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing(2),
     overflow: 'hidden',
   },
-  list: { paddingHorizontal: spacing(5), gap: spacing(3) },
+  list: { gap: spacing(3) },
+  column: { gap: spacing(3) },
   listEmpty: { flexGrow: 1, justifyContent: 'center' },
   row: {
     flexDirection: 'row',
@@ -157,6 +173,9 @@ const styles = StyleSheet.create({
     padding: spacing(4),
     ...elevation.card,
   },
+  // In a grid every tile has to claim an equal share of the row; `minWidth: 0`
+  // lets the long car name shrink instead of forcing the column wider.
+  rowGrid: { flex: 1, minWidth: 0 },
   rowOnPortal: { borderColor: colors.accent, backgroundColor: colors.surfaceRaised, ...elevation.accentGlow },
   rowMain: { flex: 1, gap: 4 },
   rowTitleLine: { flexDirection: 'row', alignItems: 'center', gap: spacing(2) },

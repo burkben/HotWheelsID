@@ -13,7 +13,16 @@
       "bundleIdentifier": "com.burkben.redlineid",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSBluetoothAlwaysUsageDescription": "Redline ID uses Bluetooth to connect to your race portal and read car and speed data."
+        "NSBluetoothAlwaysUsageDescription": "Redline ID uses Bluetooth to connect to your race portal and read car and speed data.",
+        "UISupportedInterfaceOrientations~ipad": [
+          "UIInterfaceOrientationPortrait",
+          "UIInterfaceOrientationPortraitUpsideDown",
+          "UIInterfaceOrientationLandscapeLeft",
+          "UIInterfaceOrientationLandscapeRight"
+        ],
+        "UIApplicationSceneManifest": {
+          "UIApplicationSupportsMultipleScenes": true
+        }
       }
     },
     "android": {

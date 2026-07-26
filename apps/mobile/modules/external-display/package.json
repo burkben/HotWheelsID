@@ -1,0 +1,7 @@
+{
+  "name": "external-display",
+  "version": "1.0.0",
+  "description": "Mounts the Redline ID TV stage on a real iOS external-display scene (AirPlay or cable) instead of mirroring the app window.",
+  "main": "index.ts",
+  "private": true
+}

@@ -62,6 +62,8 @@ import { nextLapCue } from '@/sound/cues';
 import { playCue } from '@/sound/player';
 import { raceShareText } from '@/share/summary';
 import { getActiveTransportControls } from '@/transport/active';
+import { useLayout } from '@/layout/useLayout';
+import { TvBadge } from '@/tv/TvBadge';
 import { colors, fontSize, fontWeight, radius, spacing } from '@/theme/tokens';
 
 /** Milliseconds each countdown digit is shown before the race arms. */
@@ -98,6 +100,7 @@ function shortUid(uid?: string | null): string {
 
 export default function RaceScreen() {
   const insets = useSafeAreaInsets();
+  const layout = useLayout();
   // Force-reduce via the Settings toggle even when the OS setting is off.
   const systemReduceMotion = useReducedMotion();
   const settingReduceMotion = useSettingsStore((s) => s.reduceMotion);
@@ -352,6 +355,275 @@ export default function RaceScreen() {
   const lapsDone = race.lapTimes.length;
   const bestSoFar = lapsDone > 0 ? Math.min(...race.lapTimes) : null;
 
+  // Every region is built once and placed by the layout below. Sharing the same
+  // element instances across the phone and split branches keeps the live lap
+  // clock and the countdown animation from remounting on rotation.
+  const header = (
+    <View style={[styles.header, layout.isSplit && styles.headerWide]}>
+      <Text style={styles.title}>Race Mode</Text>
+      <View style={styles.headerRight}>
+        <TvBadge />
+        <ConnDot connection={connection} />
+      </View>
+    </View>
+  );
+
+  const tournamentControls =
+    phase === 'idle' && inTournament && tournament ? (
+      <View style={styles.actionRow}>
+        <Pressable
+          onPress={onResetTournament}
+          style={({ pressed }) => [styles.ghostBtn, styles.flex1, pressed && styles.pressed]}
+        >
+          <Text style={styles.ghostBtnText}>End tournament</Text>
+        </Pressable>
+        <Pressable
+          onPress={onResumeTournament}
+          style={({ pressed }) => [styles.primaryBtn, styles.flex1, pressed && styles.pressed]}
+        >
+          <Text style={styles.primaryBtnText}>
+            {activeMatch ? `Race ${nameForRacer(runnerId(activeMatch, matchTimes))}` : 'Resume'}
+          </Text>
+        </Pressable>
+      </View>
+    ) : null;
+
+  const bracket =
+    tournament && (phase === 'idle' ? inTournament : phase === 'finished' && !!race.result) ? (
+      <BracketCard tournament={tournament} nameFor={nameForRacer} activeMatch={activeMatch} />
+    ) : null;
+
+  const setup =
+    phase === 'idle' && !inTournament ? (
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>Race length</Text>
+        <View style={styles.chips}>
+          {LAP_OPTIONS.map((opt) => {
+            const active = laps === opt;
+            return (
+              <Pressable
+                key={opt}
+                onPress={() => setLaps(opt)}
+                style={[styles.chip, active && styles.chipActive]}
+              >
+                <Text style={[styles.chipText, active && styles.chipTextActive]}>{opt}</Text>
+                <Text style={[styles.chipUnit, active && styles.chipTextActive]}>laps</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        <Text style={styles.sectionLabel}>{lineup.length > 0 ? 'Add racer' : 'Player'}</Text>
+        <TextInput
+          value={player}
+          onChangeText={setPlayer}
+          placeholder={lineup.length > 0 ? 'Add another racer' : 'Player 1'}
+          placeholderTextColor={colors.textMuted}
+          style={styles.input}
+          maxLength={24}
+          returnKeyType="done"
+          autoCorrect={false}
+        />
+
+        <View style={styles.metaRow}>
+          <Text style={styles.metaText}>Car: {shortUid(car?.uid)}</Text>
+          <Text style={styles.metaText}>
+            {connection === 'connected'
+              ? 'Portal ready'
+              : connection === 'connecting'
+                ? 'Connecting…'
+                : 'Portal not connected'}
+          </Text>
+        </View>
+
+        <LineupCard
+          lineup={lineup}
+          draftName={player}
+          liveCarUid={liveCarUid}
+          carLabel={carLabel}
+          onChooseNext={onChooseNextRacer}
+          onRemove={onRemoveRacer}
+          onAssignCar={onAssignCar}
+        />
+
+        {tournament?.championId ? (
+          <ChampionBanner name={nameForRacer(tournament.championId)} onReset={onResetTournament} />
+        ) : (
+          <TournamentToggle
+            on={tournamentOn && tournamentReady}
+            enabled={tournamentReady}
+            onToggle={() => setTournamentOn((v) => !v)}
+          />
+        )}
+
+        {connection !== 'connected' && (
+          <Text style={styles.hint}>
+            Connect your portal on the{' '}
+            <Link href="/" style={styles.hintLink}>
+              Speed tab
+            </Link>{' '}
+            (or switch it to Demo), then come back — passes will drive the race
+            automatically.
+          </Text>
+        )}
+
+        <View style={styles.actionRow}>
+          <Pressable
+            onPress={onAddRacer}
+            disabled={!canAddRacer}
+            style={({ pressed }) => [
+              styles.ghostBtn,
+              styles.flex1,
+              !canAddRacer && styles.btnDisabled,
+              pressed && canAddRacer && styles.pressed,
+            ]}
+          >
+            <Text style={[styles.ghostBtnText, !canAddRacer && styles.btnDisabledText]}>Add to lineup</Text>
+          </Pressable>
+
+          <Pressable
+            onPress={tournamentOn && tournamentReady ? onStartTournament : onStart}
+            style={({ pressed }) => [styles.primaryBtn, styles.flex1, pressed && styles.pressed]}
+          >
+            <Text style={styles.primaryBtnText}>
+              {tournamentOn && tournamentReady ? 'Start tournament' : 'Start race'}
+            </Text>
+          </Pressable>
+        </View>
+      </View>
+    ) : null;
+
+  const countdown =
+    phase === 'countdown' ? (
+      <View style={styles.countdown}>
+        <Animated.Text
+          style={[
+            styles.countNum,
+            layout.isSplit && styles.countNumLarge,
+            { transform: [{ scale: reduceMotion ? 1 : pulse }] },
+          ]}
+        >
+          {count}
+        </Animated.Text>
+        <Text style={styles.countLabel}>Get ready…</Text>
+        <Pressable onPress={abort} style={({ pressed }) => [styles.ghostBtn, pressed && styles.pressed]}>
+          <Text style={styles.ghostBtnText}>Cancel</Text>
+        </Pressable>
+      </View>
+    ) : null;
+
+  const racingHero =
+    phase === 'racing' ? (
+      <View style={styles.lapHero}>
+        <Text style={[styles.lapHeroNum, layout.isSplit && styles.lapHeroNumLarge]}>
+          {Math.min(lapsDone + (race.lastGateAt == null ? 0 : 1), race.targetLaps)}
+          <Text style={styles.lapHeroOf}> / {race.targetLaps}</Text>
+        </Text>
+        <Text style={styles.lapHeroLabel}>
+          {race.lastGateAt == null ? 'Cross the line to start' : 'Lap'}
+        </Text>
+      </View>
+    ) : null;
+
+  const racingStats =
+    phase === 'racing' ? (
+      <View style={styles.liveRow}>
+        <LiveStat label="This lap" value={race.lastGateAt == null ? '—' : fmtTime(liveLap)} live />
+        <LiveStat label="Last lap" value={lapsDone > 0 ? fmtTime(race.lapTimes[lapsDone - 1]) : '—'} />
+        <LiveStat label="Best" value={bestSoFar != null ? fmtTime(bestSoFar) : '—'} />
+      </View>
+    ) : null;
+
+  const racingLaps = phase === 'racing' ? <LapList lapTimes={race.lapTimes} bestLap={bestSoFar} /> : null;
+
+  const racingControls =
+    phase === 'racing' ? (
+      <View style={styles.actionRow}>
+        {canTriggerDemo && (
+          <Pressable
+            onPress={triggerDemoPass}
+            style={({ pressed }) => [styles.ghostBtn, styles.flex1, pressed && styles.pressed]}
+          >
+            <Text style={styles.ghostBtnText}>Trigger pass</Text>
+          </Pressable>
+        )}
+        <Pressable
+          onPress={() => stop()}
+          style={({ pressed }) => [styles.dangerBtn, styles.flex1, pressed && styles.pressed]}
+        >
+          <Text style={styles.dangerBtnText}>Finish</Text>
+        </Pressable>
+      </View>
+    ) : null;
+
+  const results =
+    phase === 'finished' && race.result ? (
+      <Results
+        result={race.result}
+        nextRacerName={tournament ? null : (nextRacer?.name ?? null)}
+        onPrimaryAction={
+          tournament ? onTournamentContinue : lineup.length > 1 ? onAdvanceLineup : abort
+        }
+        primaryActionLabel={
+          tournament ? 'Continue' : lineup.length > 1 ? 'Next racer' : 'Race again'
+        }
+        showLaps={!layout.isSplit}
+      />
+    ) : null;
+
+  const resultLaps =
+    phase === 'finished' && race.result && layout.isSplit ? (
+      <LapList lapTimes={race.result.lapTimes} bestLap={race.result.bestLap} />
+    ) : null;
+
+  const leaderboardBlock =
+    phase === 'idle' || phase === 'finished' ? (
+      <Leaderboard board={leaderboard} onClear={clearLeaderboard} />
+    ) : null;
+
+  // Two panes on a big landscape screen: whatever you're doing *now* on the
+  // left, the record of what happened on the right — so a race never hides its
+  // own lap times behind a scroll.
+  if (layout.isSplit) {
+    return (
+      <View
+        style={[
+          styles.screen,
+          styles.splitRoot,
+          { paddingTop: insets.top + spacing(3), paddingBottom: insets.bottom + spacing(3) },
+        ]}
+      >
+        {header}
+        <View style={styles.splitBody}>
+          <ScrollView
+            style={styles.splitLeft}
+            contentContainerStyle={styles.splitPane}
+            keyboardShouldPersistTaps="handled"
+          >
+            {setup}
+            {tournamentControls}
+            {countdown}
+            {phase === 'racing' ? (
+              <View style={styles.section}>
+                {racingHero}
+                {racingStats}
+                {racingControls}
+              </View>
+            ) : null}
+            {results}
+          </ScrollView>
+
+          <ScrollView style={styles.splitRight} contentContainerStyle={styles.splitPane}>
+            {bracket}
+            {racingLaps}
+            {resultLaps}
+            {leaderboardBlock}
+          </ScrollView>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <ScrollView
       style={styles.screen}
@@ -361,207 +633,22 @@ export default function RaceScreen() {
       ]}
       keyboardShouldPersistTaps="handled"
     >
-      <View style={styles.header}>
-        <Text style={styles.title}>Race Mode</Text>
-        <ConnDot connection={connection} />
-      </View>
-
-      {phase === 'idle' && inTournament && tournament && (
+      {header}
+      {phase === 'idle' ? bracket : null}
+      {tournamentControls}
+      {setup}
+      {countdown}
+      {phase === 'racing' ? (
         <View style={styles.section}>
-          <BracketCard tournament={tournament} nameFor={nameForRacer} activeMatch={activeMatch} />
-          <View style={styles.actionRow}>
-            <Pressable
-              onPress={onResetTournament}
-              style={({ pressed }) => [styles.ghostBtn, styles.flex1, pressed && styles.pressed]}
-            >
-              <Text style={styles.ghostBtnText}>End tournament</Text>
-            </Pressable>
-            <Pressable
-              onPress={onResumeTournament}
-              style={({ pressed }) => [styles.primaryBtn, styles.flex1, pressed && styles.pressed]}
-            >
-              <Text style={styles.primaryBtnText}>
-                {activeMatch ? `Race ${nameForRacer(runnerId(activeMatch, matchTimes))}` : 'Resume'}
-              </Text>
-            </Pressable>
-          </View>
+          {racingHero}
+          {racingStats}
+          {racingLaps}
+          {racingControls}
         </View>
-      )}
-
-      {phase === 'idle' && !inTournament && (
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Race length</Text>
-          <View style={styles.chips}>
-            {LAP_OPTIONS.map((opt) => {
-              const active = laps === opt;
-              return (
-                <Pressable
-                  key={opt}
-                  onPress={() => setLaps(opt)}
-                  style={[styles.chip, active && styles.chipActive]}
-                >
-                  <Text style={[styles.chipText, active && styles.chipTextActive]}>{opt}</Text>
-                  <Text style={[styles.chipUnit, active && styles.chipTextActive]}>laps</Text>
-                </Pressable>
-              );
-            })}
-          </View>
-
-          <Text style={styles.sectionLabel}>{lineup.length > 0 ? 'Add racer' : 'Player'}</Text>
-          <TextInput
-            value={player}
-            onChangeText={setPlayer}
-            placeholder={lineup.length > 0 ? 'Add another racer' : 'Player 1'}
-            placeholderTextColor={colors.textMuted}
-            style={styles.input}
-            maxLength={24}
-            returnKeyType="done"
-            autoCorrect={false}
-          />
-
-          <View style={styles.metaRow}>
-            <Text style={styles.metaText}>Car: {shortUid(car?.uid)}</Text>
-            <Text style={styles.metaText}>
-              {connection === 'connected'
-                ? 'Portal ready'
-                : connection === 'connecting'
-                  ? 'Connecting…'
-                  : 'Portal not connected'}
-            </Text>
-          </View>
-
-          <LineupCard
-            lineup={lineup}
-            draftName={player}
-            liveCarUid={liveCarUid}
-            carLabel={carLabel}
-            onChooseNext={onChooseNextRacer}
-            onRemove={onRemoveRacer}
-            onAssignCar={onAssignCar}
-          />
-
-          {tournament?.championId ? (
-            <ChampionBanner name={nameForRacer(tournament.championId)} onReset={onResetTournament} />
-          ) : (
-            <TournamentToggle
-              on={tournamentOn && tournamentReady}
-              enabled={tournamentReady}
-              onToggle={() => setTournamentOn((v) => !v)}
-            />
-          )}
-
-          {connection !== 'connected' && (
-            <Text style={styles.hint}>
-              Connect your portal on the{' '}
-              <Link href="/" style={styles.hintLink}>
-                Speed tab
-              </Link>{' '}
-              (or switch it to Demo), then come back — passes will drive the race
-              automatically.
-            </Text>
-          )}
-
-          <View style={styles.actionRow}>
-            <Pressable
-              onPress={onAddRacer}
-              disabled={!canAddRacer}
-              style={({ pressed }) => [
-                styles.ghostBtn,
-                styles.flex1,
-                !canAddRacer && styles.btnDisabled,
-                pressed && canAddRacer && styles.pressed,
-              ]}
-            >
-              <Text style={[styles.ghostBtnText, !canAddRacer && styles.btnDisabledText]}>Add to lineup</Text>
-            </Pressable>
-
-            <Pressable
-              onPress={tournamentOn && tournamentReady ? onStartTournament : onStart}
-              style={({ pressed }) => [styles.primaryBtn, styles.flex1, pressed && styles.pressed]}
-            >
-              <Text style={styles.primaryBtnText}>
-                {tournamentOn && tournamentReady ? 'Start tournament' : 'Start race'}
-              </Text>
-            </Pressable>
-          </View>
-        </View>
-      )}
-
-      {phase === 'countdown' && (
-        <View style={styles.countdown}>
-          <Animated.Text style={[styles.countNum, { transform: [{ scale: reduceMotion ? 1 : pulse }] }]}>
-            {count}
-          </Animated.Text>
-          <Text style={styles.countLabel}>Get ready…</Text>
-          <Pressable onPress={abort} style={({ pressed }) => [styles.ghostBtn, pressed && styles.pressed]}>
-            <Text style={styles.ghostBtnText}>Cancel</Text>
-          </Pressable>
-        </View>
-      )}
-
-      {phase === 'racing' && (
-        <View style={styles.section}>
-          <View style={styles.lapHero}>
-            <Text style={styles.lapHeroNum}>
-              {Math.min(lapsDone + (race.lastGateAt == null ? 0 : 1), race.targetLaps)}
-              <Text style={styles.lapHeroOf}> / {race.targetLaps}</Text>
-            </Text>
-            <Text style={styles.lapHeroLabel}>
-              {race.lastGateAt == null ? 'Cross the line to start' : 'Lap'}
-            </Text>
-          </View>
-
-          <View style={styles.liveRow}>
-            <LiveStat label="This lap" value={race.lastGateAt == null ? '—' : fmtTime(liveLap)} live />
-            <LiveStat label="Last lap" value={lapsDone > 0 ? fmtTime(race.lapTimes[lapsDone - 1]) : '—'} />
-            <LiveStat label="Best" value={bestSoFar != null ? fmtTime(bestSoFar) : '—'} />
-          </View>
-
-          <LapList lapTimes={race.lapTimes} bestLap={bestSoFar} />
-
-          <View style={styles.actionRow}>
-            {canTriggerDemo && (
-              <Pressable
-                onPress={triggerDemoPass}
-                style={({ pressed }) => [styles.ghostBtn, styles.flex1, pressed && styles.pressed]}
-              >
-                <Text style={styles.ghostBtnText}>Trigger pass</Text>
-              </Pressable>
-            )}
-            <Pressable
-              onPress={() => stop()}
-              style={({ pressed }) => [styles.dangerBtn, styles.flex1, pressed && styles.pressed]}
-            >
-              <Text style={styles.dangerBtnText}>Finish</Text>
-            </Pressable>
-          </View>
-        </View>
-      )}
-
-      {phase === 'finished' && race.result && tournament && (
-        <>
-          <Results
-            result={race.result}
-            nextRacerName={null}
-            onPrimaryAction={onTournamentContinue}
-            primaryActionLabel="Continue"
-          />
-          <BracketCard tournament={tournament} nameFor={nameForRacer} activeMatch={activeMatch} />
-        </>
-      )}
-
-      {phase === 'finished' && race.result && !tournament && (
-        <Results
-          result={race.result}
-          nextRacerName={nextRacer?.name ?? null}
-          onPrimaryAction={lineup.length > 1 ? onAdvanceLineup : abort}
-          primaryActionLabel={lineup.length > 1 ? 'Next racer' : 'Race again'}
-        />
-      )}
-
-      {(phase === 'idle' || phase === 'finished') && (
-        <Leaderboard board={leaderboard} onClear={clearLeaderboard} />
-      )}
+      ) : null}
+      {results}
+      {phase === 'finished' ? bracket : null}
+      {leaderboardBlock}
     </ScrollView>
   );
 }
@@ -715,11 +802,14 @@ function Results({
   nextRacerName,
   onPrimaryAction,
   primaryActionLabel,
+  showLaps = true,
 }: {
   result: RaceResult;
   nextRacerName: string | null;
   onPrimaryAction: () => void;
   primaryActionLabel: string;
+  /** Off when the split layout renders the lap breakdown in its own column. */
+  showLaps?: boolean;
 }) {
   const carName = useGarageStore((s) => s.cars.find((c) => c.uid === result.carUid)?.name ?? null);
 
@@ -752,7 +842,7 @@ function Results({
         <Text style={styles.shareBtnText}>Share result</Text>
       </Pressable>
 
-      <LapList lapTimes={result.lapTimes} bestLap={result.bestLap} />
+      {showLaps ? <LapList lapTimes={result.lapTimes} bestLap={result.bestLap} /> : null}
 
       <View style={styles.actionRow}>
         <Pressable
@@ -904,20 +994,44 @@ function BracketSlot({ name, won }: { name: string; won: boolean }) {
   );
 }
 
+/**
+ * Cap for a single column of race UI. Matches `Layout.contentMaxWidth` on a
+ * tablet and exceeds every phone window, so phones look exactly as before while
+ * a portrait iPad finally fills out.
+ */
+const COLUMN_MAX_WIDTH = 620;
+
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { alignItems: 'center', paddingHorizontal: spacing(5), gap: spacing(5) },
   header: {
     width: '100%',
-    maxWidth: 420,
+    maxWidth: COLUMN_MAX_WIDTH,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  // 9999 rather than `undefined`: an explicit value survives style flattening
+  // predictably, where an undefined key relies on RN's unset behaviour.
+  headerWide: { maxWidth: 9999, paddingBottom: spacing(3) },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: spacing(3) },
   title: { color: colors.textPrimary, fontSize: fontSize.lg, fontWeight: fontWeight.heavy },
   connDot: { width: 11, height: 11, borderRadius: radius.pill },
 
-  section: { width: '100%', maxWidth: 420, gap: spacing(3) },
+  splitRoot: { paddingHorizontal: spacing(5) },
+  splitBody: { flex: 1, flexDirection: 'row', gap: spacing(6) },
+  splitLeft: { flex: 5 },
+  splitRight: { flex: 4 },
+  splitPane: {
+    gap: spacing(5),
+    paddingBottom: spacing(8),
+    // Centre the pane's content when it is shorter than the window; once it
+    // overflows this is a no-op and the pane scrolls from the top as usual.
+    flexGrow: 1,
+    justifyContent: 'center',
+  },
+
+  section: { width: '100%', maxWidth: COLUMN_MAX_WIDTH, gap: spacing(3) },
   sectionLabel: {
     color: colors.textMuted,
     fontSize: fontSize.xs,
@@ -964,12 +1078,20 @@ const styles = StyleSheet.create({
   },
   primaryBtnText: { color: colors.bg, fontSize: fontSize.md, fontWeight: fontWeight.heavy },
 
-  countdown: { width: '100%', maxWidth: 420, alignItems: 'center', gap: spacing(4), paddingVertical: spacing(8) },
+  countdown: {
+    width: '100%',
+    maxWidth: COLUMN_MAX_WIDTH,
+    alignItems: 'center',
+    gap: spacing(4),
+    paddingVertical: spacing(8),
+  },
   countNum: { color: colors.accent, fontSize: 140, fontWeight: fontWeight.heavy, fontVariant: ['tabular-nums'] },
+  countNumLarge: { fontSize: 200 },
   countLabel: { color: colors.textSecondary, fontSize: fontSize.md },
 
   lapHero: { alignItems: 'center', paddingVertical: spacing(3), gap: spacing(1) },
   lapHeroNum: { color: colors.textPrimary, fontSize: 72, fontWeight: fontWeight.heavy, fontVariant: ['tabular-nums'] },
+  lapHeroNumLarge: { fontSize: 148 },
   lapHeroOf: { color: colors.textMuted, fontSize: fontSize.xl, fontWeight: fontWeight.bold },
   lapHeroLabel: { color: colors.textSecondary, fontSize: fontSize.sm, textTransform: 'uppercase', letterSpacing: 1 },
 
@@ -996,7 +1118,7 @@ const styles = StyleSheet.create({
 
   card: {
     width: '100%',
-    maxWidth: 420,
+    maxWidth: COLUMN_MAX_WIDTH,
     backgroundColor: colors.surface,
     borderColor: colors.border,
     borderWidth: 1,
