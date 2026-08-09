@@ -198,6 +198,16 @@ Run this on TestFlight build **1.0.0 (6)** before selecting it for App Review.
 - Open the privacy, support, catalog-source, and licensing links and confirm each
   destination is correct.
 
+### TV mode
+
+- On a physical iPhone or iPad, open More → TV mode, then enable AirPlay Screen
+  Mirroring from Control Center.
+- Confirm TV mode immediately opens the full-screen landscape stage and the same
+  live dashboard appears on both the device and TV, with no blank output or
+  corruption of the device UI.
+- Stop mirroring, tap Exit TV mode, and confirm the app returns to More in
+  portrait. The Simulator cannot exercise this path.
+
 ### iPad
 
 - Repeat the clean launch and Demo race on a supported iPad, **in landscape**,
@@ -206,13 +216,6 @@ Run this on TestFlight build **1.0.0 (6)** before selecting it for App Review.
 - Rotate the iPad through all four orientations mid-race and confirm the lap
   clock keeps running (regions are shared across the layout branches so nothing
   should remount).
-- Open a second app window from the iPad multitasking menu and confirm it shows
-  the TV stage rather than a blank window (`UIApplicationSupportsMultipleScenes`
-  is required for the external display and also enables multi-window).
-- With a TV or Apple TV on the network, start AirPlay and confirm the TV shows
-  the dedicated stage — the lap clock and standings, not a mirror of the iPad.
-  The Simulator cannot emulate an external display, so this check is
-  device-only.
 - Check portrait layouts for clipped text, overlapping controls, unreachable
   actions, and unsafe-area problems on Speed, Race, Garage, History, More,
   tournament, and detail screens.

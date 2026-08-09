@@ -1,7 +1,0 @@
-{
-  "platforms": ["apple"],
-  "apple": {
-    "modules": ["ExternalDisplayModule"],
-    "reactDelegateHandlers": ["ExternalDisplayReactDelegateHandler"]
-  }
-}

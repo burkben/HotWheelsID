@@ -35,7 +35,7 @@ An open-source tool to connect to the Hot Wheels id Race Portal after Mattel dis
 
 The Hot Wheels id portal, reborn as a native iPhone and iPad app. The current build ships a full
 tabbed experience (Speed, Race, Garage, History, More), plus car-identify and detail flows, iPad
-two-pane layouts, and a real external-display TV mode on top.
+two-pane layouts, and an AirPlay screen-mirroring TV mode on top.
 
 <table>
   <tr>
@@ -64,9 +64,10 @@ two-pane layouts, and a real external-display TV mode on top.
 - **History tab** — Durable session history with race/pass rollups and drill-in details.
 - **More tab** — Achievements, TV mode, raw Live portal event log, and Settings (units,
   calibration, player profile, haptics, reduce motion, demo defaults).
-- **📺 TV mode** — Attach a TV over AirPlay or a cable and the big screen gets its own big-screen
-  stage (lap clock, live speed, laps, standings) while the device keeps the controls. It's a real
-  second display, not mirroring — see [ADR-0015](docs/adr/0015-external-display-tv-mode.md).
+- **📺 TV mode** — Open TV mode, then use AirPlay Screen Mirroring to put the landscape stage
+  (lap clock, live speed, laps, standings) on the big screen. V1 mirrors the same stage on the
+  device and TV; independent device controls are deferred — see
+  [ADR-0015](docs/adr/0015-external-display-tv-mode.md).
 - **iPad layouts** — iPad rotates freely and lays out in two panes on a roomy window: the
   speedometer or live race on the left, passes / lap times / leaderboard on the right, with
   multi-column Garage and History grids.

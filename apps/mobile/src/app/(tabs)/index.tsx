@@ -20,7 +20,6 @@ import { StatusPill } from '@/components/StatusPill';
 import { BleStatusBanner } from '@/components/BleStatusBanner';
 import { CurrentCarHero } from '@/components/CurrentCarHero';
 import { useCarIdentity } from '@/catalog/useCarIdentity';
-import { TvBadge } from '@/tv/TvBadge';
 import { useLayout } from '@/layout/useLayout';
 import {
   usePortalController,
@@ -173,7 +172,6 @@ export default function SpeedometerScreen() {
         </Text>
       </View>
       <View style={styles.headerRight}>
-        <TvBadge />
         <StatusPill
           connection={connection}
           controlStatus={controlStatus}
