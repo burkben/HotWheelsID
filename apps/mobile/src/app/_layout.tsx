@@ -1,16 +1,32 @@
 import { useEffect } from 'react';
+import * as ScreenOrientation from 'expo-screen-orientation';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { Stack } from 'expo-router';
+import { Stack, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { Platform } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { PortalControllerProvider } from '@/portal/PortalControllerProvider';
 import { initPersistence } from '@/store/persistence/initPersistence';
 
 export default function RootLayout() {
+  const pathname = usePathname();
+
   useEffect(() => {
     initPersistence();
   }, []);
+
+  useEffect(() => {
+    if (Platform.OS !== 'ios' || Platform.isPad) return;
+
+    const orientation = pathname === '/tv'
+      ? ScreenOrientation.OrientationLock.LANDSCAPE
+      : ScreenOrientation.OrientationLock.PORTRAIT_UP;
+
+    void ScreenOrientation.lockAsync(orientation).catch((error: unknown) => {
+      console.warn('Unable to update screen orientation', error);
+    });
+  }, [pathname]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

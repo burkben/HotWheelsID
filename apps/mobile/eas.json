@@ -18,7 +18,10 @@
       }
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "ios": {
+        "enterpriseProvisioning": "adhoc"
+      }
     },
     "production": {
       "autoIncrement": true

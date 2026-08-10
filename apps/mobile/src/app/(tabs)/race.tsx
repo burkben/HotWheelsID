@@ -57,7 +57,6 @@ import { catalogIdForUid, useIdentityStore } from "@/store/identityStore";
 import { usePortalStore } from "@/store/portalStore";
 import { useRaceStore } from "@/store/raceStore";
 import { useSettingsStore } from "@/store/settingsStore";
-import { TvBadge } from "@/tv/TvBadge";
 import { spacing } from "@/theme/tokens";
 
 /** Heat times accumulated per match until both racers are in and it can be decided. */
@@ -268,7 +267,6 @@ export default function RaceScreen() {
         Race Mode
       </Text>
       <View style={styles.headerRight}>
-        <TvBadge />
         <PortalStatusPill connection={connection} />
       </View>
     </View>

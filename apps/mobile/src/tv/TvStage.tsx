@@ -1,18 +1,14 @@
 /**
  * TV stage — the big-screen "host" view.
  *
- * This is what a TV shows when one is attached: readable from a couch, with no
- * controls on it at all (an external display is non-interactive, and the phone
- * or iPad stays the remote). It renders from the same Zustand stores as the
- * app because the native side mounts it as a *second React surface on the same
- * JS runtime* — see `docs/adr/0015-external-display-tv-mode.md` — so a pass
- * recorded on the device updates the TV in the same tick.
+ * This is what the phone shows full-screen while AirPlay Screen Mirroring is
+ * active. It is readable from a couch and renders from the same Zustand stores
+ * as the rest of the app.
  *
  * The same component backs the in-app `/tv` screen, which is how the feature
  * degrades to plain AirPlay mirroring (and how you preview it without a TV).
  *
- * Deliberately router-free: an external-display surface has no navigation
- * context, so nothing here may import `expo-router`.
+ * Deliberately router-free so the stage stays reusable and previewable.
  */
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -50,9 +46,6 @@ function shortUid(uid?: string | null): string {
 }
 
 export function TvStage() {
-  // The stage measures itself instead of reading `useWindowDimensions()`:
-  // RN's `Dimensions` describes the *device* screen, so on the external-display
-  // surface it would report the iPad, not the TV. `onLayout` is per-surface.
   const [box, setBox] = useState({ width: 0, height: 0 });
   const scale = resolveTvScale(box.width, box.height);
 
