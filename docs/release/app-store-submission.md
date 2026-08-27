@@ -167,7 +167,11 @@ shipped app.
 
 ## Physical release smoke test
 
-Run this on TestFlight build **1.0.0 (6)** before selecting it for App Review.
+Run this on the **current release-candidate build** before selecting it for App
+Review. Build 9 rewrote TV mode as AirPlay mirroring (#63) and build 10 changes
+the splash background, forces the dark interface style, and makes Settings,
+Achievements, and Credits pop back to their caller — so re-run the TV-mode and
+back-navigation checks against whichever build you actually submit.
 
 ### iPhone and Race Portal
 
@@ -191,6 +195,9 @@ Run this on TestFlight build **1.0.0 (6)** before selecting it for App Review.
 - Switch to Demo and confirm simulated passes start without portal hardware.
 - Complete a short demo race using Trigger pass.
 - Open Garage, History, Achievements, Credits, and Settings.
+- From the More tab, open Achievements, Settings, and Credits in turn and back out
+  of each. Confirm Back returns to **More** every time — before build 10 these three
+  screens jumped to the Speed tab instead of popping.
 - Identify a car, then open its Garage detail screen. Confirm the photo sits fully
   inside its rounded frame with nothing running past either edge, and that the
   Identify grid tiles are square. Bundled artwork is 1x, so a regression here

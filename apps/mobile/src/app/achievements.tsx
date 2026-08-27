@@ -11,7 +11,7 @@
 import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Link } from 'expo-router';
+import { router } from 'expo-router';
 
 import {
   CATEGORY_LABELS,
@@ -47,11 +47,15 @@ export default function AchievementsScreen() {
   return (
     <View style={[styles.screen, { paddingTop: insets.top + spacing(2) }]}>
       <View style={[styles.header, column]}>
-        <Link href="/" asChild>
-          <Pressable hitSlop={12} style={({ pressed }) => [styles.back, pressed && styles.pressed]}>
-            <Text style={styles.backText}>‹ Home</Text>
-          </Pressable>
-        </Link>
+        <Pressable
+          onPress={() => router.back()}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          style={({ pressed }) => [styles.back, pressed && styles.pressed]}
+        >
+          <Text style={styles.backText}>‹ Back</Text>
+        </Pressable>
         <Text style={styles.title}>Achievements</Text>
         <View style={styles.countChip}>
           <Text style={styles.countText}>

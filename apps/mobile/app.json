@@ -7,7 +7,7 @@
     "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "redlineid",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.burkben.redlineid",
@@ -50,7 +50,7 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "backgroundColor": "#0b0f1a",
           "android": {
             "image": "./assets/images/splash-icon.png",
             "imageWidth": 76
