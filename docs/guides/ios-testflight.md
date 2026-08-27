@@ -99,6 +99,21 @@ it goes to TestFlight via submit.
 > **Tip:** `eas build --profile production --platform ios --auto-submit` does Step 2 **and**
 > Step 3 in one shot once submit is configured.
 
+### Build from `main`, never a feature branch
+
+Always build production releases after merging your PR to `main`, not from an open
+branch. EAS uses the **current Git ref** of the machine that runs `eas build`. If you
+run it while checked out on a feature branch, the resulting TestFlight build will be of
+that unmerged lineage. If `main` is ahead, the next build from `main` will effectively go
+backwards in time — an older commit with a higher version number. This is exactly what
+happened with build 9: it was cut from the launch-readiness branch instead of `main`.
+
+**Correct order:**
+
+1. Merge your PR to `main` (`gh pr merge <N> --auto`).
+2. Verify the commit is on `main` (`git log main -1`).
+3. Build from `main` (`git checkout main && git pull && eas build --profile production`).
+
 ---
 
 ## Step 3 — Submit to TestFlight
