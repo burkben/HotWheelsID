@@ -1,0 +1,914 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Trackside Telemetry — Redline ID UI Proposal</title>
+  <style>
+    :root {
+      --void: #05080d;
+      --panel: #0d1520;
+      --panel-raised: #132131;
+      --panel-inset: #09111b;
+      --glass: rgba(13, 21, 32, .78);
+      --glass-strong: rgba(13, 21, 32, .92);
+      --hairline: rgba(135, 174, 214, .20);
+      --highlight: rgba(255, 255, 255, .075);
+      --ink: #f5f8fb;
+      --secondary: #9bb0c4;
+      --muted: #64788a;
+      --flame: #ff7418;
+      --flame-soft: rgba(255, 116, 24, .13);
+      --electric: #2bd1ff;
+      --electric-soft: rgba(43, 209, 255, .12);
+      --ok: #39d98a;
+      --caution: #ffd15c;
+      --fault: #ff5a67;
+      --mono: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+      --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color-scheme: dark;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { min-height: 100%; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(900px 440px at 16% -6%, rgba(255, 116, 24, .14), transparent 68%),
+        radial-gradient(850px 520px at 88% 4%, rgba(43, 209, 255, .11), transparent 70%),
+        var(--void);
+      font-family: var(--sans);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(135, 174, 214, .024) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(135, 174, 214, .024) 1px, transparent 1px);
+      background-size: 32px 32px;
+      mask-image: linear-gradient(to bottom, black, transparent 72%);
+    }
+
+    .page-head {
+      position: relative;
+      z-index: 1;
+      max-width: 1710px;
+      margin: 0 auto;
+      padding: 46px 36px 25px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: end;
+      gap: 28px;
+      border-bottom: 1px solid rgba(135, 174, 214, .12);
+    }
+
+    .proposal-kicker {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      color: var(--flame);
+      font: 700 11px/1 var(--mono);
+      letter-spacing: .18em;
+      text-transform: uppercase;
+    }
+
+    .proposal-kicker::before {
+      content: "";
+      width: 30px;
+      height: 2px;
+      background: var(--flame);
+      box-shadow: 10px 0 18px rgba(255, 116, 24, .65);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(34px, 4vw, 62px);
+      line-height: .95;
+      letter-spacing: -.045em;
+      text-transform: uppercase;
+    }
+
+    .pitch {
+      margin: 14px 0 0;
+      max-width: 780px;
+      color: var(--secondary);
+      font-size: 16px;
+      line-height: 1.5;
+    }
+
+    .loop-note {
+      min-width: max-content;
+      padding: 11px 14px;
+      border: 1px solid var(--hairline);
+      border-radius: 6px;
+      background: rgba(13, 21, 32, .62);
+      color: var(--secondary);
+      font: 700 10px/1 var(--mono);
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+
+    .loop-note::before {
+      content: "●";
+      color: var(--electric);
+      margin-right: 8px;
+      animation: pagePulse 2s ease-in-out infinite;
+    }
+
+    .deck {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      gap: 28px;
+      width: 100%;
+      max-width: 1710px;
+      margin: 0 auto;
+      padding: 28px 36px 54px;
+      overflow-x: auto;
+      scroll-snap-type: x proximity;
+      scrollbar-color: rgba(43, 209, 255, .35) transparent;
+    }
+
+    .device-wrap {
+      flex: 0 0 375px;
+      scroll-snap-align: start;
+    }
+
+    .device-label {
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--secondary);
+      font: 700 11px/1 var(--mono);
+      letter-spacing: .17em;
+    }
+
+    .device-label span:first-child { color: var(--ink); }
+    .device-label span:last-child { color: var(--muted); font-size: 9px; }
+
+    .phone {
+      position: relative;
+      width: 375px;
+      height: 812px;
+      overflow: hidden;
+      isolation: isolate;
+      border: 1px solid rgba(173, 199, 221, .28);
+      border-radius: 47px;
+      background:
+        radial-gradient(380px 260px at 75% 8%, rgba(43, 209, 255, .07), transparent 70%),
+        radial-gradient(300px 260px at 8% 39%, rgba(255, 116, 24, .055), transparent 73%),
+        var(--void);
+      box-shadow:
+        0 36px 80px rgba(0, 0, 0, .60),
+        inset 0 0 0 6px #080c12,
+        inset 0 0 0 7px rgba(255, 255, 255, .07);
+      user-select: none;
+    }
+
+    .phone::before {
+      content: "";
+      position: absolute;
+      inset: 7px;
+      z-index: 20;
+      border: 1px solid rgba(255, 255, 255, .035);
+      border-radius: 40px;
+      pointer-events: none;
+    }
+
+    .phone::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: 6px;
+      z-index: 30;
+      width: 118px;
+      height: 4px;
+      border-radius: 9px;
+      background: rgba(245, 248, 251, .74);
+      transform: translateX(-50%);
+    }
+
+    .status-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 12;
+      height: 42px;
+      display: grid;
+      grid-template-columns: 1fr 112px 1fr;
+      align-items: center;
+      padding: 3px 23px 0;
+      color: var(--ink);
+      font: 700 11px/1 var(--mono);
+    }
+
+    .island {
+      width: 104px;
+      height: 27px;
+      justify-self: center;
+      border-radius: 18px;
+      background: #000;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .025);
+    }
+
+    .signals {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 6px;
+      color: var(--secondary);
+      letter-spacing: -.08em;
+    }
+
+    .battery {
+      width: 19px;
+      height: 9px;
+      padding: 1px;
+      border: 1px solid var(--secondary);
+      border-radius: 2px;
+    }
+
+    .battery::after {
+      content: "";
+      display: block;
+      width: 12px;
+      height: 5px;
+      background: var(--secondary);
+      border-radius: 1px;
+    }
+
+    .app-header {
+      position: absolute;
+      top: 42px;
+      left: 0;
+      right: 0;
+      z-index: 10;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 17px;
+      background: linear-gradient(to bottom, rgba(5, 8, 13, .92), rgba(5, 8, 13, .76));
+    }
+
+    .header-channel {
+      color: var(--muted);
+      font: 700 8px/1 var(--mono);
+      letter-spacing: .19em;
+      text-transform: uppercase;
+    }
+
+    .app-title {
+      margin-top: 3px;
+      color: var(--ink);
+      font-size: 21px;
+      line-height: 1;
+      font-weight: 800;
+      letter-spacing: -.025em;
+    }
+
+    .mini-segment {
+      position: relative;
+      display: flex;
+      height: 30px;
+      padding: 2px;
+      border: 1px solid var(--hairline);
+      border-radius: 6px;
+      background: rgba(9, 17, 27, .82);
+    }
+
+    .mini-segment span {
+      position: relative;
+      z-index: 1;
+      min-width: 48px;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      font: 700 8px/1 var(--mono);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .mini-segment .active { color: var(--ink); background: var(--electric-soft); border-radius: 3px; }
+
+    .status-ribbon {
+      position: absolute;
+      top: 90px;
+      left: 0;
+      right: 0;
+      z-index: 11;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 16px;
+      overflow: hidden;
+      border-top: 1px solid rgba(135, 174, 214, .13);
+      border-bottom: 1px solid rgba(135, 174, 214, .17);
+      background: rgba(9, 17, 27, .91);
+      backdrop-filter: blur(18px) saturate(130%);
+      color: var(--secondary);
+      font: 700 8px/1 var(--mono);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      transition: border-color 180ms ease, background-color 180ms ease;
+    }
+
+    .status-ribbon::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 2px;
+      background: var(--ok);
+      box-shadow: 0 0 12px var(--ok);
+      transition: background-color 180ms ease, box-shadow 180ms ease;
+    }
+
+    .status-ribbon.scanning::before { background: var(--electric); box-shadow: 0 0 12px var(--electric); }
+    .status-ribbon.pass::before { background: var(--flame); box-shadow: 0 0 15px var(--flame); }
+    .status-ribbon.pass { background: rgba(255, 116, 24, .10); border-bottom-color: rgba(255, 116, 24, .38); }
+    .status-ribbon.scanning .ribbon-dot { background: var(--electric); }
+    .status-ribbon.pass .ribbon-dot { background: var(--flame); }
+
+    .ribbon-mode { color: var(--ink); }
+    .ribbon-dot { width: 5px; height: 5px; flex: 0 0 auto; border-radius: 50%; background: var(--ok); box-shadow: 0 0 8px currentColor; }
+    .ribbon-event { margin-left: auto; color: var(--electric); white-space: nowrap; }
+
+    .screen-body {
+      position: absolute;
+      top: 118px;
+      right: 0;
+      bottom: 66px;
+      left: 0;
+      padding: 10px 14px 12px;
+      overflow: hidden;
+    }
+
+    .glass {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--hairline);
+      border-radius: 11px;
+      background: var(--glass);
+      box-shadow: inset 0 1px 0 var(--highlight), 0 12px 28px rgba(0, 0, 0, .20);
+      backdrop-filter: blur(18px) saturate(130%);
+    }
+
+    .glass::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      background: linear-gradient(125deg, rgba(255, 255, 255, .035), transparent 34%, transparent 72%, rgba(43, 209, 255, .018));
+    }
+
+    .section-label {
+      color: var(--muted);
+      font: 700 8px/1 var(--mono);
+      letter-spacing: .17em;
+      text-transform: uppercase;
+    }
+
+    .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+    .flame { color: var(--flame); }
+    .electric { color: var(--electric); }
+
+    /* SPEED */
+    .speed-body { display: grid; grid-template-rows: 236px 88px 54px 1fr; gap: 8px; }
+
+    .velocity-module { padding: 10px 12px 0; }
+    .velocity-top { position: relative; z-index: 2; display: flex; align-items: center; justify-content: space-between; }
+    .car-live { display: flex; align-items: center; gap: 6px; color: var(--secondary); font: 700 8px/1 var(--mono); letter-spacing: .07em; }
+    .car-live::before { content: ""; width: 15px; height: 6px; border: 1px solid var(--flame); border-radius: 6px 8px 3px 3px; box-shadow: 0 0 9px rgba(255, 116, 24, .42); }
+    .gauge-svg { position: absolute; left: 8px; right: 8px; bottom: 0; width: calc(100% - 16px); height: 210px; overflow: visible; }
+    .gauge-grid { fill: none; stroke: rgba(135, 174, 214, .11); stroke-width: 1; }
+    .gauge-track { fill: none; stroke: #1a2634; stroke-width: 12; stroke-linecap: round; }
+    .zone-low, .zone-push, .zone-red { fill: none; stroke-width: 4; stroke-linecap: round; }
+    .zone-low { stroke: var(--ok); opacity: .75; }
+    .zone-push { stroke: var(--caution); opacity: .82; }
+    .zone-red { stroke: var(--fault); opacity: .90; }
+    .gauge-tick { stroke: rgba(245, 248, 251, .50); stroke-width: 1; }
+    .gauge-label { fill: var(--muted); font: 700 7px var(--mono); letter-spacing: .08em; }
+    .needle {
+      transform-origin: 160px 169px;
+      animation: needleSweep 7.2s cubic-bezier(.18, .85, .22, 1) infinite;
+      filter: drop-shadow(0 0 6px rgba(255, 116, 24, .82));
+    }
+    .needle-line { stroke: var(--flame); stroke-width: 3; stroke-linecap: round; }
+    .needle-tail { stroke: rgba(255, 116, 24, .45); stroke-width: 2; }
+    .needle-cap { fill: var(--ink); stroke: var(--flame); stroke-width: 3; }
+    .readout { position: absolute; left: 0; right: 0; bottom: 30px; z-index: 3; text-align: center; }
+    .speed-value { color: var(--ink); font: 800 58px/.85 var(--mono); letter-spacing: -.07em; text-shadow: 0 0 30px rgba(255, 255, 255, .08); }
+    .speed-unit { margin-top: 9px; color: var(--muted); font: 700 8px/1 var(--mono); letter-spacing: .22em; }
+    .speed-zone-labels { position: absolute; left: 22px; right: 22px; bottom: 10px; display: flex; justify-content: space-between; color: var(--muted); font: 700 6px/1 var(--mono); letter-spacing: .12em; }
+
+    .trace-card { padding: 10px 12px 8px; }
+    .trace-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
+    .trace-range { color: var(--electric); font: 700 8px/1 var(--mono); }
+    .trace-svg { display: block; width: 100%; height: 54px; overflow: visible; }
+    .trace-grid { stroke: rgba(135, 174, 214, .11); stroke-width: .7; }
+    .trace-glow { fill: none; stroke: rgba(43, 209, 255, .23); stroke-width: 7; filter: blur(3px); }
+    .speed-line { fill: none; stroke: var(--electric); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; animation: traceDraw 7.2s linear infinite; }
+    .trace-dot { fill: var(--void); stroke: var(--flame); stroke-width: 2; animation: traceDot 7.2s ease infinite; }
+
+    .telemetry-strip { display: grid; grid-template-columns: repeat(3, 1fr); }
+    .metric { display: flex; flex-direction: column; justify-content: center; padding: 6px 9px; border-right: 1px solid var(--hairline); }
+    .metric:last-child { border-right: 0; }
+    .metric-label { color: var(--muted); font: 700 7px/1 var(--mono); letter-spacing: .12em; }
+    .metric-value { margin-top: 5px; color: var(--ink); font: 800 16px/1 var(--mono); letter-spacing: -.04em; }
+    .metric-unit { color: var(--muted); font-size: 7px; letter-spacing: .05em; }
+
+    .pass-ledger { padding: 9px 11px 6px; }
+    .ledger-head { display: flex; justify-content: space-between; padding-bottom: 6px; border-bottom: 1px solid var(--hairline); }
+    .pass-row { height: 35px; display: grid; grid-template-columns: 28px 1fr 56px 70px; align-items: center; border-bottom: 1px solid rgba(135, 174, 214, .10); font: 700 9px/1 var(--mono); }
+    .pass-row:last-child { border-bottom: 0; }
+    .pass-pos { color: var(--muted); }
+    .pass-speed { color: var(--ink); font-size: 14px; }
+    .pass-delta { color: var(--electric); text-align: right; }
+    .pass-time { color: var(--muted); text-align: right; font-size: 8px; }
+    .pb { color: var(--flame); }
+
+    /* RACE */
+    .race-body { display: grid; grid-template-rows: 34px 52px 202px 56px 1fr 42px; gap: 8px; }
+    .race-mode { display: grid; grid-template-columns: 1fr 1fr; padding: 2px; }
+    .race-mode span { display: grid; place-items: center; color: var(--muted); font: 700 8px/1 var(--mono); letter-spacing: .1em; }
+    .race-mode .selected { border-radius: 5px; background: var(--electric-soft); color: var(--electric); box-shadow: inset 0 -2px 0 var(--electric); }
+    .driver-strip { display: grid; grid-template-columns: 34px 1fr auto; align-items: center; padding: 7px 10px; }
+    .driver-no { color: var(--flame); font: 800 19px/1 var(--mono); }
+    .driver-name { font-size: 13px; font-weight: 800; }
+    .driver-car { margin-top: 2px; color: var(--muted); font: 700 7px/1 var(--mono); }
+    .ready-tag { padding: 5px 7px; border-radius: 4px; background: rgba(57, 217, 138, .10); color: var(--ok); font: 700 7px/1 var(--mono); letter-spacing: .08em; }
+
+    .race-clock { position: relative; display: grid; grid-template-rows: auto 1fr auto; padding: 11px 12px 10px; }
+    .lap-progress { display: flex; justify-content: space-between; color: var(--secondary); font: 700 8px/1 var(--mono); letter-spacing: .12em; }
+    .lap-progress strong { color: var(--flame); font-weight: 800; }
+    .clock-main { align-self: center; text-align: center; }
+    .clock-value { color: var(--ink); font: 800 39px/1 var(--mono); letter-spacing: -.07em; }
+    .clock-caption { margin-top: 7px; color: var(--muted); font: 700 7px/1 var(--mono); letter-spacing: .18em; }
+    .lap-bar { height: 3px; border-radius: 3px; background: rgba(135, 174, 214, .13); overflow: hidden; }
+    .lap-bar::after { content: ""; display: block; height: 100%; width: 58%; background: var(--flame); box-shadow: 0 0 10px var(--flame); animation: lapProgress 2.1s linear infinite; }
+
+    .countdown-overlay {
+      position: absolute;
+      inset: -1px;
+      z-index: 6;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 11px;
+      background: rgba(5, 8, 13, .92);
+      backdrop-filter: blur(10px);
+      transition: opacity 160ms ease, visibility 160ms ease;
+    }
+    .countdown-overlay.hidden { opacity: 0; visibility: hidden; }
+    .count-track { position: absolute; left: 20px; right: 20px; top: 50%; height: 1px; background: rgba(135, 174, 214, .18); }
+    .count-track::before, .count-track::after { content: ""; position: absolute; top: -3px; width: 7px; height: 7px; border: 1px solid var(--flame); transform: rotate(45deg); }
+    .count-track::before { left: 0; } .count-track::after { right: 0; }
+    .count-num { position: relative; z-index: 2; min-width: 130px; text-align: center; color: var(--flame); font: 800 106px/.8 var(--mono); letter-spacing: -.08em; text-shadow: 0 0 34px rgba(255, 116, 24, .28); }
+    .count-num.go { color: var(--electric); font-size: 66px; text-shadow: 0 0 34px rgba(43, 209, 255, .28); }
+    .count-num.pop { animation: countPop 650ms cubic-bezier(.18, .82, .22, 1); }
+    .count-caption { position: relative; z-index: 2; margin-top: 18px; color: var(--secondary); font: 700 7px/1 var(--mono); letter-spacing: .18em; }
+
+    .live-stats { display: grid; grid-template-columns: repeat(3, 1fr); }
+    .live-stat { display: flex; flex-direction: column; justify-content: center; padding: 6px 8px; border-right: 1px solid var(--hairline); text-align: center; }
+    .live-stat:last-child { border-right: 0; }
+    .live-stat label { color: var(--muted); font: 700 7px/1 var(--mono); letter-spacing: .11em; }
+    .live-stat strong { margin-top: 6px; color: var(--ink); font: 800 14px/1 var(--mono); }
+
+    .lap-ledger { min-height: 140px; padding: 9px 11px 5px; }
+    .lap-ledger-head { display: grid; grid-template-columns: 1fr 80px 55px; padding-bottom: 6px; border-bottom: 1px solid var(--hairline); color: var(--muted); font: 700 7px/1 var(--mono); letter-spacing: .10em; }
+    .lap-ledger-head span:not(:first-child) { text-align: right; }
+    .lap-row { height: 30px; display: grid; grid-template-columns: 1fr 80px 55px; align-items: center; border-bottom: 1px solid rgba(135, 174, 214, .09); font: 700 9px/1 var(--mono); }
+    .lap-row span:not(:first-child) { text-align: right; }
+    .lap-row .lap-time { color: var(--ink); font-size: 12px; }
+    .lap-row .lap-delta { color: var(--secondary); }
+    .lap-row.best { box-shadow: inset 2px 0 0 var(--flame); }
+    .lap-row.best .lap-time, .lap-row.best .lap-delta { color: var(--flame); }
+    .lap-row.arrive { animation: rowArrive 180ms ease-out both; }
+    .race-action { display: grid; place-items: center; border-color: rgba(255, 116, 24, .45); background: var(--flame); color: var(--void); font: 800 10px/1 var(--mono); letter-spacing: .10em; }
+
+    /* GARAGE */
+    .garage-body { display: grid; grid-template-rows: 38px 34px 1fr; gap: 8px; }
+    .garage-summary { display: grid; grid-template-columns: repeat(3, 1fr); }
+    .garage-summary div { display: flex; align-items: center; justify-content: center; gap: 5px; border-right: 1px solid var(--hairline); color: var(--muted); font: 700 7px/1 var(--mono); letter-spacing: .07em; }
+    .garage-summary div:last-child { border-right: 0; }
+    .garage-summary strong { color: var(--ink); font-size: 13px; }
+
+    .filter-rail { position: relative; display: grid; grid-template-columns: 1fr 1.35fr 1.35fr 1.1fr; padding: 2px; }
+    .filter-chip { position: relative; z-index: 2; display: grid; place-items: center; border-radius: 5px; color: var(--muted); font: 700 7px/1 var(--mono); letter-spacing: .05em; transition: color 180ms ease, background-color 180ms ease; }
+    .filter-chip.active { color: var(--electric); background: var(--electric-soft); box-shadow: inset 0 -2px 0 var(--electric); }
+
+    .garage-grid { position: relative; display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: 157px; gap: 8px; overflow: hidden; }
+    .scan-beam { position: absolute; z-index: 8; top: -12px; left: 0; right: 0; height: 1px; background: var(--electric); box-shadow: 0 0 9px 2px rgba(43, 209, 255, .34), 0 14px 26px rgba(43, 209, 255, .06); animation: garageScan 5.4s ease-in-out infinite; pointer-events: none; }
+    .scan-beam::after { content: "SCANNING CATALOG"; position: absolute; right: 4px; top: 5px; color: rgba(43, 209, 255, .50); font: 700 6px/1 var(--mono); letter-spacing: .12em; }
+    .car-card { position: relative; padding: 9px; transition: opacity 220ms ease, transform 220ms ease, filter 220ms ease; }
+    .car-card.hidden-by-filter { opacity: .13; transform: scale(.975); filter: saturate(.1); }
+    .car-card.live { border-color: rgba(255, 116, 24, .68); box-shadow: inset 2px 0 0 var(--flame), inset 0 1px 0 var(--highlight), 0 0 24px rgba(255, 116, 24, .09); }
+    .car-visual { height: 65px; display: grid; place-items: center; border-radius: 7px; background: linear-gradient(145deg, rgba(43, 209, 255, .07), rgba(255, 116, 24, .04)), var(--panel-inset); border: 1px solid rgba(135, 174, 214, .11); overflow: hidden; }
+    .car-shape { position: relative; width: 91px; height: 24px; border-radius: 12px 23px 7px 7px; background: linear-gradient(90deg, #1a2633 0 20%, var(--car-color, var(--flame)) 20% 78%, #1a2633 78%); transform: skewX(-8deg); box-shadow: 0 7px 13px rgba(0, 0, 0, .55), 0 0 16px color-mix(in srgb, var(--car-color, var(--flame)) 25%, transparent); }
+    .car-shape::before { content: ""; position: absolute; left: 30px; top: -10px; width: 37px; height: 15px; border-radius: 12px 16px 2px 2px; background: #132638; border: 2px solid var(--car-color, var(--flame)); }
+    .car-shape::after { content: "●     ●"; position: absolute; left: 7px; right: 0; bottom: -8px; color: #020406; font-size: 20px; letter-spacing: 37px; white-space: nowrap; }
+    .car-card-name { margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 11px; font-weight: 800; }
+    .car-card-series { margin-top: 3px; color: var(--muted); font: 700 6px/1 var(--mono); letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .car-card-stats { display: flex; align-items: baseline; justify-content: space-between; margin-top: 8px; }
+    .car-card-speed { color: var(--flame); font: 800 15px/1 var(--mono); }
+    .car-card-speed small { color: var(--muted); font-size: 6px; letter-spacing: .08em; }
+    .car-card-races { color: var(--secondary); font: 700 7px/1 var(--mono); }
+    .live-flag { position: absolute; top: 13px; left: 13px; z-index: 3; padding: 3px 5px; border-radius: 3px; background: var(--flame); color: var(--void); font: 800 6px/1 var(--mono); letter-spacing: .09em; }
+
+    /* SETTINGS */
+    .settings .app-header { display: grid; grid-template-columns: 44px 1fr 44px; padding: 0 14px; }
+    .settings-back { width: 44px; height: 44px; display: grid; place-items: center start; color: var(--electric); font-size: 25px; }
+    .settings-title { text-align: center; font-size: 17px; font-weight: 800; }
+    .settings-balance { width: 44px; height: 44px; }
+    .settings .screen-body { bottom: 12px; padding: 6px 17px 14px; overflow: hidden; }
+    .settings-scroll { height: 100%; overflow: hidden; }
+    .settings-section { margin-top: 16px; }
+    .settings-section:first-child { margin-top: 3px; }
+    .settings-section-title { margin: 0 0 7px 11px; color: var(--muted); font: 700 8px/1 var(--mono); letter-spacing: .16em; text-transform: uppercase; }
+    .settings-card { overflow: hidden; border-radius: 10px; }
+    .settings-row { position: relative; padding: 0 11px 8px; }
+    .settings-row + .settings-row::before { content: ""; position: absolute; top: 0; left: 11px; right: 0; height: 1px; background: var(--hairline); }
+    .rowline { min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .setting-label { color: var(--ink); font-size: 12px; font-weight: 700; white-space: nowrap; }
+    .setting-hint { max-width: 260px; margin-top: -2px; color: var(--secondary); font-size: 9px; line-height: 13px; }
+    .trailing-value { color: var(--electric); font: 700 10px/1 var(--mono); }
+
+    .setting-segment { flex: 0 0 auto; height: 28px; display: grid; padding: 2px; border: 1px solid var(--hairline); border-radius: 6px; background: var(--panel-inset); }
+    .setting-segment.four { width: 154px; grid-template-columns: repeat(4, 1fr); }
+    .setting-segment.two { width: 104px; grid-template-columns: repeat(2, 1fr); }
+    .setting-segment span { display: grid; place-items: center; color: var(--muted); border-radius: 4px; font: 700 8px/1 var(--mono); }
+    .setting-segment .chosen { color: var(--void); background: var(--electric); }
+
+    .stepper { width: 130px; height: 30px; display: grid; grid-template-columns: 30px 1fr 30px; align-items: center; border: 1px solid var(--hairline); border-radius: 6px; background: var(--panel-inset); text-align: center; font: 800 9px/1 var(--mono); }
+    .stepper .step { height: 28px; display: grid; place-items: center; color: var(--electric); font-size: 15px; }
+    .stepper-value { color: var(--ink); border-right: 1px solid var(--hairline); border-left: 1px solid var(--hairline); line-height: 28px; }
+
+    .switch { position: relative; width: 42px; height: 24px; flex: 0 0 auto; border: 1px solid rgba(135, 174, 214, .30); border-radius: 14px; background: #1a2734; transition: background-color 240ms cubic-bezier(.2, .8, .2, 1), border-color 240ms ease; }
+    .switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: var(--ink); box-shadow: 0 2px 7px rgba(0, 0, 0, .5); transition: transform 240ms cubic-bezier(.2, .8, .2, 1); }
+    .switch.on { border-color: var(--flame); background: var(--flame); }
+    .switch.on::after { transform: translateX(18px); }
+    .switch.demo { box-shadow: 0 0 0 0 rgba(255, 116, 24, .20); }
+    .switch.demo.on { animation: switchHalo 850ms ease-out; }
+    .destructive .setting-label { color: var(--fault); }
+    .destructive .rowline { min-height: 44px; }
+
+    /* TAB DOCK */
+    .tabbar {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 15;
+      height: 66px;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      padding: 7px 10px 13px;
+      border-top: 1px solid var(--hairline);
+      background: rgba(9, 17, 27, .91);
+      backdrop-filter: blur(23px) saturate(140%);
+      box-shadow: 0 -12px 30px rgba(0, 0, 0, .24), inset 0 1px 0 rgba(255, 255, 255, .04);
+    }
+
+    .tab { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: var(--muted); font: 700 7px/1 var(--mono); letter-spacing: .05em; }
+    .tab::before { content: ""; position: absolute; top: -8px; width: 34px; height: 2px; border-radius: 0 0 3px 3px; background: transparent; }
+    .tab.active { color: var(--flame); }
+    .tab.active::before { background: var(--flame); box-shadow: 0 0 12px rgba(255, 116, 24, .75); }
+    .tab-icon { height: 18px; display: grid; place-items: center; font-family: var(--sans); font-size: 16px; line-height: 1; }
+    .dots-icon { letter-spacing: 1px; font-size: 11px; }
+
+    @keyframes pagePulse { 0%, 100% { opacity: .4; } 50% { opacity: 1; } }
+    @keyframes needleSweep {
+      0%, 7% { transform: rotate(-118deg); }
+      18%, 31% { transform: rotate(61deg); }
+      39%, 48% { transform: rotate(-118deg); }
+      59%, 74% { transform: rotate(80deg); }
+      84%, 100% { transform: rotate(-118deg); }
+    }
+    @keyframes traceDraw { 0%, 8% { stroke-dashoffset: 1; } 64%, 92% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: -1; } }
+    @keyframes traceDot { 0%, 12% { opacity: 0; transform: translateX(-220px); } 62%, 91% { opacity: 1; transform: translateX(0); } 100% { opacity: 0; } }
+    @keyframes lapProgress { 0% { width: 3%; } 100% { width: 100%; } }
+    @keyframes countPop { 0% { opacity: 0; transform: scale(.78); filter: blur(7px); } 32% { opacity: 1; } 100% { opacity: 1; transform: scale(1); filter: blur(0); } }
+    @keyframes rowArrive { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes garageScan { 0%, 8% { transform: translateY(0); opacity: 0; } 15% { opacity: .8; } 77% { transform: translateY(492px); opacity: .8; } 86%, 100% { transform: translateY(492px); opacity: 0; } }
+    @keyframes switchHalo { from { box-shadow: 0 0 0 0 rgba(255, 116, 24, .30); } to { box-shadow: 0 0 0 8px rgba(255, 116, 24, 0); } }
+
+    @media (max-width: 760px) {
+      .page-head { grid-template-columns: 1fr; padding: 32px 20px 20px; }
+      .loop-note { justify-self: start; }
+      .deck { gap: 20px; padding: 22px 20px 46px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+      .needle { transform: rotate(61deg); }
+      .speed-line { stroke-dashoffset: 0; }
+      .scan-beam { opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <header class="page-head">
+    <div>
+      <div class="proposal-kicker">Proposal B · Redline ID</div>
+      <h1>Trackside Telemetry</h1>
+      <p class="pitch">A dark-glass timing console where every pass reads like live race data—precise at rest, electric at the beam.</p>
+    </div>
+    <div class="loop-note">looping mock — not interactive</div>
+  </header>
+
+  <main class="deck" aria-label="Four animated iPhone mockups">
+    <!-- SPEED -->
+    <section class="device-wrap" aria-label="Speed screen mockup">
+      <div class="device-label"><span>01 // SPEED</span><span>375 × 812</span></div>
+      <div class="phone speed">
+        <div class="status-bar"><span>9:41</span><span class="island"></span><span class="signals">▮▮▮ <span class="battery"></span></span></div>
+        <header class="app-header">
+          <div><div class="header-channel">Redline ID / 01</div><div class="app-title">Speed</div></div>
+          <div class="mini-segment"><span class="active">Live</span><span>Demo</span></div>
+        </header>
+        <div class="status-ribbon" id="speedRibbon">
+          <span class="ribbon-mode">Portal / Live</span><span class="ribbon-dot"></span><span id="speedState">Ready</span><span class="ribbon-event" id="speedEvent">Car HW50</span>
+        </div>
+
+        <div class="screen-body speed-body">
+          <section class="glass velocity-module">
+            <div class="velocity-top"><span class="section-label">Velocity / channel 01</span><span class="car-live">GT SCORCHER · HW50</span></div>
+            <svg class="gauge-svg" viewBox="0 0 320 205" aria-hidden="true">
+              <path class="gauge-grid" d="M34 169 A126 126 0 0 1 286 169"/>
+              <path class="gauge-track" d="M47 169 A113 113 0 0 1 273 169"/>
+              <path class="zone-low" d="M47 169 A113 113 0 0 1 99 74"/>
+              <path class="zone-push" d="M104 71 A113 113 0 0 1 209 67"/>
+              <path class="zone-red" d="M215 70 A113 113 0 0 1 273 169"/>
+              <g>
+                <line class="gauge-tick" x1="48" y1="169" x2="58" y2="169"/><line class="gauge-tick" x1="63" y1="113" x2="72" y2="117"/>
+                <line class="gauge-tick" x1="104" y1="72" x2="110" y2="81"/><line class="gauge-tick" x1="160" y1="57" x2="160" y2="68"/>
+                <line class="gauge-tick" x1="216" y1="72" x2="210" y2="81"/><line class="gauge-tick" x1="257" y1="113" x2="248" y2="117"/>
+                <line class="gauge-tick" x1="272" y1="169" x2="262" y2="169"/>
+                <text class="gauge-label" x="43" y="187">0</text><text class="gauge-label" x="57" y="103">60</text>
+                <text class="gauge-label" x="95" y="61">120</text><text class="gauge-label" x="151" y="45">180</text>
+                <text class="gauge-label" x="211" y="61">240</text><text class="gauge-label" x="268" y="187">300</text>
+              </g>
+              <g class="needle"><line class="needle-tail" x1="160" y1="180" x2="160" y2="169"/><line class="needle-line" x1="160" y1="169" x2="160" y2="75"/><circle class="needle-cap" cx="160" cy="169" r="7"/></g>
+            </svg>
+            <div class="readout"><div class="speed-value" id="speedValue">000.0</div><div class="speed-unit">MILES PER HOUR</div></div>
+            <div class="speed-zone-labels"><span>LOW</span><span>PUSH</span><span>REDLINE</span></div>
+          </section>
+
+          <section class="glass trace-card">
+            <div class="trace-head"><span class="section-label">Live trace / last 12</span><span class="trace-range">Δ +8.4</span></div>
+            <svg class="trace-svg" viewBox="0 0 320 54" preserveAspectRatio="none" aria-hidden="true">
+              <path class="trace-grid" d="M0 12H320M0 28H320M0 44H320M53 0V54M106 0V54M159 0V54M212 0V54M265 0V54"/>
+              <path class="trace-glow" d="M0 44 L28 38 L52 41 L78 29 L104 34 L130 21 L156 26 L182 14 L208 23 L236 10 L264 17 L292 5 L318 9" pathLength="1"/>
+              <path class="speed-line" d="M0 44 L28 38 L52 41 L78 29 L104 34 L130 21 L156 26 L182 14 L208 23 L236 10 L264 17 L292 5 L318 9" pathLength="1"/>
+              <circle class="trace-dot" cx="318" cy="9" r="3.5"/>
+            </svg>
+          </section>
+
+          <section class="glass telemetry-strip">
+            <div class="metric"><span class="metric-label">Best</span><span class="metric-value flame">247.8 <small class="metric-unit">MPH</small></span></div>
+            <div class="metric"><span class="metric-label">Passes</span><span class="metric-value">018 <small class="metric-unit">TOTAL</small></span></div>
+            <div class="metric"><span class="metric-label">Delta</span><span class="metric-value electric">+08.4 <small class="metric-unit">MPH</small></span></div>
+          </section>
+
+          <section class="glass pass-ledger">
+            <div class="ledger-head"><span class="section-label">Recent passes</span><span class="section-label">Session 14</span></div>
+            <div class="pass-row"><span class="pass-pos pb">PB</span><span class="pass-speed pb">247.8</span><span class="pass-delta">+8.4</span><span class="pass-time">09:41:26</span></div>
+            <div class="pass-row"><span class="pass-pos">02</span><span class="pass-speed">239.4</span><span class="pass-delta">−8.4</span><span class="pass-time">09:40:51</span></div>
+            <div class="pass-row"><span class="pass-pos">03</span><span class="pass-speed">232.7</span><span class="pass-delta">−15.1</span><span class="pass-time">09:40:08</span></div>
+          </section>
+        </div>
+
+        <nav class="tabbar" aria-hidden="true">
+          <div class="tab active"><span class="tab-icon">⌁</span><span>Speed</span></div><div class="tab"><span class="tab-icon">⚑</span><span>Race</span></div>
+          <div class="tab"><span class="tab-icon">▰</span><span>Garage</span></div><div class="tab"><span class="tab-icon">◴</span><span>History</span></div><div class="tab"><span class="tab-icon dots-icon">•••</span><span>More</span></div>
+        </nav>
+      </div>
+    </section>
+
+    <!-- RACE -->
+    <section class="device-wrap" aria-label="Race screen mockup">
+      <div class="device-label"><span>02 // RACE</span><span>375 × 812</span></div>
+      <div class="phone race">
+        <div class="status-bar"><span>9:41</span><span class="island"></span><span class="signals">▮▮▮ <span class="battery"></span></span></div>
+        <header class="app-header"><div><div class="header-channel">Timing / heat 04</div><div class="app-title">Race</div></div><span class="section-label electric">Target 05 laps</span></header>
+        <div class="status-ribbon"><span class="ribbon-mode">Portal / Live</span><span class="ribbon-dot"></span><span>Gate armed</span><span class="ribbon-event">Car HW50</span></div>
+
+        <div class="screen-body race-body">
+          <div class="glass race-mode"><span>Solo</span><span class="selected">Race night</span></div>
+          <div class="glass driver-strip"><span class="driver-no">04</span><div><div class="driver-name">Maya</div><div class="driver-car">GT SCORCHER · HW50</div></div><span class="ready-tag">READY</span></div>
+          <section class="glass race-clock">
+            <div class="lap-progress"><span>CURRENT RUN</span><span><strong>LAP 03</strong> / 05</span></div>
+            <div class="clock-main"><div class="clock-value" id="raceTicker">00:00.000</div><div class="clock-caption">THIS LAP / LIVE</div></div>
+            <div class="lap-bar"></div>
+            <div class="countdown-overlay" id="countdownOverlay">
+              <div class="count-track"></div><div class="count-num" id="countNum">3</div><div class="count-caption">MAYA / GATE ARMED</div>
+            </div>
+          </section>
+          <section class="glass live-stats">
+            <div class="live-stat"><label>Last</label><strong>08.219</strong></div><div class="live-stat"><label>Best</label><strong class="flame">07.982</strong></div><div class="live-stat"><label>Delta</label><strong class="electric">−0.184</strong></div>
+          </section>
+          <section class="glass lap-ledger">
+            <div class="lap-ledger-head"><span>SECTOR</span><span>TIME</span><span>DELTA</span></div>
+            <div id="lapRows"></div>
+          </section>
+          <div class="glass race-action">FINISH RUN</div>
+        </div>
+
+        <nav class="tabbar" aria-hidden="true">
+          <div class="tab"><span class="tab-icon">⌁</span><span>Speed</span></div><div class="tab active"><span class="tab-icon">⚑</span><span>Race</span></div>
+          <div class="tab"><span class="tab-icon">▰</span><span>Garage</span></div><div class="tab"><span class="tab-icon">◴</span><span>History</span></div><div class="tab"><span class="tab-icon dots-icon">•••</span><span>More</span></div>
+        </nav>
+      </div>
+    </section>
+
+    <!-- GARAGE -->
+    <section class="device-wrap" aria-label="Garage screen mockup">
+      <div class="device-label"><span>03 // GARAGE</span><span>375 × 812</span></div>
+      <div class="phone garage">
+        <div class="status-bar"><span>9:41</span><span class="island"></span><span class="signals">▮▮▮ <span class="battery"></span></span></div>
+        <header class="app-header"><div><div class="header-channel">Parc fermé / collection</div><div class="app-title">Garage</div></div><span class="mono flame" style="font-size:16px;font-weight:800">06</span></header>
+        <div class="status-ribbon"><span class="ribbon-mode">Portal / Live</span><span class="ribbon-dot"></span><span>Car locked</span><span class="ribbon-event">GT Scorcher</span></div>
+
+        <div class="screen-body garage-body">
+          <section class="glass garage-summary"><div><strong>06</strong> CARS</div><div><strong>05</strong> ID'D</div><div><strong>01</strong> LIVE</div></section>
+          <section class="glass filter-rail" id="filterRail"><span class="filter-chip active" data-filter="all">ALL</span><span class="filter-chip" data-filter="live">ON PORTAL</span><span class="filter-chip" data-filter="id">IDENTIFIED</span><span class="filter-chip" data-filter="record">RECORDS</span></section>
+          <section class="garage-grid" id="garageGrid">
+            <div class="scan-beam"></div>
+            <article class="glass car-card live" data-tags="live id record"><span class="live-flag">LIVE</span><div class="car-visual"><div class="car-shape" style="--car-color:#ff7418"></div></div><div class="car-card-name">GT Scorcher</div><div class="car-card-series">HW RACE TEAM · HW50</div><div class="car-card-stats"><span class="car-card-speed">247.8 <small>MPH</small></span><span class="car-card-races">12 races</span></div></article>
+            <article class="glass car-card" data-tags="id"><div class="car-visual"><div class="car-shape" style="--car-color:#2bd1ff"></div></div><div class="car-card-name">Mach Speeder</div><div class="car-card-series">SPEED BLUR · 7A21</div><div class="car-card-stats"><span class="car-card-speed">236.1 <small>MPH</small></span><span class="car-card-races">8 races</span></div></article>
+            <article class="glass car-card" data-tags="id record"><div class="car-visual"><div class="car-shape" style="--car-color:#ffd15c"></div></div><div class="car-card-name">Rally Finale</div><div class="car-card-series">TRACK STARS · D039</div><div class="car-card-stats"><span class="car-card-speed">243.3 <small>MPH</small></span><span class="car-card-races">17 races</span></div></article>
+            <article class="glass car-card" data-tags="id"><div class="car-visual"><div class="car-shape" style="--car-color:#bd6cff"></div></div><div class="car-card-name">Street Shaker</div><div class="car-card-series">NIGHTBURNERZ · 42B8</div><div class="car-card-stats"><span class="car-card-speed">228.6 <small>MPH</small></span><span class="car-card-races">5 races</span></div></article>
+            <article class="glass car-card" data-tags="id"><div class="car-visual"><div class="car-shape" style="--car-color:#39d98a"></div></div><div class="car-card-name">Hiway Hauler</div><div class="car-card-series">METRO · 91AC</div><div class="car-card-stats"><span class="car-card-speed">219.0 <small>MPH</small></span><span class="car-card-races">3 races</span></div></article>
+            <article class="glass car-card" data-tags=""><div class="car-visual"><div class="car-shape" style="--car-color:#ff5a67"></div></div><div class="car-card-name">Unknown casting</div><div class="car-card-series">UID · 63:F1</div><div class="car-card-stats"><span class="car-card-speed">211.4 <small>MPH</small></span><span class="car-card-races">1 race</span></div></article>
+          </section>
+        </div>
+
+        <nav class="tabbar" aria-hidden="true">
+          <div class="tab"><span class="tab-icon">⌁</span><span>Speed</span></div><div class="tab"><span class="tab-icon">⚑</span><span>Race</span></div>
+          <div class="tab active"><span class="tab-icon">▰</span><span>Garage</span></div><div class="tab"><span class="tab-icon">◴</span><span>History</span></div><div class="tab"><span class="tab-icon dots-icon">•••</span><span>More</span></div>
+        </nav>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="device-wrap" aria-label="Settings screen mockup">
+      <div class="device-label"><span>04 // SETTINGS</span><span>375 × 812</span></div>
+      <div class="phone settings">
+        <div class="status-bar"><span>9:41</span><span class="island"></span><span class="signals">▮▮▮ <span class="battery"></span></span></div>
+        <header class="app-header"><span class="settings-back">‹</span><span class="settings-title">Settings</span><span class="settings-balance"></span></header>
+        <div class="status-ribbon"><span class="ribbon-mode">Portal / Live</span><span class="ribbon-dot"></span><span>Ready</span><span class="ribbon-event">Preferences local</span></div>
+
+        <div class="screen-body">
+          <div class="settings-scroll">
+            <section class="settings-section"><h2 class="settings-section-title">Profile</h2><div class="glass settings-card"><div class="settings-row"><div class="rowline"><span class="setting-label">Player name</span><span class="trailing-value">Maya ›</span></div><div class="setting-hint">Pre-fills the racer name when you start a race.</div></div></div></section>
+
+            <section class="settings-section"><h2 class="settings-section-title">Racing</h2><div class="glass settings-card"><div class="settings-row"><div class="rowline"><span class="setting-label">Default laps</span><span class="setting-segment four"><span>3</span><span class="chosen">5</span><span>7</span><span>10</span></span></div><div class="setting-hint">Selected by default on race setup.</div></div></div></section>
+
+            <section class="settings-section"><h2 class="settings-section-title">Speed</h2><div class="glass settings-card">
+              <div class="settings-row"><div class="rowline"><span class="setting-label">Units</span><span class="setting-segment two"><span class="chosen">MPH</span><span>KM/H</span></span></div></div>
+              <div class="settings-row"><div class="rowline"><span class="setting-label">Calibration</span><span class="stepper"><span class="step">−</span><span class="stepper-value">1.00×</span><span class="step">+</span></span></div><div class="setting-hint">Trim displayed speed to a reference. Recorded data stays unchanged.</div></div>
+            </div></section>
+
+            <section class="settings-section"><h2 class="settings-section-title">Feedback</h2><div class="glass settings-card">
+              <div class="settings-row"><div class="rowline"><span class="setting-label">Haptics</span><span class="switch on" aria-hidden="true"></span></div><div class="setting-hint">Vibration on countdown, laps, and new bests.</div></div>
+              <div class="settings-row"><div class="rowline"><span class="setting-label">Sound</span><span class="switch demo on" id="demoSwitch" aria-hidden="true"></span></div><div class="setting-hint">Race cues for countdown, laps, bests, and finish.</div></div>
+              <div class="settings-row"><div class="rowline"><span class="setting-label">Reduce motion</span><span class="switch" aria-hidden="true"></span></div><div class="setting-hint">Also honors the system accessibility setting.</div></div>
+            </div></section>
+
+            <section class="settings-section"><h2 class="settings-section-title">System</h2><div class="glass settings-card destructive"><div class="settings-row"><div class="rowline"><span class="setting-label">Reset to defaults</span><span class="trailing-value" style="color:var(--fault)">›</span></div></div></div></section>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      const speedValue = document.getElementById('speedValue');
+      const speedRibbon = document.getElementById('speedRibbon');
+      const speedState = document.getElementById('speedState');
+      const speedEvent = document.getElementById('speedEvent');
+      const speedStates = [
+        { value: '000.0', state: 'Ready', event: 'Car HW50', tone: '', delay: 850 },
+        { value: '000.0', state: 'Beam armed', event: 'Scanning', tone: 'scanning', delay: 750 },
+        { value: '239.4', state: 'Pass captured', event: '239.4 mph', tone: 'pass', delay: 1750 },
+        { value: '000.0', state: 'Ready', event: 'Car HW50', tone: '', delay: 900 },
+        { value: '247.8', state: 'New session best', event: 'PB 247.8 mph', tone: 'pass', delay: 1900 },
+        { value: '000.0', state: 'Ready', event: '18 passes', tone: '', delay: 1050 }
+      ];
+      let speedIndex = 0;
+
+      function cycleSpeed() {
+        const item = speedStates[speedIndex];
+        speedValue.textContent = item.value;
+        speedState.textContent = item.state;
+        speedEvent.textContent = item.event;
+        speedRibbon.classList.remove('scanning', 'pass');
+        if (item.tone) speedRibbon.classList.add(item.tone);
+        speedIndex = (speedIndex + 1) % speedStates.length;
+        window.setTimeout(cycleSpeed, reduced ? 4000 : item.delay);
+      }
+
+      const overlay = document.getElementById('countdownOverlay');
+      const countNum = document.getElementById('countNum');
+      const raceTicker = document.getElementById('raceTicker');
+      const lapRows = document.getElementById('lapRows');
+      const laps = [
+        { n: 'LAP 01', time: '08.219', delta: '+0.237', best: false },
+        { n: 'LAP 02', time: '07.982', delta: 'BEST', best: true },
+        { n: 'LAP 03', time: '08.041', delta: '+0.059', best: false },
+        { n: 'LAP 04', time: '07.914', delta: 'BEST', best: true }
+      ];
+      let raceTimers = [];
+      let tickerTimer = 0;
+
+      function later(fn, ms) {
+        const id = window.setTimeout(fn, ms);
+        raceTimers.push(id);
+      }
+
+      function showCount(value) {
+        countNum.textContent = value;
+        countNum.classList.toggle('go', value === 'GO');
+        countNum.classList.remove('pop');
+        void countNum.offsetWidth;
+        countNum.classList.add('pop');
+      }
+
+      function addLap(lap) {
+        const row = document.createElement('div');
+        row.className = `lap-row arrive${lap.best ? ' best' : ''}`;
+        row.innerHTML = `<span>${lap.n}</span><span class="lap-time">${lap.time}</span><span class="lap-delta">${lap.delta}</span>`;
+        lapRows.prepend(row);
+      }
+
+      function startTicker() {
+        const start = performance.now();
+        window.clearInterval(tickerTimer);
+        tickerTimer = window.setInterval(() => {
+          const elapsed = Math.min(9.999, (performance.now() - start) / 1000);
+          raceTicker.textContent = `00:${elapsed.toFixed(3).padStart(6, '0')}`;
+        }, reduced ? 500 : 33);
+      }
+
+      function loopRace() {
+        raceTimers.forEach(window.clearTimeout);
+        raceTimers = [];
+        window.clearInterval(tickerTimer);
+        lapRows.innerHTML = '';
+        raceTicker.textContent = '00:00.000';
+        overlay.classList.remove('hidden');
+        showCount('3');
+        later(() => showCount('2'), 850);
+        later(() => showCount('1'), 1700);
+        later(() => showCount('GO'), 2550);
+        later(() => { overlay.classList.add('hidden'); startTicker(); }, 3200);
+        laps.forEach((lap, index) => later(() => addLap(lap), 3950 + index * 850));
+        later(loopRace, 8050);
+      }
+
+      const filterChips = [...document.querySelectorAll('.filter-chip')];
+      const carCards = [...document.querySelectorAll('.car-card')];
+      const filters = ['all', 'record', 'live', 'id'];
+      let filterIndex = 1;
+      function cycleFilter() {
+        const filter = filters[filterIndex];
+        filterChips.forEach(chip => chip.classList.toggle('active', chip.dataset.filter === filter));
+        carCards.forEach(card => card.classList.toggle('hidden-by-filter', filter !== 'all' && !card.dataset.tags.split(' ').includes(filter)));
+        filterIndex = (filterIndex + 1) % filters.length;
+      }
+
+      const demoSwitch = document.getElementById('demoSwitch');
+      function toggleDemoSwitch() { demoSwitch.classList.toggle('on'); }
+
+      if (reduced) {
+        speedValue.textContent = '247.8';
+        speedState.textContent = 'New session best';
+        speedEvent.textContent = 'PB 247.8 mph';
+        overlay.classList.add('hidden');
+        laps.slice(0, 3).forEach(addLap);
+      } else {
+        cycleSpeed();
+        loopRace();
+        window.setInterval(cycleFilter, 3800);
+        window.setInterval(toggleDemoSwitch, 2700);
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Redline ID — UI Overhaul Proposals</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#04060b;color:#eef2fa;font-family:-apple-system,"SF Pro Text","Helvetica Neue",Arial,sans-serif;min-height:100vh;padding:34px 22px 70px}
+  .wrap{max-width:1180px;margin:0 auto}
+  h1{font-size:30px;font-weight:800}
+  h1 .o{color:#ff7a1a}
+  .sub{color:#93a4c4;font-size:15px;margin-top:8px;line-height:1.5;max-width:760px}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:22px;margin-top:30px}
+  .card{background:#0b101b;border:1px solid #1a2438;border-radius:20px;padding:20px;display:flex;flex-direction:column;transition:border-color .2s, transform .2s}
+  .card:hover{border-color:#33415f;transform:translateY(-3px)}
+  .badge{font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;padding:4px 11px;border-radius:999px;align-self:flex-start}
+  .a .badge{background:rgba(255,122,26,.14);color:#ff9440;border:1px solid rgba(255,122,26,.4)}
+  .b .badge{background:rgba(38,198,255,.12);color:#4fd2ff;border:1px solid rgba(38,198,255,.4)}
+  .c .badge{background:rgba(139,92,246,.14);color:#b49aff;border:1px solid rgba(139,92,246,.45)}
+  .card h2{font-size:21px;font-weight:800;margin:12px 0 8px}
+  .card .by{font-size:11px;color:#64788a;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+  .card p{color:#9db0cc;font-size:13.5px;line-height:1.55;flex:1}
+  .preview{display:block;margin:16px 0;border-radius:14px;overflow:hidden;border:1px solid #141c2e;position:relative;background:#000}
+  .preview iframe{width:100%;height:250px;border:0;display:block;pointer-events:none;transform:scale(1)}
+  .preview .cover{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(2,4,8,.34);opacity:0;transition:opacity .2s}
+  .preview:hover .cover{opacity:1}
+  .cover span{font-size:12px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;background:#ff7a1a;color:#12060a;padding:9px 18px;border-radius:999px}
+  .links{display:flex;gap:10px}
+  .links a{flex:1;text-align:center;text-decoration:none;font-size:13px;font-weight:700;padding:11px 8px;border-radius:12px;border:1px solid #26334d;color:#cfe0f5;background:#0f1626}
+  .links a:hover{border-color:#ff7a1a;color:#ffb27a}
+  .links a.primary{background:#ff7a1a;border-color:#ff7a1a;color:#160903}
+  .links a.primary:hover{background:#ff8b3d;color:#160903}
+  .compare{margin-top:40px;background:#0b101b;border:1px solid #1a2438;border-radius:20px;padding:24px;overflow-x:auto}
+  .compare h2{font-size:18px;margin-bottom:16px}
+  table{width:100%;border-collapse:collapse;font-size:13px;min-width:640px}
+  th,td{text-align:left;padding:11px 14px;border-bottom:1px solid #141c2e;vertical-align:top;line-height:1.45}
+  th{color:#64788a;font-size:11px;text-transform:uppercase;letter-spacing:1.2px}
+  td.k{color:#8ea3c4;font-weight:700;white-space:nowrap}
+  tr:last-child td{border-bottom:0}
+  .foot{margin-top:30px;color:#64788a;font-size:12.5px;line-height:1.7}
+  code{background:#0f1626;padding:1px 7px;border-radius:6px;font-size:11.5px;color:#9db0cc}
+  .pick{margin-top:26px;background:linear-gradient(135deg,rgba(255,122,26,.10),rgba(38,198,255,.06));border:1px solid rgba(255,122,26,.3);border-radius:18px;padding:20px 24px}
+  .pick b{color:#ffb27a}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Redline ID — <span class="o">UI Overhaul</span> Proposals</h1>
+  <p class="sub">Three directions for a dynamic, animated UI. Each has a written proposal and a looping animated mock you can open in a browser. Pick a direction and I'll have the coding agents implement it in the app (the Settings alignment fix ships with whichever you choose).</p>
+
+  <div class="cards">
+
+    <div class="card a">
+      <span class="badge">Proposal A · Arcade Racer</span>
+      <h2>Arcade Racer</h2>
+      <div class="by">designed by Claude (Opus)</div>
+      <p>Bold toy-box / retro-arcade energy. Chunky shapes, big display numbers, speed-line and checkered motifs, bouncy springs, glow bursts and confetti on records. The most playful, kid-forward direction.</p>
+      <a class="preview" href="mockups/arcade-racer/index.html">
+        <iframe src="mockups/arcade-racer/index.html" scrolling="no" title="Arcade Racer mock"></iframe>
+        <span class="cover"><span>Open live mock →</span></span>
+      </a>
+      <div class="links">
+        <a class="primary" href="mockups/arcade-racer/index.html">▶ Animated mock</a>
+        <a href="../01-proposal-arcade-racer.md">Full proposal</a>
+      </div>
+    </div>
+
+    <div class="card b">
+      <span class="badge">Proposal B · Trackside Telemetry</span>
+      <h2>Trackside Telemetry</h2>
+      <div class="by">designed by Codex (GPT)</div>
+      <p>Motorsport timing-console discipline. Blackened glass panels, hairlines, tabular numerals, a live speed sparkline, and a persistent portal-status ribbon. Adult-serious at rest, playful only on a record. Keeps the tab bar.</p>
+      <a class="preview" href="mockups/trackside-telemetry/index.html">
+        <iframe src="mockups/trackside-telemetry/index.html" scrolling="no" title="Trackside Telemetry mock"></iframe>
+        <span class="cover"><span>Open live mock →</span></span>
+      </a>
+      <div class="links">
+        <a class="primary" href="mockups/trackside-telemetry/index.html">▶ Animated mock</a>
+        <a href="../02-proposal-trackside-telemetry.md">Full proposal</a>
+      </div>
+    </div>
+
+    <div class="card c">
+      <span class="badge">Proposal C · Night Rally</span>
+      <h2>Night Rally</h2>
+      <div class="by">designed by OpenCode (local)</div>
+      <p>Full-bleed cockpit. No tab bar — you swipe between immersive mode pages with a glowing "mode rail," one persistent speed readout morphs between layouts, and drifting light streaks keep it alive. The most immersive, boldest break.</p>
+      <a class="preview" href="mockups/night-rally/index.html">
+        <iframe src="mockups/night-rally/index.html" scrolling="no" title="Night Rally mock"></iframe>
+        <span class="cover"><span>Open live mock →</span></span>
+      </a>
+      <div class="links">
+        <a class="primary" href="mockups/night-rally/index.html">▶ Animated mock</a>
+        <a href="../03-proposal-night-rally.md">Full proposal</a>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="compare">
+    <h2>Side-by-side</h2>
+    <table>
+      <tr><th></th><th>A · Arcade Racer</th><th>B · Trackside Telemetry</th><th>C · Night Rally</th></tr>
+      <tr><td class="k">Personality</td><td>Toy-box arcade, celebratory</td><td>Motorsport instrument, precise</td><td>Cinematic cockpit, immersive</td></tr>
+      <tr><td class="k">Navigation</td><td>Tab bar (restyled)</td><td>Tab bar + status ribbon</td><td><b>Swipe pager + mode rail</b> (tabs stay on iPad)</td></tr>
+      <tr><td class="k">Motion feel</td><td>Bouncy springs, confetti, wobble</td><td>Fast, damped, no bounce</td><td>Shared-element morphs, ambient drift</td></tr>
+      <tr><td class="k">Signature</td><td>Flame-burst gauge + sticker cards</td><td>Glass + sparkline trace + ribbon</td><td>High-beam flash + page morph</td></tr>
+      <tr><td class="k">New deps</td><td>Maybe a display font (bundled)</td><td>None (uses installed glass/svg)</td><td>Display font (bundled)</td></tr>
+      <tr><td class="k">Shell effort</td><td>Low–Med</td><td>Medium</td><td>Med–High (custom pager)</td></tr>
+      <tr><td class="k">Risk</td><td>Lowest</td><td>Low</td><td>Highest (nav change)</td></tr>
+    </table>
+  </div>
+
+  <div class="pick">
+    <b>How to review:</b> open each <b>Animated mock</b> in a browser tab and let it loop — the motion is the point.
+    Then skim the matching <b>Full proposal</b> for the per-screen and Settings specs. All three fix the Settings
+    alignment bugs documented in <code>00-research.md</code>.
+  </div>
+
+  <p class="foot">
+    Generated by a three-agent pipeline (research + design on local OpenCode, Claude Code, and Codex) on branch
+    <code>burkben/ui-overhaul-proposals</code>. Mockups are self-contained HTML — no network, no assets. When you've
+    picked a direction, tell me which (A, B, or C, or a blend) and the coding agents will implement it in the app.
+  </p>
+</div>
+</body>
+</html>
