@@ -1,5 +1,9 @@
 # UI Overhaul — Proposals for Review
 
+> **Status: direction chosen.** The owner selected **Proposal B — Trackside
+> Telemetry**. Implementation is tracked in **[IMPLEMENTATION.md](IMPLEMENTATION.md)**;
+> the Settings alignment overhaul and the global telemetry shell are already in.
+
 Three candidate directions for a **dynamic, animated** Redline ID UI, produced by a
 multi-agent pipeline (research + design across local OpenCode, Claude Code, and Codex).
 
