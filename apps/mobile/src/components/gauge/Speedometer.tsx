@@ -22,7 +22,7 @@ import Animated, {
 } from "react-native-reanimated";
 import Svg, { Circle, G, Line, Path, Text as SvgText } from "react-native-svg";
 
-import { colors, fontSize, fontWeight } from "@/theme/tokens";
+import { colors, fontFamily, fontSize, fontWeight } from "@/theme/tokens";
 import {
   DEFAULT_SPEED_DISPLAY,
   formatSpeedValue,
@@ -159,7 +159,7 @@ export function Speedometer({
               y1={tick.outer.y}
               x2={tick.inner.x}
               y2={tick.inner.y}
-              stroke={colors.textMuted}
+              stroke={colors.inkMuted}
               strokeWidth={2}
             />
           ))}
@@ -168,7 +168,7 @@ export function Speedometer({
               key={`label-${tick.value}`}
               x={tick.label.x}
               y={tick.label.y + 4}
-              fill={colors.textSecondary}
+              fill={colors.inkSecondary}
               fontSize={11}
               fontWeight="600"
               textAnchor="middle"
@@ -190,17 +190,17 @@ export function Speedometer({
           x2={polarToCartesian(cx, cy, needleLength, GAUGE_START_ANGLE).x}
           y2={polarToCartesian(cx, cy, needleLength, GAUGE_START_ANGLE).y}
           animatedProps={needleProps}
-          stroke={isHot ? colors.accent : colors.accentBlue}
+          stroke={isHot ? colors.flame : colors.electric}
           strokeWidth={4}
           strokeLinecap="round"
         />
-        <Circle cx={cx} cy={cy} r={12} fill={colors.surface} stroke={colors.border} strokeWidth={2} />
-        <Circle cx={cx} cy={cy} r={4} fill={isHot ? colors.accent : colors.accentBlue} />
+        <Circle cx={cx} cy={cy} r={12} fill={colors.panelSolid} stroke={colors.hairline} strokeWidth={2} />
+        <Circle cx={cx} cy={cy} r={4} fill={isHot ? colors.flame : colors.electric} />
       </Svg>
 
       {/* Digital readout overlay */}
       <View pointerEvents="none" style={styles.readout}>
-        <Text style={[styles.readoutValue, isHot && { color: colors.accent }]}>
+        <Text style={[styles.readoutValue, isHot && { color: colors.flame }]}>
           {formatSpeedValue(readoutMph, display)}
         </Text>
         <Text style={styles.readoutUnit}>scale {speedUnitLabel(display.unit)}</Text>
@@ -220,14 +220,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   readoutValue: {
-    color: colors.textPrimary,
+    color: colors.ink,
     fontSize: fontSize.display,
     fontWeight: fontWeight.heavy,
+    fontFamily: fontFamily.telemetry,
     fontVariant: ["tabular-nums"],
     lineHeight: fontSize.display,
   },
   readoutUnit: {
-    color: colors.textSecondary,
+    color: colors.inkSecondary,
     fontSize: fontSize.sm,
     fontWeight: fontWeight.medium,
     letterSpacing: 1,

@@ -35,7 +35,7 @@ import { colors } from "@/theme/tokens";
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 /** Ember tints, warm to white-hot. */
-const EMBER_COLORS = ["#ff5a1a", colors.accent, "#ffb43a", "#ffe08a"] as const;
+const EMBER_COLORS = ["#ff5a1a", colors.flame, "#ffb43a", "#ffe08a"] as const;
 
 const HEAT_GRADIENT_ID = "hwHeatBloom";
 
@@ -99,9 +99,9 @@ export function FlameField({
     <G>
       <Defs>
         <RadialGradient id={HEAT_GRADIENT_ID} cx="50%" cy="50%" r="50%">
-          <Stop offset="0%" stopColor={colors.accent} stopOpacity={0.55} />
+          <Stop offset="0%" stopColor={colors.flame} stopOpacity={0.55} />
           <Stop offset="55%" stopColor="#ff5a1a" stopOpacity={0.22} />
-          <Stop offset="100%" stopColor={colors.accent} stopOpacity={0} />
+          <Stop offset="100%" stopColor={colors.flame} stopOpacity={0} />
         </RadialGradient>
       </Defs>
 
