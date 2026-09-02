@@ -9,7 +9,14 @@
  * (see docs/design/ui-overhaul/02-proposal-trackside-telemetry.md).
  */
 import { useEffect, useState, type PropsWithChildren } from "react";
-import { AccessibilityInfo, Platform, StyleSheet, View, type ViewStyle } from "react-native";
+import {
+  AccessibilityInfo,
+  Platform,
+  StyleSheet,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from "react-native";
 import {
   GlassView,
   isGlassEffectAPIAvailable,
@@ -23,8 +30,8 @@ export interface TelemetrySurfaceProps {
   radius?: number;
   /** When true, force the opaque fallback (used for tests / reduce-transparency). */
   forceFallback?: boolean;
-  style?: ViewStyle;
-  contentStyle?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
+  contentStyle?: StyleProp<ViewStyle>;
 }
 
 /** True only when native glass is safe to render on this device. */

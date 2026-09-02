@@ -18,7 +18,10 @@ import { RecentPasses } from '@/components/RecentPasses';
 import { Speedometer } from '@/components/gauge/Speedometer';
 import { StatusPill } from '@/components/StatusPill';
 import { BleStatusBanner } from '@/components/BleStatusBanner';
-import { CurrentCarHero } from '@/components/CurrentCarHero';
+import { ActiveCarStrip } from '@/components/telemetry/ActiveCarStrip';
+import { SpeedTrace } from '@/components/telemetry/SpeedTrace';
+import { TelemetrySurface } from '@/components/telemetry/TelemetrySurface';
+import { TelemetryValue } from '@/components/telemetry/TelemetryValue';
 import { useCarIdentity } from '@/catalog/useCarIdentity';
 import { useLayout } from '@/layout/useLayout';
 import {
@@ -30,7 +33,7 @@ import { useGarageStore } from '@/store/garageStore';
 import { usePortalStore } from '@/store/portalStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { formatBestSpeed, speedUnitLabel, type SpeedDisplay } from '@/speed/format';
-import { colors, elevation, fontSize, fontWeight, radius, spacing, speedGauge } from '@/theme/tokens';
+import { colors, fontSize, fontSizeT, fontWeight, radius, radiusT, spacing, speedGauge } from '@/theme/tokens';
 
 /** How long the needle holds a pass before easing back toward zero. */
 const NEEDLE_HOLD_MS = 1300;
@@ -236,7 +239,7 @@ export default function SpeedometerScreen() {
     </>
   );
 
-  const heroCard = <CurrentCarHero model={hero} display={speedDisplay} />;
+  const heroCard = <ActiveCarStrip model={hero} display={speedDisplay} />;
 
   const gauge = (
     <Speedometer
@@ -252,16 +255,44 @@ export default function SpeedometerScreen() {
     />
   );
 
+  // Live telemetry trace of recent passes (oldest → newest).
+  const traceValues = useMemo(
+    () => passes.map((p) => p.scaleMph).slice(0, 30).reverse(),
+    [passes],
+  );
+
+  const lastDelta =
+    lastPassMph > 0 && bestMph > 0 ? lastPassMph - bestMph : null;
+
   const stats = (
     <View style={[styles.statsRow, { maxWidth: paneWidth }]}>
-      <Stat label="Best" value={formatBestSpeed(bestMph, speedDisplay)} unit={speedUnitLabel(speedUnit)} />
-      <Stat label="Passes" value={passes.length.toString()} unit="total" />
       <Stat
-        label="Last"
-        value={formatBestSpeed(lastPassMph, speedDisplay)}
+        label="Best"
+        value={formatBestSpeed(bestMph, speedDisplay)}
         unit={speedUnitLabel(speedUnit)}
       />
+      <Stat label="Passes" value={passes.length.toString()} unit="total" />
+      <Stat
+        label="Delta"
+        value={lastDelta == null ? '—' : formatBestSpeed(Math.abs(lastDelta), speedDisplay)}
+        unit={speedUnitLabel(speedUnit)}
+        delta={
+          lastDelta == null
+            ? undefined
+            : `${lastDelta >= 0 ? '+' : '−'}${formatBestSpeed(Math.abs(lastDelta), speedDisplay)}`
+        }
+      />
     </View>
+  );
+
+  const trace = (
+    <TelemetrySurface style={[styles.traceCard, { maxWidth: paneWidth }]}>
+      <View style={styles.traceHead}>
+        <Text style={styles.traceLabel}>Speed trace</Text>
+        <Text style={styles.traceMeta}>last {Math.min(traceValues.length, 30)} passes</Text>
+      </View>
+      <SpeedTrace values={traceValues} height={92} />
+    </TelemetrySurface>
   );
 
   // Connect/retry/disconnect all live on the status pill now, so demo mode is
@@ -307,6 +338,7 @@ export default function SpeedometerScreen() {
             {modeToggle}
             {gauge}
             {stats}
+            {trace}
             {controls}
           </View>
           <ScrollView
@@ -348,6 +380,7 @@ export default function SpeedometerScreen() {
       {heroCard}
       {gauge}
       {stats}
+      {trace}
       {controls}
       <RecentPasses
         passes={passes}
@@ -360,28 +393,33 @@ export default function SpeedometerScreen() {
   );
 }
 
-function Stat({ label, value, unit }: { label: string; value: string; unit: string }) {
+function Stat({
+  label,
+  value,
+  unit,
+  delta,
+}: {
+  label: string;
+  value: string;
+  unit: string;
+  delta?: string;
+}) {
   return (
-    <View style={styles.stat}>
+    <TelemetrySurface style={styles.stat}>
       <Text style={styles.statLabel}>{label}</Text>
-      <Text style={styles.statValue} numberOfLines={1}>
-        {value}
-      </Text>
-      <Text style={styles.statUnit} numberOfLines={1}>
-        {unit}
-      </Text>
-    </View>
+      <TelemetryValue value={value} unit={unit} delta={delta} size="md" />
+    </TelemetrySurface>
   );
 }
 
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: colors.bg,
+    backgroundColor: colors.void,
   },
   content: {
     alignItems: 'center',
-    gap: spacing(5),
+    gap: spacing(4),
   },
   /** iPad: a fixed frame, since each pane manages its own scrolling. */
   splitRoot: {
@@ -424,12 +462,12 @@ const styles = StyleSheet.create({
     gap: spacing(2),
   },
   title: {
-    color: colors.textPrimary,
+    color: colors.ink,
     fontSize: fontSize.xl,
     fontWeight: fontWeight.heavy,
   },
   subtitle: {
-    color: colors.textSecondary,
+    color: colors.inkSecondary,
     fontSize: fontSize.sm,
     marginTop: 2,
   },
@@ -440,30 +478,39 @@ const styles = StyleSheet.create({
   },
   stat: {
     flex: 1,
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: radius.md,
     paddingVertical: spacing(3),
     paddingHorizontal: spacing(3),
-    alignItems: 'center',
-    gap: 2,
-    ...elevation.card,
+    alignItems: 'flex-start',
+    gap: 4,
   },
   statLabel: {
-    color: colors.textMuted,
-    fontSize: fontSize.xs,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  statValue: {
-    color: colors.textPrimary,
-    fontSize: fontSize.lg,
+    color: colors.inkMuted,
+    fontSize: fontSizeT.xs,
     fontWeight: fontWeight.bold,
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
   },
-  statUnit: {
-    color: colors.textSecondary,
-    fontSize: fontSize.xs,
+  traceCard: {
+    width: '100%',
+    padding: spacing(3),
+    gap: spacing(2),
+  },
+  traceHead: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+  },
+  traceLabel: {
+    color: colors.inkMuted,
+    fontSize: fontSizeT.xs,
+    fontWeight: fontWeight.bold,
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+  },
+  traceMeta: {
+    color: colors.inkMuted,
+    fontSize: fontSizeT.xs,
+    fontVariant: ['tabular-nums'],
   },
   controls: {
     width: '100%',
@@ -472,73 +519,75 @@ const styles = StyleSheet.create({
   },
   button: {
     flex: 1,
-    borderRadius: radius.md,
+    borderRadius: radiusT.field,
     paddingVertical: spacing(3.5),
     alignItems: 'center',
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   buttonGhost: {
-    backgroundColor: colors.surfaceAlt,
-    borderColor: colors.border,
+    backgroundColor: colors.panelInset,
+    borderColor: colors.hairline,
   },
   lockedBanner: {
     width: '100%',
-    backgroundColor: colors.surface,
-    borderColor: colors.danger,
+    backgroundColor: colors.panelSolid,
+    borderColor: colors.fault,
     borderWidth: 1,
-    borderRadius: radius.md,
+    borderRadius: radiusT.card,
     padding: spacing(4),
     gap: spacing(2),
   },
   lockedTitle: {
-    color: colors.textPrimary,
+    color: colors.ink,
     fontSize: fontSize.md,
     fontWeight: fontWeight.bold,
   },
   lockedBody: {
-    color: colors.textSecondary,
+    color: colors.inkSecondary,
     fontSize: fontSize.sm,
     lineHeight: 19,
   },
   lockedButton: {
     marginTop: spacing(1),
     alignSelf: 'flex-start',
-    backgroundColor: colors.surfaceAlt,
-    borderColor: colors.accent,
+    backgroundColor: colors.panelInset,
+    borderColor: colors.flame,
     borderWidth: 1,
-    borderRadius: radius.md,
+    borderRadius: radiusT.field,
     paddingVertical: spacing(2.5),
     paddingHorizontal: spacing(4),
   },
   lockedButtonText: {
-    color: colors.accent,
+    color: colors.flame,
     fontSize: fontSize.sm,
     fontWeight: fontWeight.bold,
   },
   modeToggle: {
     flexDirection: 'row',
-    backgroundColor: colors.surfaceAlt,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: radius.pill,
-    padding: 3,
-    gap: 3,
+    backgroundColor: colors.panelInset,
+    borderColor: colors.hairline,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: radiusT.field,
+    padding: 2,
+    gap: 2,
   },
   modeOption: {
-    paddingVertical: spacing(1.5),
+    paddingVertical: spacing(2),
     paddingHorizontal: spacing(4),
-    borderRadius: radius.pill,
+    borderRadius: radiusT.field - 2,
+    minHeight: 32,
+    justifyContent: 'center',
   },
   modeOptionActive: {
-    backgroundColor: colors.accent,
+    backgroundColor: colors.electric,
   },
   modeText: {
-    color: colors.textSecondary,
+    color: colors.inkSecondary,
     fontSize: fontSize.sm,
     fontWeight: fontWeight.bold,
   },
   modeTextActive: {
-    color: colors.bg,
+    color: colors.void,
   },
   buttonDisabled: {
     opacity: 0.4,
@@ -547,12 +596,12 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   buttonText: {
-    color: colors.textPrimary,
+    color: colors.ink,
     fontSize: fontSize.md,
     fontWeight: fontWeight.bold,
   },
   note: {
-    color: colors.textMuted,
+    color: colors.inkMuted,
     fontSize: fontSize.xs,
     textAlign: 'center',
     lineHeight: 18,
