@@ -6,7 +6,7 @@
  */
 import { StyleSheet, Text, View } from "react-native";
 
-import { colors, fontSize, fontWeight, radius, spacing } from "@/theme/tokens";
+import { colors, fontFamily, fontSize, fontSizeT, fontWeight, radiusT, spacing } from "@/theme/tokens";
 import {
   DEFAULT_SPEED_DISPLAY,
   formatSpeedValue,
@@ -76,23 +76,23 @@ export function RecentPasses({
 const styles = StyleSheet.create({
   card: {
     width: "100%",
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: radius.lg,
+    backgroundColor: colors.panelSolid,
+    borderColor: colors.hairline,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: radiusT.card,
     padding: spacing(4),
     gap: spacing(2),
   },
   heading: {
-    color: colors.textSecondary,
-    fontSize: fontSize.sm,
+    color: colors.inkMuted,
+    fontSize: fontSize.xs,
     fontWeight: fontWeight.bold,
     textTransform: "uppercase",
-    letterSpacing: 1,
+    letterSpacing: 1.2,
     marginBottom: spacing(1),
   },
   empty: {
-    color: colors.textMuted,
+    color: colors.inkMuted,
     fontSize: fontSize.sm,
   },
   row: {
@@ -100,8 +100,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingVertical: spacing(2),
-    borderTopWidth: 1,
-    borderTopColor: colors.surfaceAlt,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.hairline,
   },
   rowLeft: {
     flexDirection: "row",
@@ -109,21 +109,22 @@ const styles = StyleSheet.create({
     gap: spacing(1.5),
   },
   mph: {
-    color: colors.textPrimary,
+    color: colors.ink,
+    fontFamily: fontFamily.telemetry,
     fontSize: fontSize.xl,
     fontWeight: fontWeight.heavy,
     fontVariant: ["tabular-nums"],
   },
   mphBest: {
-    color: colors.accent,
+    color: colors.flame,
   },
   unit: {
-    color: colors.textMuted,
-    fontSize: fontSize.xs,
+    color: colors.inkMuted,
+    fontSize: fontSizeT.xs,
   },
   bestTag: {
-    color: colors.accent,
-    fontSize: fontSize.xs,
+    color: colors.flame,
+    fontSize: fontSizeT.xs,
     fontWeight: fontWeight.bold,
     letterSpacing: 1,
     marginLeft: spacing(1),
@@ -132,12 +133,14 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
   },
   uid: {
-    color: colors.textSecondary,
+    color: colors.inkSecondary,
     fontSize: fontSize.sm,
-    fontFamily: "monospace",
+    fontFamily: fontFamily.telemetry,
+    fontVariant: ["tabular-nums"],
   },
   time: {
-    color: colors.textMuted,
-    fontSize: fontSize.xs,
+    color: colors.inkMuted,
+    fontSize: fontSizeT.xs,
+    fontVariant: ["tabular-nums"],
   },
 });
