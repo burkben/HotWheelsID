@@ -12,13 +12,13 @@ import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { bleStatusBanner } from "@/ble/bleStatus";
 import type { BlePhase } from "@/ble/types";
-import { colors, fontSize, fontWeight, radius, spacing } from "@/theme/tokens";
+import { colors, fontSize, fontWeight, radiusT, spacing } from "@/theme/tokens";
 
 export function BleStatusBanner({ phase }: { phase: BlePhase | null }) {
   const banner = bleStatusBanner(phase);
   if (!banner) return null;
 
-  const accent = banner.tone === "danger" ? colors.danger : colors.warn;
+  const accent = banner.tone === "danger" ? colors.fault : colors.caution;
 
   return (
     <View
@@ -52,28 +52,28 @@ const styles = StyleSheet.create({
   banner: {
     width: "100%",
     maxWidth: 420,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.panelSolid,
     borderWidth: 1,
-    borderRadius: radius.md,
+    borderRadius: radiusT.card,
     padding: spacing(4),
     gap: spacing(2),
   },
   title: {
-    color: colors.textPrimary,
+    color: colors.ink,
     fontSize: fontSize.md,
     fontWeight: fontWeight.bold,
   },
   body: {
-    color: colors.textSecondary,
+    color: colors.inkSecondary,
     fontSize: fontSize.sm,
     lineHeight: 19,
   },
   button: {
     marginTop: spacing(1),
     alignSelf: "flex-start",
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: colors.panelInset,
     borderWidth: 1,
-    borderRadius: radius.md,
+    borderRadius: radiusT.card,
     paddingVertical: spacing(2.5),
     paddingHorizontal: spacing(4),
   },
