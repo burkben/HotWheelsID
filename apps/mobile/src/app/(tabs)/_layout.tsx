@@ -18,24 +18,27 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 import { colors, fontWeight } from '@/theme/tokens';
 import { PersistenceStatusBanner } from '@/components/PersistenceStatusBanner';
+import { PortalStatusRibbon } from '@/components/telemetry/PortalStatusRibbon';
 
 type IconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
 
 /** A vector tab glyph; its tint follows the active/inactive tab color. */
 function tabIcon(name: IconName) {
   return function TabIcon({ color, size }: { color: ColorValue; size?: number }) {
-    return <MaterialCommunityIcons name={name} color={color} size={size ?? 26} />;
+    return <MaterialCommunityIcons name={name} color={color} size={size ?? 24} />;
   };
 }
 
+// Trackside Telemetry dock: the flame active tab sits on the cooler void/panel
+// ramp with a hairline top border; labels stay visible for mixed-age use.
 const screenOptions: ComponentProps<typeof Tabs>['screenOptions'] = {
   headerShown: false,
-  tabBarActiveTintColor: colors.accent,
-  tabBarInactiveTintColor: colors.textMuted,
+  tabBarActiveTintColor: colors.flame,
+  tabBarInactiveTintColor: colors.inkMuted,
   tabBarStyle: {
-    backgroundColor: colors.surface,
-    borderTopColor: colors.border,
-    borderTopWidth: 1,
+    backgroundColor: colors.panelSolid,
+    borderTopColor: colors.hairline,
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
   tabBarLabelStyle: { fontSize: 11, fontWeight: fontWeight.bold },
 };
@@ -44,6 +47,10 @@ export default function TabsLayout() {
   return (
     <View style={styles.layout}>
       <PersistenceStatusBanner />
+      {/* Global telemetry channel: portal state stays legible on every tab.
+          It lives here (not the root stack) so pushed screens and the separate
+          /tv surface are excluded automatically. */}
+      <PortalStatusRibbon />
       <Tabs screenOptions={screenOptions}>
         <Tabs.Screen name="index" options={{ title: 'Speed', tabBarIcon: tabIcon('speedometer') }} />
         <Tabs.Screen name="race" options={{ title: 'Race', tabBarIcon: tabIcon('flag-checkered') }} />
@@ -58,6 +65,6 @@ export default function TabsLayout() {
 const styles = StyleSheet.create({
   layout: {
     flex: 1,
-    backgroundColor: colors.bg,
+    backgroundColor: colors.void,
   },
 });

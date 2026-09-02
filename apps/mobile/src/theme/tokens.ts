@@ -44,6 +44,39 @@ export const colors = {
   warn: "#eab308",
   danger: "#ef4444",
   idle: "#6b7a99",
+
+  // ---- Trackside Telemetry (UI overhaul, proposal B) -----------------------
+  // Lower, cooler blacks and purpose-built glass/fallback surfaces. These are
+  // additions alongside the legacy ramp above; new telemetry screens use these,
+  // and existing tokens keep working while surfaces migrate.
+  /** Screen void — the deepest black the app sits on. */
+  void: "#05080d",
+  /** Opaque fallback for every glass surface (never legibility-dependent). */
+  panelSolid: "#0d1520",
+  /** Inset/nested telemetry surface (inputs, unselected segments, inset rows). */
+  panelInset: "#09111b",
+  /** Raised telemetry surface — active car, current heat, selected record. */
+  panelRaised: "#132131",
+  /** Default glass fill when liquid glass is unavailable or transparency-reduced. */
+  glassFill: "rgba(13,21,32,0.78)",
+  /** One-pixel top/inner highlight on glass/telemetry surfaces. */
+  glassHighlight: "rgba(255,255,255,0.07)",
+  /** Cooler hairline for telemetry cards, rows, graph grids. */
+  hairline: "rgba(135,174,214,0.20)",
+
+  /** Telemetry ink ramp. */
+  ink: "#f5f8fb",
+  inkSecondary: "#9bb0c4",
+  inkMuted: "#64788a",
+
+  /** Calibrated accents (close to the brand pair, tuned for glass). */
+  flame: "#ff7418",
+  electric: "#2bd1ff",
+
+  /** Status semantics tuned for the darker void (always paired with text/icon). */
+  okT: "#39d98a",
+  caution: "#ffd15c",
+  fault: "#ff5a67",
 } as const;
 
 /** Speed gauge configuration (values are "scale mph" = parseSpeed.scaleMph). */
@@ -72,6 +105,19 @@ export const radius = {
   md: 12,
   lg: 16,
   xl: 24,
+  pill: 999,
+} as const;
+
+/**
+ * Trackside Telemetry precision radius scale — tighter than the legacy ramp.
+ * Primary telemetry cards use 12, list groups 10, fields/segments 6.
+ */
+export const radiusT = {
+  xs: 4,
+  sm: 8,
+  card: 12,
+  group: 10,
+  field: 6,
   pill: 999,
 } as const;
 
@@ -118,9 +164,33 @@ export const fontSize = {
   display: 64,
 } as const;
 
+/** Trackside Telemetry extensions — tiny channel labels and hero readouts. */
+export const fontSizeT = {
+  /** 9pt channel/axis labels — supplemental only, never core. */
+  nano: 9,
+  xs: 11,
+  sm: 13,
+  md: 16,
+  lg: 20,
+  xl: 24,
+  /** Live speed / hero value. */
+  hero: 88,
+  /** Race countdown digits. */
+  raceDisplay: 112,
+} as const;
+
 export const fontWeight = {
   regular: "400",
   medium: "600",
   bold: "700",
   heavy: "800",
+} as const;
+
+/**
+ * Numeric/telemetry face. San Francisco stays the reading face; the mono face is
+ * reserved for values where digits must align in stable columns (speed, lap
+ * times, counters, UID fragments, timestamps). No font download — iOS SF Mono.
+ */
+export const fontFamily = {
+  telemetry: "SFMono-Regular",
 } as const;

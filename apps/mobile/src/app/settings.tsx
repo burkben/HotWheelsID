@@ -1,14 +1,17 @@
 /**
  * Settings — durable app preferences (ADR-0006, Phase 3).
  *
- * Reads/writes {@link useSettingsStore}; every change persists through the store's
- * write-through sink (a `settings` KV table on the shared `redlineid.db`, migration
- * v4 — no native rebuild). When SQLite isn't in the build yet the edits still apply
- * for the session and simply aren't saved.
+ * Rebuilt on the Trackside Telemetry row system (proposal B). Every preference
+ * uses the shared `SettingRow` geometry: the control is a sibling of the label
+ * on a ≥44pt "label line", and the hint is a sibling of that line — never of
+ * the control. That single rule fixes the alignment bugs audited in
+ * docs/design/ui-overhaul/00-research.md §5 (floating switches/stepper, the
+ * overstretched flex chips, compounded section spacing, cramped cards, the
+ * orphaned reset, and the off-center header).
  *
- * Wired consumers: `playerName` + `defaultLaps` seed the Race setup screen, `haptics`
- * gates tactile feedback there and on Home, `reduceMotion` is OR'd with the OS setting
- * for race animations, and `mockModeDefault` chooses Home's initial transport.
+ * Behavior is unchanged: reads/writes {@link useSettingsStore} with the same
+ * write-through persistence, the same commit-on-blur name editing, and the same
+ * eight settings keys. Only the layout system changed.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -41,7 +44,14 @@ import {
   speedUnitLabel,
   type SpeedUnit,
 } from '@/speed/format';
-import { colors, fontSize, fontWeight, radius, spacing } from '@/theme/tokens';
+import {
+  CompactStepper,
+  SettingGroup,
+  SettingRow,
+  SettingsSection,
+  TelemetrySegmentedControl,
+} from '@/components/telemetry';
+import { colors, fontSize, fontWeight, radiusT, spacing } from '@/theme/tokens';
 
 /**
  * Sharing emits a JSON payload through the OS share sheet, which on its own
@@ -79,6 +89,7 @@ export default function SettingsScreen() {
   // in progress — and stops a stale default draft overwriting the persisted name if
   // Settings is opened before persistence finishes loading.
   const [draftName, setDraftName] = useState(playerName);
+  const [editingName, setEditingName] = useState(false);
   const nameDirty = useRef(false);
   useEffect(() => {
     if (!nameDirty.current) setDraftName(playerName);
@@ -100,18 +111,7 @@ export default function SettingsScreen() {
     if (next !== draftName) setDraftName(next);
     if (next !== playerName) setPlayerName(next);
     nameDirty.current = false; // draft now matches the store; allow future re-sync
-  };
-
-  const selectLaps = (laps: number) => {
-    if (laps === defaultLaps) return;
-    setDefaultLaps(laps);
-    tick();
-  };
-
-  const selectUnit = (unit: SpeedUnit) => {
-    if (unit === speedUnit) return;
-    setSpeedUnit(unit);
-    tick();
+    setEditingName(false);
   };
 
   const nudgeCalibration = (delta: number) => {
@@ -148,6 +148,7 @@ export default function SettingsScreen() {
           reset();
           nameDirty.current = false;
           setDraftName(DEFAULT_SETTINGS.playerName);
+          setEditingName(false);
         },
       },
     ]);
@@ -155,18 +156,22 @@ export default function SettingsScreen() {
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top + spacing(2) }]}>
+      {/* Balanced 3-slot header: fixed-width sides so the title is optically
+          centered regardless of the back button's width (fixes §5.1). */}
       <View style={[styles.header, column]}>
-        <Pressable
-          onPress={() => router.back()}
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-          style={({ pressed }) => [styles.back, pressed && styles.pressed]}
-        >
-          <Text style={styles.backText}>‹ Back</Text>
-        </Pressable>
+        <View style={styles.headerSide}>
+          <Pressable
+            onPress={() => router.back()}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+            style={({ pressed }) => [styles.backChip, pressed && styles.pressed]}
+          >
+            <Text style={styles.backChipText}>‹</Text>
+          </Pressable>
+        </View>
         <Text style={styles.title}>Settings</Text>
-        <View style={styles.headerSpacer} />
+        <View style={styles.headerSide} />
       </View>
 
       <ScrollView
@@ -177,193 +182,172 @@ export default function SettingsScreen() {
         ]}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={styles.sectionLabel}>Profile</Text>
-        <View style={styles.card}>
-          <Text style={styles.rowLabel}>Player name</Text>
-          <TextInput
-            value={draftName}
-            onChangeText={editName}
-            onBlur={commitName}
-            onSubmitEditing={commitName}
-            placeholder={DEFAULT_SETTINGS.playerName}
-            placeholderTextColor={colors.textMuted}
-            style={styles.input}
-            maxLength={24}
-            returnKeyType="done"
-            autoCorrect={false}
-          />
-          <Text style={styles.hint}>Pre-fills the racer name when you start a race.</Text>
-        </View>
+        <SettingsSection title="Profile" style={styles.firstSection}>
+          <SettingGroup>
+            {editingName ? (
+              <View style={styles.editRow}>
+                <TextInput
+                  value={draftName}
+                  onChangeText={editName}
+                  onBlur={commitName}
+                  onSubmitEditing={commitName}
+                  placeholder={DEFAULT_SETTINGS.playerName}
+                  placeholderTextColor={colors.inkMuted}
+                  style={styles.input}
+                  maxLength={24}
+                  returnKeyType="done"
+                  autoCorrect={false}
+                  autoFocus
+                  accessibilityLabel="Player name"
+                />
+              </View>
+            ) : (
+              <SettingRow
+                label="Player name"
+                hint="Pre-fills the racer name when you start a race."
+                onPress={() => setEditingName(true)}
+                control={<Text style={styles.valueText}>{playerName}</Text>}
+                accessibilityLabel={`Player name, ${playerName}. Double tap to edit.`}
+              />
+            )}
+          </SettingGroup>
+        </SettingsSection>
 
-        <Text style={styles.sectionLabel}>Racing</Text>
-        <View style={styles.card}>
-          <Text style={styles.rowLabel}>Default laps</Text>
-          <View style={styles.chips}>
-            {LAP_OPTIONS.map((opt) => {
-              const active = defaultLaps === opt;
-              return (
-                <Pressable
-                  key={opt}
-                  onPress={() => selectLaps(opt)}
-                  style={({ pressed }) => [
-                    styles.chip,
-                    active && styles.chipActive,
-                    pressed && styles.pressed,
-                  ]}
-                >
-                  <Text style={[styles.chipNum, active && styles.chipTextActive]}>{opt}</Text>
-                  <Text style={[styles.chipUnit, active && styles.chipTextActive]}>laps</Text>
-                </Pressable>
-              );
-            })}
-          </View>
-          <Text style={styles.hint}>The lap target selected by default on the race setup screen.</Text>
-        </View>
+        <SettingsSection title="Racing">
+          <SettingGroup>
+            <SettingRow
+              label="Default laps"
+              hint="The lap target selected by default on the race setup screen."
+              control={
+                <TelemetrySegmentedControl
+                  accent="flame"
+                  segments={LAP_OPTIONS.map((n) => ({ value: n, label: String(n) }))}
+                  value={defaultLaps}
+                  onChange={(n) => {
+                    setDefaultLaps(n);
+                    tick();
+                  }}
+                />
+              }
+            />
+          </SettingGroup>
+        </SettingsSection>
 
-        <Text style={styles.sectionLabel}>Speed</Text>
-        <View style={styles.card}>
-          <Text style={styles.rowLabel}>Units</Text>
-          <View style={styles.chips}>
-            {(['mph', 'kmh'] as SpeedUnit[]).map((unit) => {
-              const active = speedUnit === unit;
-              return (
-                <Pressable
-                  key={unit}
-                  onPress={() => selectUnit(unit)}
-                  style={({ pressed }) => [
-                    styles.chip,
-                    active && styles.chipActive,
-                    pressed && styles.pressed,
-                  ]}
-                >
-                  <Text style={[styles.chipNum, active && styles.chipTextActive]}>
-                    {speedUnitLabel(unit)}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-          <View style={styles.divider} />
-          <View style={styles.stepperRow}>
-            <View style={styles.stepperText}>
-              <Text style={styles.rowLabel}>Calibration</Text>
-              <Text style={styles.hint}>
-                Trim displayed speeds to match a known reference. Recorded data and goals stay
-                unchanged.
-              </Text>
-            </View>
-            <View style={styles.stepper}>
-              <Pressable
-                onPress={() => nudgeCalibration(-CALIBRATION_STEP)}
-                disabled={speedCalibration <= MIN_CALIBRATION}
-                hitSlop={8}
-                style={({ pressed }) => [
-                  styles.stepperBtn,
-                  pressed && styles.pressed,
-                  speedCalibration <= MIN_CALIBRATION && styles.stepperBtnDisabled,
-                ]}
-              >
-                <Text style={styles.stepperBtnText}>−</Text>
-              </Pressable>
-              <Text style={styles.stepperValue}>{formatCalibration(speedCalibration)}</Text>
-              <Pressable
-                onPress={() => nudgeCalibration(CALIBRATION_STEP)}
-                disabled={speedCalibration >= MAX_CALIBRATION}
-                hitSlop={8}
-                style={({ pressed }) => [
-                  styles.stepperBtn,
-                  pressed && styles.pressed,
-                  speedCalibration >= MAX_CALIBRATION && styles.stepperBtnDisabled,
-                ]}
-              >
-                <Text style={styles.stepperBtnText}>+</Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
+        <SettingsSection title="Speed">
+          <SettingGroup>
+            <SettingRow
+              label="Units"
+              control={
+                <TelemetrySegmentedControl
+                  segments={(['mph', 'kmh'] as SpeedUnit[]).map((u) => ({
+                    value: u,
+                    label: speedUnitLabel(u),
+                  }))}
+                  value={speedUnit}
+                  onChange={(u) => {
+                    setSpeedUnit(u);
+                    tick();
+                  }}
+                />
+              }
+            />
+            <SettingRow
+              label="Calibration"
+              hint="Trim displayed speeds to match a known reference. Recorded data and goals stay unchanged."
+              control={
+                <CompactStepper
+                  value={formatCalibration(speedCalibration)}
+                  onDecrement={() => nudgeCalibration(-CALIBRATION_STEP)}
+                  onIncrement={() => nudgeCalibration(CALIBRATION_STEP)}
+                  canDecrement={speedCalibration > MIN_CALIBRATION}
+                  canIncrement={speedCalibration < MAX_CALIBRATION}
+                  accessibilityLabel="Speed calibration"
+                />
+              }
+            />
+          </SettingGroup>
+        </SettingsSection>
 
-        <Text style={styles.sectionLabel}>Feedback</Text>
-        <View style={styles.card}>
-          <ToggleRow
-            label="Haptics"
-            hint="Vibration on the countdown, each lap, and new-best passes."
-            value={haptics}
-            onValueChange={setHaptics}
-          />
-          <View style={styles.divider} />
-          <ToggleRow
-            label="Sound"
-            hint="Play race cues on the countdown, each lap, new-best laps, and finish."
-            value={sound}
-            onValueChange={setSound}
-          />
-          <View style={styles.divider} />
-          <ToggleRow
-            label="Reduce motion"
-            hint="Skip the countdown pulse and other animations (also honors the system setting)."
-            value={reduceMotion}
-            onValueChange={setReduceMotion}
-          />
-        </View>
+        <SettingsSection title="Feedback">
+          <SettingGroup>
+            <ToggleRow
+              label="Haptics"
+              hint="Vibration on the countdown, each lap, and new-best passes."
+              value={haptics}
+              onValueChange={setHaptics}
+            />
+            <ToggleRow
+              label="Sound"
+              hint="Play race cues on the countdown, each lap, new-best laps, and finish."
+              value={sound}
+              onValueChange={setSound}
+            />
+            <ToggleRow
+              label="Reduce motion"
+              hint="Skip the countdown pulse and other animations (also honors the system setting)."
+              value={reduceMotion}
+              onValueChange={setReduceMotion}
+            />
+          </SettingGroup>
+        </SettingsSection>
 
-        <Text style={styles.sectionLabel}>Startup</Text>
-        <View style={styles.card}>
-          <ToggleRow
-            label="Start in demo mode"
-            hint="Start the in-app mock portal instead of scanning for live BLE."
-            value={mockModeDefault}
-            onValueChange={setMockModeDefault}
-          />
-        </View>
+        <SettingsSection title="Startup">
+          <SettingGroup>
+            <ToggleRow
+              label="Start in demo mode"
+              hint="Start the in-app mock portal instead of scanning for live BLE."
+              value={mockModeDefault}
+              onValueChange={setMockModeDefault}
+            />
+          </SettingGroup>
+        </SettingsSection>
 
-        <Text style={styles.sectionLabel}>Community</Text>
-        <View style={styles.card}>
-          <Text style={styles.rowLabel}>Share car identities</Text>
-          <Text style={styles.hint}>
-            {
-              "Contribute the castings you've identified to the community seed so everyone's cars auto-name. Only casting → catalog facts are shared — never your tags or collection."
-            }
-          </Text>
-          <Pressable
-            onPress={shareIdentifications}
-            disabled={shareableCount === 0}
-            style={({ pressed }) => [
-              styles.shareBtn,
-              pressed && styles.pressed,
-              shareableCount === 0 && styles.stepperBtnDisabled,
-            ]}
-          >
-            <Text style={styles.shareBtnText}>
-              {shareableCount === 0
-                ? 'Identify a car to share'
-                : `Share ${shareableCount} identified casting${shareableCount === 1 ? '' : 's'}`}
-            </Text>
-          </Pressable>
-          <Text style={styles.hint}>
-            Sharing hands you a JSON file. Add it to the community folder on GitHub and open a
-            pull request — the guide has the steps.
-          </Text>
-          <Pressable
-            onPress={() => {
-              void WebBrowser.openBrowserAsync(CONTRIBUTING_URL);
-            }}
-            style={({ pressed }) => [styles.link, pressed && styles.pressed]}
-          >
-            <Text style={styles.linkText}>How to contribute ↗</Text>
-          </Pressable>
-        </View>
+        <SettingsSection title="Community">
+          <SettingGroup>
+            <SettingRow
+              label="Share car identities"
+              hint="Contribute the castings you've identified to the community seed — only casting → catalog facts are shared, never your tags or collection."
+              onPress={shareIdentifications}
+              disabled={shareableCount === 0}
+              control={
+                <Text style={[styles.valueText, shareableCount === 0 && styles.dimText]}>
+                  {shareableCount === 0 ? '—' : `${shareableCount}`}
+                </Text>
+              }
+              accessibilityLabel={
+                shareableCount === 0
+                  ? 'Share car identities. Identify a car first.'
+                  : `Share ${shareableCount} identified castings.`
+              }
+            />
+            <SettingRow
+              label="How to contribute"
+              hint="Sharing hands you a JSON file. Add it to the community folder on GitHub and open a pull request — the guide has the steps."
+              chevron
+              onPress={() => {
+                void WebBrowser.openBrowserAsync(CONTRIBUTING_URL);
+              }}
+            />
+          </SettingGroup>
+        </SettingsSection>
 
-        <Pressable
-          onPress={confirmReset}
-          style={({ pressed }) => [styles.resetBtn, pressed && styles.pressed]}
-        >
-          <Text style={styles.resetText}>Reset to defaults</Text>
-        </Pressable>
+        <SettingsSection title="System">
+          <SettingGroup>
+            <SettingRow
+              label="Reset to defaults"
+              destructive
+              onPress={confirmReset}
+              accessibilityLabel="Reset settings to defaults"
+              accessibilityHint="Restores every preference to its default value."
+            />
+          </SettingGroup>
+        </SettingsSection>
       </ScrollView>
     </View>
   );
 }
 
+/** A switch row on the shared label-line geometry. */
 function ToggleRow({
   label,
   hint,
@@ -376,138 +360,80 @@ function ToggleRow({
   onValueChange: (v: boolean) => void;
 }) {
   return (
-    <View style={styles.toggleRow}>
-      <View style={styles.toggleText}>
-        <Text style={styles.rowLabel}>{label}</Text>
-        <Text style={styles.hint}>{hint}</Text>
-      </View>
-      <Switch
-        value={value}
-        onValueChange={onValueChange}
-        trackColor={{ false: colors.track, true: colors.accent }}
-        thumbColor={colors.textPrimary}
-        ios_backgroundColor={colors.track}
-      />
-    </View>
+    <SettingRow
+      label={label}
+      hint={hint}
+      control={
+        <Switch
+          value={value}
+          onValueChange={onValueChange}
+          trackColor={{ false: colors.panelInset, true: colors.electric }}
+          thumbColor={colors.ink}
+          ios_backgroundColor={colors.panelInset}
+        />
+      }
+    />
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.bg },
+  screen: { flex: 1, backgroundColor: colors.void },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing(3),
     paddingHorizontal: spacing(5),
     paddingBottom: spacing(3),
     width: '100%',
     alignSelf: 'center',
   },
-  back: { paddingVertical: spacing(1), paddingRight: spacing(1) },
-  backText: { color: colors.accentBlue, fontSize: fontSize.md, fontWeight: fontWeight.medium },
-  title: { color: colors.textPrimary, fontSize: fontSize.xl, fontWeight: fontWeight.heavy, flex: 1 },
-  headerSpacer: { width: spacing(1) },
+  headerSide: { width: 64, alignItems: 'flex-start' },
+  backChip: {
+    width: 34,
+    height: 34,
+    borderRadius: radiusT.pill,
+    backgroundColor: colors.panelSolid,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.hairline,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backChipText: { color: colors.electric, fontSize: 20, fontWeight: fontWeight.bold, marginTop: -2 },
+  title: {
+    flex: 1,
+    textAlign: 'center',
+    color: colors.ink,
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.heavy,
+  },
   content: {
     paddingHorizontal: spacing(5),
-    gap: spacing(2),
     paddingTop: spacing(1),
     width: '100%',
     alignSelf: 'center',
   },
-  sectionLabel: {
-    color: colors.textMuted,
-    fontSize: fontSize.xs,
-    fontWeight: fontWeight.bold,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginTop: spacing(4),
-    marginBottom: spacing(1),
+  firstSection: { marginTop: spacing(2) },
+  editRow: {
+    paddingVertical: spacing(2.5),
+    paddingHorizontal: spacing(4),
+    minHeight: 44,
+    justifyContent: 'center',
   },
-  card: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: radius.md,
-    padding: spacing(4),
-    gap: spacing(2),
-  },
-  rowLabel: { color: colors.textPrimary, fontSize: fontSize.md, fontWeight: fontWeight.bold },
-  hint: { color: colors.textSecondary, fontSize: fontSize.sm, lineHeight: 18 },
   input: {
-    backgroundColor: colors.surfaceAlt,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: radius.md,
+    backgroundColor: colors.panelInset,
+    borderColor: colors.hairline,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: radiusT.field,
     paddingHorizontal: spacing(3.5),
     paddingVertical: spacing(3),
-    color: colors.textPrimary,
+    color: colors.ink,
     fontSize: fontSize.md,
   },
-  chips: { flexDirection: 'row', gap: spacing(2) },
-  chip: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: spacing(2.5),
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surfaceAlt,
-  },
-  chipActive: { borderColor: colors.accent, backgroundColor: colors.accent },
-  chipNum: { color: colors.textPrimary, fontSize: fontSize.lg, fontWeight: fontWeight.heavy },
-  chipUnit: { color: colors.textMuted, fontSize: fontSize.xs, textTransform: 'uppercase', letterSpacing: 1 },
-  chipTextActive: { color: colors.bg },
-  toggleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing(3) },
-  toggleText: { flex: 1, gap: 4 },
-  stepperRow: { flexDirection: 'row', alignItems: 'center', gap: spacing(3) },
-  stepperText: { flex: 1, gap: 4 },
-  stepper: { flexDirection: 'row', alignItems: 'center', gap: spacing(2) },
-  stepperBtn: {
-    width: spacing(9),
-    height: spacing(9),
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surfaceAlt,
-  },
-  stepperBtnDisabled: { opacity: 0.35 },
-  stepperBtnText: { color: colors.textPrimary, fontSize: fontSize.xl, fontWeight: fontWeight.heavy },
-  stepperValue: {
-    minWidth: spacing(14),
-    textAlign: 'center',
-    color: colors.textPrimary,
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.heavy,
+  valueText: {
+    color: colors.inkSecondary,
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.bold,
     fontVariant: ['tabular-nums'],
   },
-  divider: { height: 1, backgroundColor: colors.border, marginVertical: spacing(1) },
-  shareBtn: {
-    marginTop: spacing(1),
-    alignItems: 'center',
-    backgroundColor: colors.surfaceAlt,
-    borderColor: colors.accentBlue,
-    borderWidth: 1,
-    borderRadius: radius.md,
-    paddingVertical: spacing(3),
-  },
-  shareBtnText: { color: colors.accentBlue, fontSize: fontSize.md, fontWeight: fontWeight.bold },
-  link: {
-    alignSelf: 'flex-start',
-    paddingVertical: spacing(1),
-    paddingRight: spacing(2),
-  },
-  linkText: { color: colors.accentBlue, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
-  resetBtn: {
-    marginTop: spacing(6),
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderColor: colors.danger,
-    borderWidth: 1,
-    borderRadius: radius.md,
-    paddingVertical: spacing(3.5),
-  },
-  resetText: { color: colors.danger, fontSize: fontSize.md, fontWeight: fontWeight.bold },
+  dimText: { color: colors.inkMuted },
   pressed: { opacity: 0.7 },
 });
