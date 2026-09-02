@@ -53,7 +53,7 @@ export function CarPhoto({
     ...(height != null ? { height } : null),
     ...(aspectRatio != null ? { aspectRatio } : null),
     borderRadius: rounded,
-    ...(ring ? { borderWidth: 2, borderColor: colors.accent } : null),
+    ...(ring ? { borderWidth: 2, borderColor: colors.flame } : null),
   };
 
   if (!source) {
@@ -86,14 +86,14 @@ export function CarPhoto({
 
 const styles = StyleSheet.create({
   placeholder: {
-    backgroundColor: colors.surfaceAlt,
-    borderColor: colors.border,
+    backgroundColor: colors.panelInset,
+    borderColor: colors.hairline,
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
   },
   frame: {
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: colors.panelInset,
     // Keeps the photo inside the rounded corners and the accent ring.
     overflow: "hidden",
   },
