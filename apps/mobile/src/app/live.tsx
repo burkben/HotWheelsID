@@ -32,7 +32,7 @@ import {
 import { usePortalStore } from "@/store/portalStore";
 import { useSettingsStore } from "@/store/settingsStore";
 import { formatBestSpeed, formatSpeedValue, speedUnitLabel } from "@/speed/format";
-import { colors, fontSize, fontWeight, radius, spacing } from "@/theme/tokens";
+import { colors, fontSize, fontWeight, radiusT, spacing } from "@/theme/tokens";
 
 const PHASE_LABEL: Record<BlePhase, string> = {
   idle: "Idle",
@@ -51,9 +51,9 @@ const PHASE_LABEL: Record<BlePhase, string> = {
 };
 
 function logColor(level: BleLogEntry["level"]): string {
-  if (level === "error") return colors.danger;
-  if (level === "event") return colors.accentBlue;
-  return colors.textSecondary;
+  if (level === "error") return colors.fault;
+  if (level === "event") return colors.electric;
+  return colors.inkSecondary;
 }
 
 export default function LiveScreen() {
@@ -243,7 +243,7 @@ function formatTime(ms: number): string {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: colors.bg,
+    backgroundColor: colors.void,
   },
   header: {
     flexDirection: "row",
@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
     paddingRight: spacing(2),
   },
   backText: {
-    color: colors.accentBlue,
+    color: colors.electric,
     fontSize: fontSize.md,
     fontWeight: fontWeight.medium,
   },
@@ -269,58 +269,58 @@ const styles = StyleSheet.create({
     gap: spacing(4),
   },
   title: {
-    color: colors.textPrimary,
+    color: colors.ink,
     fontSize: fontSize.xl,
     fontWeight: fontWeight.heavy,
   },
   subtitle: {
-    color: colors.textSecondary,
+    color: colors.inkSecondary,
     fontSize: fontSize.sm,
     lineHeight: 19,
     marginTop: -spacing(2),
   },
   notice: {
-    backgroundColor: colors.surface,
-    borderColor: colors.warn,
+    backgroundColor: colors.panelSolid,
+    borderColor: colors.caution,
     borderWidth: 1,
-    borderRadius: radius.md,
+    borderRadius: radiusT.card,
     padding: spacing(4),
     gap: spacing(2),
   },
   noticeError: {
-    backgroundColor: colors.surface,
-    borderColor: colors.danger,
+    backgroundColor: colors.panelSolid,
+    borderColor: colors.fault,
     borderWidth: 1,
-    borderRadius: radius.md,
+    borderRadius: radiusT.card,
     padding: spacing(4),
     gap: spacing(2),
   },
   noticeTitle: {
-    color: colors.textPrimary,
+    color: colors.ink,
     fontSize: fontSize.md,
     fontWeight: fontWeight.bold,
   },
   noticeBody: {
-    color: colors.textSecondary,
+    color: colors.inkSecondary,
     fontSize: fontSize.sm,
     lineHeight: 19,
   },
   summaryCard: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
+    backgroundColor: colors.panelSolid,
+    borderColor: colors.hairline,
     borderWidth: 1,
-    borderRadius: radius.md,
+    borderRadius: radiusT.card,
     padding: spacing(4),
     gap: spacing(3),
   },
   summaryLabel: {
-    color: colors.textMuted,
+    color: colors.inkMuted,
     fontSize: fontSize.xs,
     textTransform: "uppercase",
     letterSpacing: 1,
   },
   summaryValue: {
-    color: colors.textPrimary,
+    color: colors.ink,
     fontSize: fontSize.md,
     fontWeight: fontWeight.medium,
   },
@@ -330,36 +330,36 @@ const styles = StyleSheet.create({
   },
   miniStat: {
     flex: 1,
-    backgroundColor: colors.surfaceAlt,
-    borderColor: colors.border,
+    backgroundColor: colors.panelInset,
+    borderColor: colors.hairline,
     borderWidth: 1,
-    borderRadius: radius.sm,
+    borderRadius: radiusT.field,
     paddingVertical: spacing(2.5),
     paddingHorizontal: spacing(2),
     alignItems: "center",
     gap: 2,
   },
   miniLabel: {
-    color: colors.textMuted,
+    color: colors.inkMuted,
     fontSize: fontSize.xs,
     textTransform: "uppercase",
     letterSpacing: 1,
   },
   miniValue: {
-    color: colors.textPrimary,
+    color: colors.ink,
     fontSize: fontSize.sm,
     fontWeight: fontWeight.bold,
   },
   modeButton: {
     alignSelf: "flex-start",
     marginTop: spacing(2),
-    borderRadius: radius.md,
+    borderRadius: radiusT.card,
     paddingVertical: spacing(2.5),
     paddingHorizontal: spacing(4),
-    backgroundColor: colors.accent,
+    backgroundColor: colors.flame,
   },
   modeButtonText: {
-    color: colors.bg,
+    color: colors.void,
     fontSize: fontSize.sm,
     fontWeight: fontWeight.bold,
   },
@@ -372,25 +372,25 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   logHeader: {
-    color: colors.textPrimary,
+    color: colors.ink,
     fontSize: fontSize.md,
     fontWeight: fontWeight.bold,
   },
   clearText: {
-    color: colors.accentBlue,
+    color: colors.electric,
     fontSize: fontSize.sm,
   },
   logCard: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
+    backgroundColor: colors.panelSolid,
+    borderColor: colors.hairline,
     borderWidth: 1,
-    borderRadius: radius.md,
+    borderRadius: radiusT.card,
     padding: spacing(3),
     gap: spacing(2),
     minHeight: 120,
   },
   logEmpty: {
-    color: colors.textMuted,
+    color: colors.inkMuted,
     fontSize: fontSize.sm,
     lineHeight: 19,
   },
@@ -399,7 +399,7 @@ const styles = StyleSheet.create({
     gap: spacing(3),
   },
   logTime: {
-    color: colors.textMuted,
+    color: colors.inkMuted,
     fontSize: fontSize.xs,
     fontVariant: ["tabular-nums"],
     paddingTop: 1,

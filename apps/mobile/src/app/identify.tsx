@@ -36,7 +36,7 @@ import {
   useIdentifyCar,
   type IdentificationChange,
 } from "@/catalog/useCarIdentity";
-import { colors, elevation, fontSize, fontWeight, radius, spacing } from "@/theme/tokens";
+import { colors, fontSize, fontWeight, radiusT, spacing } from "@/theme/tokens";
 
 type IdentifyMode = "catalog" | "toyNumber";
 
@@ -138,7 +138,7 @@ export default function IdentifyScreen() {
         <MaterialCommunityIcons
           name="magnify"
           size={20}
-          color={colors.textMuted}
+          color={colors.inkMuted}
           style={styles.searchIcon}
         />
         <TextInput
@@ -152,7 +152,7 @@ export default function IdentifyScreen() {
               ? "Enter package toy number, e.g. FXB03"
               : "Search name, series, toy #, wave, or year"
           }
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.inkMuted}
           style={styles.search}
           autoCorrect={false}
           autoCapitalize="none"
@@ -303,10 +303,10 @@ function CarCard({
       ]}
     >
       <View style={styles.cardPhotoWrap}>
-        <CarPhoto carId={car.id} width="100%" aspectRatio={1} rounded={radius.sm} ring={selected} />
+        <CarPhoto carId={car.id} width="100%" aspectRatio={1} rounded={radiusT.field} ring={selected} />
         {selected ? (
           <View style={styles.checkBadge}>
-            <MaterialCommunityIcons name="check" size={15} color={colors.bg} />
+            <MaterialCommunityIcons name="check" size={15} color={colors.void} />
           </View>
         ) : null}
       </View>
@@ -363,7 +363,7 @@ function FilterChip({
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.bg },
+  screen: { flex: 1, backgroundColor: colors.void },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -372,10 +372,10 @@ const styles = StyleSheet.create({
     paddingBottom: spacing(3),
   },
   headerText: { flex: 1, gap: 2 },
-  title: { color: colors.textPrimary, fontSize: fontSize.xl, fontWeight: fontWeight.heavy },
-  subtitle: { color: colors.textSecondary, fontSize: fontSize.sm },
+  title: { color: colors.ink, fontSize: fontSize.xl, fontWeight: fontWeight.heavy },
+  subtitle: { color: colors.inkSecondary, fontSize: fontSize.sm },
   close: { paddingVertical: spacing(1), paddingHorizontal: spacing(2) },
-  closeText: { color: colors.accentBlue, fontSize: fontSize.md, fontWeight: fontWeight.bold },
+  closeText: { color: colors.electric, fontSize: fontSize.md, fontWeight: fontWeight.bold },
   modeRow: {
     flexDirection: "row",
     gap: spacing(2),
@@ -387,17 +387,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginHorizontal: spacing(5),
     marginBottom: spacing(3),
-    backgroundColor: colors.surfaceAlt,
-    borderColor: colors.border,
+    backgroundColor: colors.panelInset,
+    borderColor: colors.hairline,
     borderWidth: 1,
-    borderRadius: radius.md,
+    borderRadius: radiusT.card,
     paddingHorizontal: spacing(3.5),
   },
   searchIcon: { marginRight: spacing(2) },
   search: {
     flex: 1,
     paddingVertical: spacing(3),
-    color: colors.textPrimary,
+    color: colors.ink,
     fontSize: fontSize.md,
   },
   filters: {
@@ -407,7 +407,7 @@ const styles = StyleSheet.create({
   },
   filterGroup: { gap: spacing(1) },
   filterLabel: {
-    color: colors.textMuted,
+    color: colors.inkMuted,
     fontSize: fontSize.xs,
     fontWeight: fontWeight.bold,
     textTransform: "uppercase",
@@ -416,71 +416,71 @@ const styles = StyleSheet.create({
   filterChips: { flexDirection: "row", flexWrap: "wrap", gap: spacing(1.5) },
   filterChip: {
     borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.pill,
-    backgroundColor: colors.surfaceAlt,
+    borderColor: colors.hairline,
+    borderRadius: radiusT.pill,
+    backgroundColor: colors.panelInset,
     paddingHorizontal: spacing(2.5),
     paddingVertical: spacing(1.5),
   },
-  filterChipActive: { borderColor: colors.accentBlue, backgroundColor: colors.accentBlueSoft },
-  filterChipText: { color: colors.textSecondary, fontSize: fontSize.xs, fontWeight: fontWeight.bold },
-  filterChipTextActive: { color: colors.accentBlue },
+  filterChipActive: { borderColor: colors.electric, backgroundColor: colors.accentBlueSoft },
+  filterChipText: { color: colors.inkSecondary, fontSize: fontSize.xs, fontWeight: fontWeight.bold },
+  filterChipTextActive: { color: colors.electric },
   confirmPanel: {
     marginHorizontal: spacing(5),
     marginBottom: spacing(3),
     padding: spacing(3),
     borderWidth: 1,
-    borderColor: colors.accentBlue,
-    borderRadius: radius.md,
-    backgroundColor: colors.surfaceRaised,
+    borderColor: colors.electric,
+    borderRadius: radiusT.card,
+    backgroundColor: colors.panelRaised,
     gap: spacing(3),
   },
   confirmText: { gap: spacing(1) },
-  confirmTitle: { color: colors.textPrimary, fontSize: fontSize.md, fontWeight: fontWeight.bold },
-  confirmBody: { color: colors.textSecondary, fontSize: fontSize.sm },
+  confirmTitle: { color: colors.ink, fontSize: fontSize.md, fontWeight: fontWeight.bold },
+  confirmBody: { color: colors.inkSecondary, fontSize: fontSize.sm },
   confirmActions: { flexDirection: "row", justifyContent: "flex-end", gap: spacing(2) },
   secondaryButton: {
     borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
+    borderColor: colors.hairline,
+    borderRadius: radiusT.card,
     paddingHorizontal: spacing(3),
     paddingVertical: spacing(2),
   },
-  secondaryButtonText: { color: colors.textSecondary, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
+  secondaryButtonText: { color: colors.inkSecondary, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
   primaryButton: {
-    backgroundColor: colors.accent,
-    borderRadius: radius.md,
+    backgroundColor: colors.flame,
+    borderRadius: radiusT.card,
     paddingHorizontal: spacing(3),
     paddingVertical: spacing(2),
   },
-  primaryButtonText: { color: colors.bg, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
+  primaryButtonText: { color: colors.void, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
   savedPanel: {
     marginHorizontal: spacing(5),
     marginBottom: spacing(3),
     paddingHorizontal: spacing(3),
     paddingVertical: spacing(2.5),
-    borderRadius: radius.md,
+    borderRadius: radiusT.card,
     backgroundColor: colors.accentSoft,
     flexDirection: "row",
     alignItems: "center",
     gap: spacing(3),
   },
-  savedText: { flex: 1, color: colors.textPrimary, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
-  undoText: { color: colors.accentBlue, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
+  savedText: { flex: 1, color: colors.ink, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
+  undoText: { color: colors.electric, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
   grid: { paddingHorizontal: spacing(5), gap: spacing(3) },
   gridRow: { gap: spacing(3) },
   gridEmpty: { flexGrow: 1, justifyContent: "center" },
   card: {
     flex: 1,
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
+    backgroundColor: colors.panelSolid,
+    borderColor: colors.hairline,
     borderWidth: 1,
-    borderRadius: radius.md,
+    borderRadius: radiusT.card,
     padding: spacing(3),
     gap: spacing(2),
   },
-  cardSelected: { borderColor: colors.accent, backgroundColor: colors.surfaceRaised, ...elevation.accentGlow },
-  cardCandidate: { borderColor: colors.accentBlue, backgroundColor: colors.surfaceRaised },
+  cardSelected: { borderColor: colors.flame, backgroundColor: colors.panelRaised },
+  cardCandidate: { borderColor: colors.electric, backgroundColor: colors.panelRaised },
   cardPhotoWrap: { width: "100%" },
   checkBadge: {
     position: "absolute",
@@ -488,16 +488,16 @@ const styles = StyleSheet.create({
     right: spacing(2),
     width: 24,
     height: 24,
-    borderRadius: radius.pill,
-    backgroundColor: colors.accent,
+    borderRadius: radiusT.pill,
+    backgroundColor: colors.flame,
     alignItems: "center",
     justifyContent: "center",
   },
-  cardName: { color: colors.textPrimary, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
-  cardMeta: { color: colors.textSecondary, fontSize: fontSize.xs },
-  cardMetaSecondary: { color: colors.textMuted, fontSize: fontSize.xs },
+  cardName: { color: colors.ink, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
+  cardMeta: { color: colors.inkSecondary, fontSize: fontSize.xs },
+  cardMetaSecondary: { color: colors.inkMuted, fontSize: fontSize.xs },
   wikiLink: { marginTop: "auto", alignSelf: "flex-start", paddingTop: spacing(1) },
-  wikiLinkText: { color: colors.accentBlue, fontSize: fontSize.xs, fontWeight: fontWeight.bold },
-  noResults: { color: colors.textSecondary, fontSize: fontSize.sm, textAlign: "center" },
+  wikiLinkText: { color: colors.electric, fontSize: fontSize.xs, fontWeight: fontWeight.bold },
+  noResults: { color: colors.inkSecondary, fontSize: fontSize.sm, textAlign: "center" },
   pressed: { opacity: 0.7 },
 });
