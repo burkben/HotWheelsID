@@ -33,7 +33,7 @@ import { useGarageStore } from '@/store/garageStore';
 import { usePortalStore } from '@/store/portalStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { formatBestSpeed, speedUnitLabel, type SpeedDisplay } from '@/speed/format';
-import { colors, fontSize, fontSizeT, fontWeight, radius, radiusT, spacing, speedGauge } from '@/theme/tokens';
+import { colors, fontSize, fontSizeT, fontWeight, radiusT, spacing, speedGauge } from '@/theme/tokens';
 
 /** How long the needle holds a pass before easing back toward zero. */
 const NEEDLE_HOLD_MS = 1300;

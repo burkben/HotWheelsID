@@ -131,7 +131,7 @@ export function RaceSetup({
             value={soloPlayer}
             onChangeText={onSoloPlayerChange}
             placeholder="Player 1"
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor={colors.inkMuted}
             style={styles.input}
             maxLength={24}
             returnKeyType="done"
@@ -173,7 +173,7 @@ export function RaceSetup({
             onChangeText={onRacerDraftChange}
             onSubmitEditing={canAddRacer ? onAddRacer : undefined}
             placeholder="Racer name"
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor={colors.inkMuted}
             style={styles.input}
             maxLength={24}
             returnKeyType="done"

@@ -8,7 +8,7 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { CarPhoto } from "@/catalog/CarPhoto";
 import { formatBestSpeed, speedUnitLabel, type SpeedDisplay } from "@/speed/format";
-import { colors, fontSizeT, fontWeight, radiusT, spacing } from "@/theme/tokens";
+import { colors, fontSizeT, fontWeight, spacing } from "@/theme/tokens";
 import { TelemetrySurface } from "./TelemetrySurface";
 import type { CarHeroModel } from "@/portal/selectors";
 
