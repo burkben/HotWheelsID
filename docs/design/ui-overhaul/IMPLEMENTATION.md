@@ -59,17 +59,19 @@ URL-type errors that exist on `main`), `eslint --max-warnings=0` clean, and
 **318/318 tests pass** (40 files). No store, protocol, BLE, persistence, or TV
 contract was changed.
 
-## Deliberately not migrated yet (out of the first pass)
-
-These remain on the legacy ramp without clashing with the new shell; they're
-lower-traffic or a separate surface. Easy follow-ups:
+## Deliberately not migrated (out of scope by design)
 
 - `app/tv.tsx` + `tv/TvStage.tsx` — the separate AirPlay-mirrored landscape
   surface; **intentionally untouched** per the proposal's "what stays the same".
-- `app/live.tsx`, `app/achievements.tsx`, `app/credits.tsx`, `app/identify.tsx`
-  — secondary pushed screens (raw log, badges, credits, identify picker).
 - `components/CurrentCarHero.tsx` — superseded by `ActiveCarStrip` on Speed;
-  kept for any other callers until those are confirmed migrated.
+  kept only in case another caller appears (none currently render it).
+
+## Swept in the consistency pass (now complete)
+
+Every remaining screen is on the telemetry ramp: `app/live.tsx`,
+`app/achievements.tsx`, `app/credits.tsx`, and `app/identify.tsx` were migrated
+(grouped cards, hairlines, flame/electric accents, tabular numerals). So the
+entire app except the TV surface now shares one design system.
 
 ## Not yet done (proposal items deferred)
 
