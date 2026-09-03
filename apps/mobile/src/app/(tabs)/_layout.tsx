@@ -16,7 +16,7 @@ import { StyleSheet, View } from 'react-native';
 import { Tabs } from 'expo-router';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
-import { colors, fontWeight } from '@/theme/tokens';
+import { colors, fontFamily, fontWeight } from '@/theme/tokens';
 import { PersistenceStatusBanner } from '@/components/PersistenceStatusBanner';
 import { PortalStatusRibbon } from '@/components/telemetry/PortalStatusRibbon';
 
@@ -40,7 +40,12 @@ const screenOptions: ComponentProps<typeof Tabs>['screenOptions'] = {
     borderTopColor: colors.hairline,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
-  tabBarLabelStyle: { fontSize: 11, fontWeight: fontWeight.bold },
+  tabBarLabelStyle: {
+    fontSize: 11,
+    fontWeight: fontWeight.bold,
+    fontFamily: fontFamily.telemetry,
+    letterSpacing: 0.3,
+  },
 };
 
 export default function TabsLayout() {

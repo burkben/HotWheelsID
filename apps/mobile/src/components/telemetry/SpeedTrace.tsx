@@ -94,7 +94,21 @@ export function SpeedTrace({ values, height = 92 }: SpeedTraceProps) {
               <Circle cx={last.x} cy={last.y} r={3.5} fill={colors.flame} />
             ) : null}
           </>
-        ) : null}
+        ) : (
+          // Idle baseline: a flat dashed center line so an empty trace still
+          // reads as a live instrument, not a dead box.
+          <Line
+            x1={PAD}
+            x2={WIDTH - PAD}
+            y1={50}
+            y2={50}
+            stroke={colors.electric}
+            strokeOpacity={0.3}
+            strokeWidth={1.5}
+            strokeDasharray="1 6"
+            strokeLinecap="round"
+          />
+        )}
       </Svg>
       {/* min/max annotations */}
       {values.length > 1 ? (

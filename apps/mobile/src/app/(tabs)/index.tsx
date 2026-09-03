@@ -12,11 +12,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useReducedMotion } from 'react-native-reanimated';
 
-import { PORTAL_NAME } from '@redlineid/protocol';
 
 import { RecentPasses } from '@/components/RecentPasses';
 import { Speedometer } from '@/components/gauge/Speedometer';
-import { StatusPill } from '@/components/StatusPill';
 import { BleStatusBanner } from '@/components/BleStatusBanner';
 import { ActiveCarStrip } from '@/components/telemetry/ActiveCarStrip';
 import { SpeedTrace } from '@/components/telemetry/SpeedTrace';
@@ -166,28 +164,13 @@ export default function SpeedometerScreen() {
   // Reanimated needle keeps its position instead of remounting at zero.
   const paneWidth = layout.isSplit ? undefined : layout.contentMaxWidth;
 
+  // The PortalStatusRibbon (mounted in the tab shell) now carries connection
+  // state + the connect/retry/disconnect action, so the header is just the
+  // title — no redundant status pill or subtitle duplicating the ribbon.
   const header = (
     <View style={[styles.header, { maxWidth: layout.isSplit ? undefined : layout.contentMaxWidth }]}>
       <View style={styles.headerText}>
         <Text style={styles.title}>Redline ID</Text>
-        <Text style={styles.subtitle}>
-          Portal “{PORTAL_NAME}” · {useBle ? 'live BLE' : 'demo mode'}
-        </Text>
-      </View>
-      <View style={styles.headerRight}>
-        <StatusPill
-          connection={connection}
-          controlStatus={controlStatus}
-          phase={blePhase}
-          mode={mode}
-          manuallyDisconnected={manuallyDisconnected}
-          onConnect={() => void controller.connect()}
-          onRetry={() => void controller.retry()}
-          onDisconnect={() => {
-            setNeedleValue(0);
-            void controller.disconnect();
-          }}
-        />
       </View>
     </View>
   );
@@ -456,20 +439,10 @@ const styles = StyleSheet.create({
   headerText: {
     flexShrink: 1,
   },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing(2),
-  },
   title: {
     color: colors.ink,
     fontSize: fontSize.xl,
     fontWeight: fontWeight.heavy,
-  },
-  subtitle: {
-    color: colors.inkSecondary,
-    fontSize: fontSize.sm,
-    marginTop: 2,
   },
   statsRow: {
     width: '100%',
