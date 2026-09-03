@@ -15,7 +15,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 
-import { colors, radiusT } from "@/theme/tokens";
+import { colors, fontFamily, radiusT } from "@/theme/tokens";
 import { useTelemetryMotion } from "./useTelemetryMotion";
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
@@ -110,19 +110,12 @@ export function SpeedTrace({ values, height = 92 }: SpeedTraceProps) {
           />
         )}
       </Svg>
-      {/* min/max annotations */}
+      {/* min/max annotations — pinned to the LEFT edge so they never collide
+          with the line's terminal point, which always sits on the right. */}
       {values.length > 1 ? (
         <View pointerEvents="none" style={styles.scale}>
-          <View style={styles.scaleRow}>
-            <View style={styles.scaleMaxMin}>
-              <Animated.Text style={styles.scaleText}>{Math.round(max)}</Animated.Text>
-            </View>
-          </View>
-          <View style={styles.scaleRow}>
-            <View style={styles.scaleMaxMin}>
-              <Animated.Text style={styles.scaleText}>{Math.round(min)}</Animated.Text>
-            </View>
-          </View>
+          <Animated.Text style={styles.scaleText}>{Math.round(max)}</Animated.Text>
+          <Animated.Text style={styles.scaleText}>{Math.round(min)}</Animated.Text>
         </View>
       ) : null}
     </View>
@@ -139,14 +132,13 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 4,
     bottom: 4,
-    right: 6,
+    left: 8,
     justifyContent: "space-between",
   },
-  scaleRow: { alignItems: "flex-end" },
-  scaleMaxMin: {},
   scaleText: {
     color: colors.inkMuted,
     fontSize: 9,
+    fontFamily: fontFamily.telemetry,
     fontVariant: ["tabular-nums"],
   },
 });

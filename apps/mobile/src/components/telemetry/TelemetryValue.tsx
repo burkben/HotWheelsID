@@ -48,7 +48,9 @@ export function TelemetryValue({
       </Text>
       {unit ? <Text style={styles.unit}>{unit}</Text> : null}
       {delta ? (
-        <Text style={[styles.delta, { color: deltaColor }]}>{delta}</Text>
+        <Text style={[styles.delta, { color: deltaColor }]} numberOfLines={1}>
+          {delta}
+        </Text>
       ) : null}
     </View>
   );
@@ -58,6 +60,7 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     alignItems: "baseline",
+    flexWrap: "wrap",
     gap: 6,
   },
   value: {
@@ -65,6 +68,7 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.bold,
     fontVariant: ["tabular-nums"],
     letterSpacing: -0.5,
+    flexShrink: 1,
   },
   unit: {
     color: colors.inkMuted,
