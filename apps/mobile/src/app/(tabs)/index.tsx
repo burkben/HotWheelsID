@@ -171,7 +171,7 @@ export default function SpeedometerScreen() {
       <View style={styles.headerText}>
         <Text style={styles.title}>Redline ID</Text>
         <Text style={styles.subtitle}>
-          Portal \u201c{PORTAL_NAME}\u201d \u00b7 {useBle ? 'live BLE' : 'demo mode'}
+          Portal “{PORTAL_NAME}” · {useBle ? 'live BLE' : 'demo mode'}
         </Text>
       </View>
       <View style={styles.headerRight}>
