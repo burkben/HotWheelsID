@@ -15,10 +15,14 @@ import { useEffect } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Animated, {
   ReduceMotion,
+  cancelAnimation,
   useAnimatedProps,
   useReducedMotion,
   useSharedValue,
+  withDelay,
+  withSequence,
   withSpring,
+  withTiming,
 } from "react-native-reanimated";
 import Svg, { Circle, G, Line, Path, Text as SvgText } from "react-native-svg";
 
@@ -61,6 +65,14 @@ export interface SpeedometerProps {
   display?: SpeedDisplay;
   /** App-level override, OR'd with the operating-system preference. */
   reduceMotion?: boolean;
+  /**
+   * Needle behavior:
+   * - "sweep" (default): a one-off pass. The needle ramps up through the speed,
+   *   holds a beat at the peak, then coasts back to rest — all on the UI thread.
+   * - "track": continuous racing. The needle glides directly from one reading to
+   *   the next and stays there; it never returns to zero between passes.
+   */
+  mode?: "sweep" | "track";
 }
 
 export function Speedometer({
@@ -73,6 +85,7 @@ export function Speedometer({
   size = 300,
   display = DEFAULT_SPEED_DISPLAY,
   reduceMotion: reduceMotionOverride = false,
+  mode = "sweep",
 }: SpeedometerProps) {
   const stroke = 18;
   const cx = size / 2;
@@ -84,18 +97,46 @@ export function Speedometer({
   const reduceMotion = useReducedMotion() || reduceMotionOverride;
 
   useEffect(() => {
-    const fraction = Math.max(0, Math.min(value, max)) / max;
+    const clamped = Math.max(0, Math.min(value, max));
+    const fraction = clamped / max;
     const target = GAUGE_START_ANGLE + fraction * (GAUGE_END_ANGLE - GAUGE_START_ANGLE);
-    // A soft, well-damped spring so the needle glides through a pass instead of
-    // snapping. Higher damping kills overshoot/bounce; moderate stiffness keeps
-    // it responsive without feeling steppy.
-    angle.value = withSpring(target, {
-      damping: 22,
-      stiffness: 120,
-      mass: 0.9,
-      reduceMotion: reduceMotion ? ReduceMotion.Always : ReduceMotion.System,
-    });
-  }, [value, max, angle, reduceMotion]);
+    const reduce = reduceMotion ? ReduceMotion.Always : ReduceMotion.System;
+
+    // Interrupt whatever the needle was doing so a new pass takes over cleanly.
+    cancelAnimation(angle);
+
+    if (mode === "track") {
+      // Continuous racing: glide directly from the current reading to the next
+      // and stay there. A well-damped spring keeps it lively without bounce;
+      // the needle never returns to zero between laps.
+      angle.value = withSpring(target, {
+        damping: 20,
+        stiffness: 110,
+        mass: 0.9,
+        reduceMotion: reduce,
+      });
+      return;
+    }
+
+    // Sweep (default): one continuous pass, all on the UI thread. Ramp up through
+    // ~55% of the speed then the peak with an ease-out timing curve (smooth
+    // acceleration, no spring overshoot), hold a beat at the top, then coast back
+    // to rest with a soft spring. Reads as a real acceleration across the sensor.
+    if (clamped < 1) {
+      // Already at/near rest — just settle to zero.
+      angle.value = withSpring(GAUGE_START_ANGLE, { damping: 22, stiffness: 120, mass: 0.9, reduceMotion: reduce });
+      return;
+    }
+    const midTarget = GAUGE_START_ANGLE + (fraction * 0.55) * (GAUGE_END_ANGLE - GAUGE_START_ANGLE);
+    angle.value = withSequence(
+      withTiming(midTarget, { duration: 320, reduceMotion: reduce }),
+      withTiming(target, { duration: 300, reduceMotion: reduce }),
+      withDelay(
+        900,
+        withSpring(GAUGE_START_ANGLE, { damping: 24, stiffness: 90, mass: 1.0, reduceMotion: reduce }),
+      ),
+    );
+  }, [value, max, angle, reduceMotion, mode]);
 
   const needleProps = useAnimatedProps(() => {
     "worklet";
