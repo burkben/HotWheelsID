@@ -86,10 +86,13 @@ export function Speedometer({
   useEffect(() => {
     const fraction = Math.max(0, Math.min(value, max)) / max;
     const target = GAUGE_START_ANGLE + fraction * (GAUGE_END_ANGLE - GAUGE_START_ANGLE);
+    // A soft, well-damped spring so the needle glides through a pass instead of
+    // snapping. Higher damping kills overshoot/bounce; moderate stiffness keeps
+    // it responsive without feeling steppy.
     angle.value = withSpring(target, {
-      damping: 13,
-      stiffness: 95,
-      mass: 0.7,
+      damping: 22,
+      stiffness: 120,
+      mass: 0.9,
       reduceMotion: reduceMotion ? ReduceMotion.Always : ReduceMotion.System,
     });
   }, [value, max, angle, reduceMotion]);

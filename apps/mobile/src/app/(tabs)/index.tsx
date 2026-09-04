@@ -33,8 +33,11 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { formatBestSpeed, speedUnitLabel, type SpeedDisplay } from '@/speed/format';
 import { colors, fontSize, fontSizeT, fontWeight, radiusT, spacing, speedGauge } from '@/theme/tokens';
 
-/** How long the needle holds a pass before easing back toward zero. */
-const NEEDLE_HOLD_MS = 1300;
+/** Needle pass choreography: a short ramp up through the speed, a beat at the
+ *  peak, then a soft return to rest — one continuous sweep, like a car
+ *  accelerating across the sensor, not a teleport to peak + drop to zero. */
+const NEEDLE_RAMP_MS = 650;
+const NEEDLE_HOLD_MS = 900;
 
 export default function SpeedometerScreen() {
   const insets = useSafeAreaInsets();
@@ -105,18 +108,30 @@ export default function SpeedometerScreen() {
     );
   }, [hero]);
 
-  // Needle springs to each pass, then eases back to rest; the digital readout
-  // keeps showing the last recorded speed.
+  // Needle sweeps up through each pass, holds a beat, then eases back to rest;
+  // the digital readout keeps showing the last recorded speed. The ramp runs
+  // through intermediate steps so the motion reads as a continuous sweep
+  // (acceleration → peak → coast-down) rather than a teleport + drop.
   const [needleValue, setNeedleValue] = useState(0);
   const [lastPassMph, setLastPassMph] = useState(0);
-  const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sweepTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   useEffect(() => {
     if (!lastSpeed || lastSpeed.scaleMph < 1) return;
     setLastPassMph(lastSpeed.scaleMph);
-    setNeedleValue(lastSpeed.scaleMph);
-    if (holdTimer.current) clearTimeout(holdTimer.current);
-    holdTimer.current = setTimeout(() => setNeedleValue(0), NEEDLE_HOLD_MS);
+
+    // Cancel any in-flight sweep, then choreograph this pass.
+    sweepTimers.current.forEach(clearTimeout);
+    sweepTimers.current = [];
+    const peak = lastSpeed.scaleMph;
+    // Ramp: ease through ~55% then the peak — two quick steps the spring blends
+    // into a smooth climb.
+    setNeedleValue(peak * 0.55);
+    sweepTimers.current.push(setTimeout(() => setNeedleValue(peak), NEEDLE_RAMP_MS * 0.45));
+    // Hold at peak, then coast back to rest.
+    sweepTimers.current.push(
+      setTimeout(() => setNeedleValue(0), NEEDLE_RAMP_MS + NEEDLE_HOLD_MS),
+    );
 
     // Tactile punch on each pass; a celebratory cue when it's a new best.
     // (The store has already folded this pass into bestMph by now.)
@@ -140,8 +155,9 @@ export default function SpeedometerScreen() {
   }, [car?.uid]);
 
   useEffect(() => {
+    const timers = sweepTimers.current;
     return () => {
-      if (holdTimer.current) clearTimeout(holdTimer.current);
+      timers.forEach(clearTimeout);
     };
   }, []);
 
