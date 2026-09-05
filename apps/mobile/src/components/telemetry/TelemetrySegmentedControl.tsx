@@ -7,7 +7,7 @@
  * an electric indicator with a quick `withTiming`; reduce-motion snaps it.
  */
 import { useEffect, useState } from "react";
-import { Pressable, StyleSheet, Text, View, type LayoutChangeEvent } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 
 import { colors, fontSize, fontWeight, radiusT, spacing } from "@/theme/tokens";
@@ -34,39 +34,49 @@ export function TelemetrySegmentedControl<T extends string | number>({
   accent = "electric",
 }: TelemetrySegmentedControlProps<T>) {
   const { reduceMotion, timing } = useTelemetryMotion();
-  const n = Math.max(1, segments.length);
   const activeIndex = Math.max(0, segments.findIndex((s) => s.value === value));
   const accentColor = accent === "flame" ? colors.flame : colors.electric;
 
-  // Measure the rail's inner width so the indicator slides in points, not a
-  // fragile mix of % and translate. 2pt padding on each side.
-  const [innerWidth, setInnerWidth] = useState(0);
-  const onLayout = (e: LayoutChangeEvent) => setInnerWidth(e.nativeEvent.layout.width - 4);
-  const slot = innerWidth / n;
+  // Let native text determine each segment's width. flex: 1 inside an intrinsic
+  // rail gives Yoga a zero text basis, clipping every label on iOS. Measure the
+  // actual segments so the indicator also fits choices with different widths.
+  const [frames, setFrames] = useState<Record<number, { x: number; width: number }>>({});
+  const selectedX = frames[activeIndex]?.x ?? 2;
+  const selectedWidth = frames[activeIndex]?.width ?? 0;
 
-  const progress = useSharedValue(activeIndex);
+  const indicatorX = useSharedValue(selectedX);
+  const indicatorWidth = useSharedValue(selectedWidth);
   useEffect(() => {
-    progress.value = reduceMotion ? activeIndex : withTiming(activeIndex, timing);
-  }, [activeIndex, reduceMotion, timing, progress]);
+    indicatorX.value = reduceMotion ? selectedX : withTiming(selectedX, timing);
+    indicatorWidth.value = reduceMotion ? selectedWidth : withTiming(selectedWidth, timing);
+  }, [selectedX, selectedWidth, reduceMotion, timing, indicatorX, indicatorWidth]);
 
   const indicatorStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: progress.value * slot }],
-    width: slot,
+    transform: [{ translateX: indicatorX.value }],
+    width: indicatorWidth.value,
   }));
 
   return (
-    <View style={styles.rail} accessibilityRole="tablist" onLayout={onLayout}>
-      {slot > 0 && (
+    <View style={styles.rail} accessibilityRole="tablist">
+      {selectedWidth > 0 && (
         <Animated.View
           pointerEvents="none"
           style={[styles.indicator, { backgroundColor: accentColor }, indicatorStyle]}
         />
       )}
-      {segments.map((seg) => {
+      {segments.map((seg, index) => {
         const selected = seg.value === value;
         return (
           <Pressable
             key={String(seg.value)}
+            onLayout={({ nativeEvent: { layout } }) => {
+              const { x, width } = layout;
+              setFrames((previous) =>
+                previous[index]?.x === x && previous[index]?.width === width
+                  ? previous
+                  : { ...previous, [index]: { x, width } },
+              );
+            }}
             onPress={() => onChange(seg.value)}
             accessibilityRole="tab"
             accessibilityLabel={seg.accessibilityLabel ?? String(seg.label)}
@@ -98,12 +108,14 @@ const styles = StyleSheet.create({
   },
   indicator: {
     position: "absolute",
+    left: 0,
     top: 2,
     bottom: 2,
     borderRadius: radiusT.field - 2,
   },
   segment: {
-    flex: 1,
+    flexShrink: 0,
+    minWidth: 44,
     minHeight: 32,
     paddingHorizontal: spacing(3),
     alignItems: "center",

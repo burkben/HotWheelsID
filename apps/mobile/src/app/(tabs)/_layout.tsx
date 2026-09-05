@@ -12,7 +12,8 @@
  */
 import type { ComponentProps } from 'react';
 import type { ColorValue } from 'react-native';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Tabs } from 'expo-router';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
@@ -50,7 +51,7 @@ const screenOptions: ComponentProps<typeof Tabs>['screenOptions'] = {
 
 export default function TabsLayout() {
   return (
-    <View style={styles.layout}>
+    <SafeAreaView edges={['top']} style={styles.layout}>
       <PersistenceStatusBanner />
       {/* Global telemetry channel: portal state stays legible on every tab.
           It lives here (not the root stack) so pushed screens and the separate
@@ -63,7 +64,7 @@ export default function TabsLayout() {
         <Tabs.Screen name="history" options={{ title: 'History', tabBarIcon: tabIcon('history') }} />
         <Tabs.Screen name="more" options={{ title: 'More', tabBarIcon: tabIcon('dots-horizontal') }} />
       </Tabs>
-    </View>
+    </SafeAreaView>
   );
 }
 

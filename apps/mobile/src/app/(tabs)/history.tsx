@@ -11,6 +11,7 @@ import { useCallback, useState } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Link, useFocusEffect } from 'expo-router';
+import { LinkPressable } from '@/components/LinkPressable';
 
 import { getSessionRepository } from '@/store/persistence/historyAccess';
 import type { SessionSummary } from '@/store/persistence/sessionRepository';
@@ -72,7 +73,7 @@ export default function HistoryScreen() {
   const hasSessions = (sessions?.length ?? 0) > 0;
 
   return (
-    <View style={[styles.screen, { paddingTop: insets.top + spacing(2) }]}>
+    <View style={[styles.screen, { paddingTop: spacing(2) }]}>
       <View style={styles.header}>
         <Text style={styles.title}>History</Text>
         {hasSessions ? (
@@ -115,8 +116,8 @@ function SessionRow({ session, grid }: { session: SessionSummary; grid?: boolean
   const display = { unit: speedUnit, calibration: speedCalibration };
   return (
     <Link href={{ pathname: '/history/[id]', params: { id: String(session.id) } }} asChild>
-      <Pressable
-        style={({ pressed }) => [
+      <LinkPressable
+        contentStyle={({ pressed }) => [
           styles.row,
           grid && styles.rowGrid,
           live && styles.rowLive,
@@ -140,7 +141,7 @@ function SessionRow({ session, grid }: { session: SessionSummary; grid?: boolean
           <Text style={styles.bestMph}>{formatMphLabel(session.bestMph, display)}</Text>
           <Text style={styles.bestMphUnit}>best {speedUnitLabel(speedUnit)}</Text>
         </View>
-      </Pressable>
+      </LinkPressable>
     </Link>
   );
 }

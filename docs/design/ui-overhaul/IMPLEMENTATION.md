@@ -54,15 +54,48 @@ living counterpart to the proposal; the proposal remains the design intent.
   migrated to `panelSolid`+`hairline` surfaces, `flame`/`electric` accents, and
   tabular/mono numerals.
 
-**Verification:** `tsc --noEmit` clean (only 4 pre-existing `vitest.config.ts`
-URL-type errors that exist on `main`), `eslint --max-warnings=0` clean, and
-**318/318 tests pass** (40 files). No store, protocol, BLE, persistence, or TV
-contract was changed.
+**Verification (2026-09-05):** mobile typecheck and lint are clean;
+**318/318 mobile tests** (40 files) and **69/69 protocol tests** pass. No store,
+protocol, BLE, persistence, or TV stage contract was changed.
+
+## Native polish and motion verification
+
+- The gauge uses one uninterrupted 620ms UI-thread ascent, holds for 900ms, then
+  returns with a damped spring. Heat follows the animated needle as it returns.
+- Accepted pass IDs retrigger equal-speed sweeps. Car-removed notifications and
+  zero/noise readings no longer interrupt a real pass.
+- During a race, the Speed tab uses continuous tracking and holds its target
+  between laps. The TV speed-trap gauge also tracks accepted passes; the TV race
+  hero remains the existing lap clock.
+- Reduce Motion shows a static target instead of skipping the sequence to zero.
+  The TV gauge now receives the app's override as well as the OS preference.
+- The tab shell owns the top safe area so the portal ribbon appears below the
+  iOS status bar; individual tabs no longer add the top inset a second time.
+- Settings segments use their native text widths and measured indicator frames.
+  This fixes invisible labels caused by flex children inside an intrinsic rail.
+- `LinkPressable` keeps pressed-state style callbacks out of Expo Router's
+  object-style merge. More, Garage, History, and linked detail/race controls keep
+  their intended spacing, orientation, and press feedback.
+
+Verified on the iPhone 17 Pro simulator (iOS 26.5) using the native app and its
+debugger, with temporary controlled samples:
+
+1. A 280 mph sweep continued while JavaScript was deliberately blocked for
+   300ms (needle angle advanced from -20.6° to 107.9°), reached 117°, and returned
+   to -135°. Car removal and a zero sample did not interrupt it.
+2. A second 280 mph pass had a new pass ID and retriggered the sweep.
+3. Race tracking held 180 mph through removal/zero notifications, then moved
+   monotonically to 260 and down to 120 without returning to zero.
+4. Reduce Motion immediately showed 240 mph and remained static beyond the
+   ordinary sweep's hold duration.
+5. Native screenshots checked Settings (including the Community section),
+   the corrected segmented labels, and the tab safe area. These are simulator
+   checks, not a physical-device frame-rate benchmark.
 
 ## Deliberately not migrated (out of scope by design)
 
 - `app/tv.tsx` + `tv/TvStage.tsx` — the separate AirPlay-mirrored landscape
-  surface; **intentionally untouched** per the proposal's "what stays the same".
+  layout is retained. The follow-up needle behavior changes are listed above.
 - `components/CurrentCarHero.tsx` — superseded by `ActiveCarStrip` on Speed;
   kept only in case another caller appears (none currently render it).
 

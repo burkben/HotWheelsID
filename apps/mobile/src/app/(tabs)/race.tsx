@@ -427,7 +427,7 @@ export default function RaceScreen() {
           styles.screen,
           styles.splitRoot,
           {
-            paddingTop: insets.top + spacing(3),
+            paddingTop: spacing(3),
             paddingBottom: insets.bottom + spacing(3),
           },
         ]}
@@ -467,7 +467,7 @@ export default function RaceScreen() {
       contentContainerStyle={[
         styles.content,
         {
-          paddingTop: insets.top + spacing(3),
+          paddingTop: spacing(3),
           paddingBottom: insets.bottom + spacing(8),
         },
       ]}

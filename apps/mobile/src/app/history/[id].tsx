@@ -8,6 +8,7 @@ import { useCallback, useState } from 'react';
 import { FlatList, Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Link, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { LinkPressable } from '@/components/LinkPressable';
 
 import { useGarageStore } from '@/store/garageStore';
 import { getSessionRepository } from '@/store/persistence/historyAccess';
@@ -160,7 +161,7 @@ function PassRow({ pass, name }: { pass: SessionPass; name: string }) {
   if (!pass.carUid) return body;
   return (
     <Link href={{ pathname: '/garage/[uid]', params: { uid: pass.carUid } }} asChild>
-      <Pressable style={({ pressed }) => [pressed && styles.pressed]}>{body}</Pressable>
+      <LinkPressable contentStyle={({ pressed }) => [pressed && styles.pressed]}>{body}</LinkPressable>
     </Link>
   );
 }

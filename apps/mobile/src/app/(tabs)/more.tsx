@@ -8,12 +8,13 @@
  * chevron aligned to the label line. See docs/design/ui-overhaul/02.
  */
 import type { ComponentProps } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Link } from 'expo-router';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 import { summarize } from '@/achievements/engine';
+import { LinkPressable } from '@/components/LinkPressable';
 import { useAchievementsStore } from '@/store/achievementsStore';
 import { colors, fontSize, fontSizeT, fontWeight, radiusT, spacing } from '@/theme/tokens';
 import { useLayout } from '@/layout/useLayout';
@@ -28,7 +29,7 @@ export default function MoreScreen() {
   const { unlockedCount, total } = summarize(unlocked);
 
   return (
-    <View style={[styles.screen, { paddingTop: insets.top + spacing(2) }]}>
+    <View style={[styles.screen, { paddingTop: spacing(2) }]}>
       <View style={[styles.header, { maxWidth: layout.contentMaxWidth }]}>
         <Text style={styles.title}>More</Text>
       </View>
@@ -104,10 +105,10 @@ function MoreRow({
 }) {
   return (
     <Link href={href} asChild>
-      <Pressable
+      <LinkPressable
         accessibilityRole="button"
         accessibilityLabel={value ? `${title}, ${value}` : title}
-        style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+        contentStyle={({ pressed }) => [styles.row, pressed && styles.pressed]}
       >
         <MaterialCommunityIcons name={icon} size={21} color={colors.electric} />
         <View style={styles.rowMain}>
@@ -122,7 +123,7 @@ function MoreRow({
             {subtitle}
           </Text>
         </View>
-      </Pressable>
+      </LinkPressable>
     </Link>
   );
 }

@@ -4,7 +4,7 @@
  * An SVG dial (track, colored speed zones, ticks, labels) with a needle animated
  * by Reanimated. The needle endpoint is computed inside a `useAnimatedProps`
  * worklet so updates run on the UI thread without React re-renders; new samples
- * spring in via `withSpring` for an interruptible, lively motion.
+ * animate from the current angle without JavaScript timers.
  *
  * Rendering choice (ADR-0009 / ADR-0010): react-native-svg for rock-solid web +
  * native parity. The Phase 2b flame/particle FX (`FlameField`) is also SVG, hung
@@ -14,9 +14,11 @@
 import { useEffect } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Animated, {
+  Easing,
   ReduceMotion,
   cancelAnimation,
   useAnimatedProps,
+  useDerivedValue,
   useReducedMotion,
   useSharedValue,
   withDelay,
@@ -53,6 +55,8 @@ export interface SpeedZone {
 export interface SpeedometerProps {
   /** Live needle target in scale mph (animated). */
   value: number;
+  /** Accepted pass ID: retrigger a sweep even when two passes have equal speeds. */
+  sampleKey?: number;
   /** Big digital readout in scale mph (the last recorded pass). */
   readoutMph: number;
   max: number;
@@ -77,6 +81,7 @@ export interface SpeedometerProps {
 
 export function Speedometer({
   value,
+  sampleKey,
   readoutMph,
   max,
   zones,
@@ -102,8 +107,12 @@ export function Speedometer({
     const target = GAUGE_START_ANGLE + fraction * (GAUGE_END_ANGLE - GAUGE_START_ANGLE);
     const reduce = reduceMotion ? ReduceMotion.Always : ReduceMotion.System;
 
-    // Interrupt whatever the needle was doing so a new pass takes over cleanly.
-    cancelAnimation(angle);
+    // Keep a useful static reading when motion is disabled; a reduced sequence
+    // would otherwise skip straight to its final (zero) target.
+    if (reduceMotion) {
+      angle.value = target;
+      return;
+    }
 
     if (mode === "track") {
       // Continuous racing: glide directly from the current reading to the next
@@ -118,25 +127,26 @@ export function Speedometer({
       return;
     }
 
-    // Sweep (default): one continuous pass, all on the UI thread. Ramp up through
-    // ~55% of the speed then the peak with an ease-out timing curve (smooth
-    // acceleration, no spring overshoot), hold a beat at the top, then coast back
-    // to rest with a soft spring. Reads as a real acceleration across the sensor.
+    // One uninterrupted ramp from the current angle. Splitting the ascent into
+    // two eased timings makes the needle hesitate at the intermediate target.
+    // Replacing the animation also lets a new pass interrupt the return smoothly.
     if (clamped < 1) {
       // Already at/near rest — just settle to zero.
       angle.value = withSpring(GAUGE_START_ANGLE, { damping: 22, stiffness: 120, mass: 0.9, reduceMotion: reduce });
       return;
     }
-    const midTarget = GAUGE_START_ANGLE + (fraction * 0.55) * (GAUGE_END_ANGLE - GAUGE_START_ANGLE);
     angle.value = withSequence(
-      withTiming(midTarget, { duration: 320, reduceMotion: reduce }),
-      withTiming(target, { duration: 300, reduceMotion: reduce }),
+      reduce,
+      withTiming(target, { duration: 620, easing: Easing.out(Easing.cubic), reduceMotion: reduce }),
       withDelay(
         900,
         withSpring(GAUGE_START_ANGLE, { damping: 24, stiffness: 90, mass: 1.0, reduceMotion: reduce }),
+        reduce,
       ),
     );
-  }, [value, max, angle, reduceMotion, mode]);
+  }, [value, sampleKey, max, angle, reduceMotion, mode]);
+
+  useEffect(() => () => cancelAnimation(angle), [angle]);
 
   const needleProps = useAnimatedProps(() => {
     "worklet";
@@ -150,10 +160,11 @@ export function Speedometer({
   const ticks = makeTicks(cx, cy, r - stroke / 2, max, tickStep);
   const isHot = readoutMph >= flameThreshold;
 
-  // Live heat for the flame layer: how far the *current* needle target sits
-  // past the threshold (flares on a fast pass, fades as the needle returns).
-  const headroom = Math.max(1, max - flameThreshold);
-  const liveIntensity = Math.max(0, Math.min((value - flameThreshold) / headroom, 1));
+  // Heat follows the animated needle, including its return, on the UI thread.
+  const liveIntensity = useDerivedValue(() => {
+    const mph = ((angle.value - GAUGE_START_ANGLE) / (GAUGE_END_ANGLE - GAUGE_START_ANGLE)) * max;
+    return Math.max(0, Math.min((mph - flameThreshold) / Math.max(1, max - flameThreshold), 1));
+  });
 
   return (
     <View

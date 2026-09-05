@@ -4,9 +4,10 @@
  * bootstrap hydrates from SQLite and keeps in sync via the portal→garage bridge.
  * The car currently on the portal (from {@link usePortalStore}) is highlighted.
  */
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Link } from 'expo-router';
+import { LinkPressable } from '@/components/LinkPressable';
 
 import { useGarageStore } from '@/store/garageStore';
 import type { CarRecord } from '@/store/persistence/carRepository';
@@ -45,7 +46,7 @@ export default function GarageScreen() {
           .join('  ·  ') || 'Tap a car to identify it';
 
   return (
-    <View style={[styles.screen, { paddingTop: insets.top + spacing(2) }]}>
+    <View style={[styles.screen, { paddingTop: spacing(2) }]}>
       <View style={styles.header}>
         <View style={styles.headerText}>
           <Text style={styles.title}>Garage</Text>
@@ -86,8 +87,8 @@ function CarRow({ car, onPortal, grid }: { car: CarRecord; onPortal: boolean; gr
   const title = identity?.name ?? carLabel(car);
   return (
     <Link href={{ pathname: '/garage/[uid]', params: { uid: car.uid } }} asChild>
-      <Pressable
-        style={({ pressed }) => [
+      <LinkPressable
+        contentStyle={({ pressed }) => [
           styles.row,
           grid && styles.rowGrid,
           onPortal && styles.rowOnPortal,
@@ -115,7 +116,7 @@ function CarRow({ car, onPortal, grid }: { car: CarRecord; onPortal: boolean; gr
             {formatLap(car.bestLap)} · {car.races} {car.races === 1 ? 'race' : 'races'}
           </Text>
         </View>
-      </Pressable>
+      </LinkPressable>
     </Link>
   );
 }

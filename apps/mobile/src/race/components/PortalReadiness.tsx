@@ -1,5 +1,6 @@
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { Link } from "expo-router";
+import { LinkPressable } from "@/components/LinkPressable";
 
 import type { ConnectionState } from "../../store/portalStore";
 import { colors } from "../../theme/tokens";
@@ -42,14 +43,14 @@ export function PortalRecovery({ connection }: { readonly connection: Connection
         <Text style={styles.readinessDetail}>{readiness.detail}</Text>
       </View>
       <Link href="/" asChild>
-        <Pressable
+        <LinkPressable
           accessibilityRole="link"
           accessibilityLabel="Connect portal on Speed tab"
           accessibilityHint="Opens the Speed tab where you can connect a portal or start Demo"
-          style={({ pressed }) => pressed && styles.pressed}
+          contentStyle={({ pressed }) => pressed && styles.pressed}
         >
           <Text style={styles.recoveryLink}>Connect on Speed</Text>
-        </Pressable>
+        </LinkPressable>
       </Link>
     </View>
   );

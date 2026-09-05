@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import {
   AccessibilityInfo,
   Platform,
@@ -29,6 +29,7 @@ import {
 import { carHeroModel, portalStatusPresentation } from '@/portal/selectors';
 import { useGarageStore } from '@/store/garageStore';
 import { usePortalStore } from '@/store/portalStore';
+import { useRaceStore } from '@/store/raceStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { formatBestSpeed, speedUnitLabel, type SpeedDisplay } from '@/speed/format';
 import { colors, fontSize, fontSizeT, fontWeight, radiusT, spacing, speedGauge } from '@/theme/tokens';
@@ -41,9 +42,10 @@ export default function SpeedometerScreen() {
   const controlStatus = usePortalStore((s) => s.controlStatus);
   const car = usePortalStore((s) => s.car);
   const lastCar = usePortalStore((s) => s.lastCar);
-  const lastSpeed = usePortalStore((s) => s.lastSpeed);
   const bestMph = usePortalStore((s) => s.bestMph);
   const passes = usePortalStore((s) => s.passes);
+  const lastPass = passes[0];
+  const racePhase = useRaceStore((s) => s.race.phase);
   const garageCars = useGarageStore((s) => s.cars);
 
   const canBle = usePortalController((s) => s.canBle);
@@ -69,9 +71,9 @@ export default function SpeedometerScreen() {
         garageCars,
         catalogCar,
         sessionBestMph: bestMph,
-        lastMph: lastSpeed?.scaleMph,
+        lastMph: lastPass?.scaleMph,
       }),
-    [car, lastCar, garageCars, catalogCar, bestMph, lastSpeed?.scaleMph],
+    [car, lastCar, garageCars, catalogCar, bestMph, lastPass?.scaleMph],
   );
 
   const status = useMemo(
@@ -102,26 +104,23 @@ export default function SpeedometerScreen() {
     );
   }, [hero]);
 
-  // The gauge owns the needle choreography on the UI thread (sweep mode): hand
-  // it the latest pass speed and it ramps up, holds, and coasts back to rest.
-  // The digital readout keeps showing the last recorded speed.
-  const needleValue = lastSpeed && lastSpeed.scaleMph >= 1 ? lastSpeed.scaleMph : 0;
-  const [lastPassMph, setLastPassMph] = useState(0);
+  // Accepted passes survive car-removed/zero notifications and suppress BLE
+  // echoes. Their IDs retrigger equal-speed sweeps without remounting the gauge.
+  const lastPassMph = lastPass?.scaleMph ?? 0;
 
   useEffect(() => {
-    if (!lastSpeed || lastSpeed.scaleMph < 1) return;
-    setLastPassMph(lastSpeed.scaleMph);
+    if (!lastPass) return;
 
     // Tactile punch on each pass; a celebratory cue when it's a new best.
     // (The store has already folded this pass into bestMph by now.)
     if (Platform.OS !== 'web' && useSettingsStore.getState().haptics) {
-      const isRecord = lastSpeed.scaleMph >= usePortalStore.getState().bestMph - 0.001;
+      const isRecord = lastPass.scaleMph >= usePortalStore.getState().bestMph - 0.001;
       const haptic = isRecord
         ? Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
         : Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       haptic.catch(() => {});
     }
-  }, [lastSpeed]);
+  }, [lastPass]);
 
   // Light tick when a new car is detected on the portal.
   useEffect(() => {
@@ -213,7 +212,9 @@ export default function SpeedometerScreen() {
 
   const gauge = (
     <Speedometer
-      value={needleValue}
+      value={lastPassMph}
+      sampleKey={lastPass?.id}
+      mode={racePhase === 'idle' ? 'sweep' : 'track'}
       readoutMph={lastPassMph}
       max={speedGauge.maxMph}
       zones={speedGauge.zones}
@@ -295,7 +296,7 @@ export default function SpeedometerScreen() {
           styles.screen,
           styles.splitRoot,
           {
-            paddingTop: insets.top + spacing(3),
+            paddingTop: spacing(3),
             paddingBottom: insets.bottom + spacing(3),
             paddingLeft: insets.left + layout.gutter,
             paddingRight: insets.right + layout.gutter,
@@ -338,7 +339,7 @@ export default function SpeedometerScreen() {
       contentContainerStyle={[
         styles.content,
         {
-          paddingTop: insets.top + spacing(3),
+          paddingTop: spacing(3),
           paddingBottom: insets.bottom + spacing(6),
           paddingHorizontal: layout.gutter,
         },

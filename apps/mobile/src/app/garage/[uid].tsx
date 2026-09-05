@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
+import { LinkPressable } from '@/components/LinkPressable';
 import * as Haptics from 'expo-haptics';
 import * as WebBrowser from 'expo-web-browser';
 
@@ -81,16 +82,16 @@ export default function CarDetailScreen() {
             {shortUid(uid)} hasn’t been collected, or the garage was cleared.
           </Text>
           <Link href="/garage" asChild>
-            <Pressable style={({ pressed }) => [styles.missingButton, pressed && styles.pressed]}>
+            <LinkPressable contentStyle={({ pressed }) => [styles.missingButton, pressed && styles.pressed]}>
               <Text style={styles.missingButtonText}>‹ Back to Garage</Text>
-            </Pressable>
+            </LinkPressable>
           </Link>
         </View>
       ) : (
         <>
           {identity ? (
             <Link href={{ pathname: '/identify', params: { uid } }} asChild>
-              <Pressable style={({ pressed }) => [styles.heroPhoto, pressed && styles.pressed]}>
+              <LinkPressable contentStyle={({ pressed }) => [styles.heroPhoto, pressed && styles.pressed]}>
                 <CarPhoto
                   carId={identity?.id}
                   width="100%"
@@ -101,7 +102,7 @@ export default function CarDetailScreen() {
                 <View style={styles.changeBadge}>
                   <Text style={styles.changeBadgeText}>Change</Text>
                 </View>
-              </Pressable>
+              </LinkPressable>
             </Link>
           ) : null}
 
@@ -128,7 +129,7 @@ export default function CarDetailScreen() {
 
           {!identity ? (
             <Link href={{ pathname: '/identify', params: { uid } }} asChild>
-              <Pressable style={({ pressed }) => [styles.identityCard, pressed && styles.pressed]}>
+              <LinkPressable contentStyle={({ pressed }) => [styles.identityCard, pressed && styles.pressed]}>
                 <CarPhoto size={64} rounded={radiusT.card} />
                 <View style={styles.identityText}>
                   <Text style={styles.identityName} numberOfLines={1}>
@@ -141,7 +142,7 @@ export default function CarDetailScreen() {
                   </Text>
                 </View>
                 <Text style={styles.identityCta}>Identify</Text>
-              </Pressable>
+              </LinkPressable>
             </Link>
           ) : null}
 

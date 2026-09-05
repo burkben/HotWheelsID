@@ -50,7 +50,6 @@ export function TvStage() {
   const car = usePortalStore((s) => s.car);
   const bestMph = usePortalStore((s) => s.bestMph);
   const passes = usePortalStore((s) => s.passes);
-  const lastSpeed = usePortalStore((s) => s.lastSpeed);
 
   const race = useRaceStore((s) => s.race);
   const leaderboard = useRaceStore((s) => s.leaderboard);
@@ -83,7 +82,7 @@ export function TvStage() {
             ) : (
               <SpeedHero
                 scale={scale}
-                pass={lastSpeed ?? null}
+                pass={passes[0] ?? null}
                 bestMph={bestMph}
                 display={display}
               />
@@ -156,12 +155,10 @@ function SpeedHero({
   display: SpeedDisplay;
 }) {
   const lastMph = pass?.scaleMph ?? 0;
+  const reduceMotion = useSettingsStore((s) => s.reduceMotion);
 
-  // Continuous racing: the needle glides directly from one lap's speed to the
-  // next and stays there — it never resets to zero between passes. The gauge's
-  // "track" mode owns that motion on the UI thread; here we just feed it the
-  // latest reading, keyed on the pass object so identical repeat speeds still
-  // register as a new target.
+  // The TV speed-trap gauge holds the last accepted pass between crossings,
+  // including car-removed/zero notifications. Races retain their lap-clock hero.
   const needleMph = lastMph >= 1 ? lastMph : 0;
 
   return (
@@ -176,6 +173,7 @@ function SpeedHero({
         size={scale.gauge}
         display={display}
         mode="track"
+        reduceMotion={reduceMotion}
       />
       <Text style={[styles.heroCaption, { fontSize: scale.label }]}>
         BEST {formatSpeedValue(bestMph, display)} {speedUnitLabel(display.unit).toUpperCase()}
