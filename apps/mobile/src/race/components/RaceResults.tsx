@@ -1,5 +1,6 @@
 import { Pressable, Share, Text, View } from "react-native";
 import { Link } from "expo-router";
+import { LinkPressable } from "@/components/LinkPressable";
 import * as Haptics from "expo-haptics";
 
 import { raceShareText, formatLapTime } from "../../share/summary";
@@ -89,13 +90,13 @@ export function RaceResults({
           <Text style={styles.primaryBtnText}>{primaryActionLabel}</Text>
         </Pressable>
         <Link href="/" asChild>
-          <Pressable
+          <LinkPressable
             accessibilityRole="link"
             accessibilityLabel="Done racing, return to Speed"
-            style={({ pressed }) => [styles.ghostBtn, styles.flex1, pressed && styles.pressed]}
+            contentStyle={({ pressed }) => [styles.ghostBtn, styles.flex1, pressed && styles.pressed]}
           >
             <Text style={styles.ghostBtnText}>Done</Text>
-          </Pressable>
+          </LinkPressable>
         </Link>
       </View>
     </View>

@@ -8,6 +8,7 @@ import { useCallback, useState } from 'react';
 import { FlatList, Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Link, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { LinkPressable } from '@/components/LinkPressable';
 
 import { useGarageStore } from '@/store/garageStore';
 import { getSessionRepository } from '@/store/persistence/historyAccess';
@@ -17,7 +18,7 @@ import { speedUnitLabel } from '@/speed/format';
 import { sessionShareText } from '@/share/summary';
 import { carLabel, shortUid } from '@/garage/format';
 import { useLayout } from '@/layout/useLayout';
-import { colors, fontSize, fontWeight, radius, spacing } from '@/theme/tokens';
+import { colors, fontFamily, fontSize, fontSizeT, fontWeight, radiusT, spacing } from '@/theme/tokens';
 import {
   formatClock,
   formatDuration,
@@ -160,13 +161,13 @@ function PassRow({ pass, name }: { pass: SessionPass; name: string }) {
   if (!pass.carUid) return body;
   return (
     <Link href={{ pathname: '/garage/[uid]', params: { uid: pass.carUid } }} asChild>
-      <Pressable style={({ pressed }) => [pressed && styles.pressed]}>{body}</Pressable>
+      <LinkPressable contentStyle={({ pressed }) => [pressed && styles.pressed]}>{body}</LinkPressable>
     </Link>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.bg },
+  screen: { flex: 1, backgroundColor: colors.void },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -176,10 +177,10 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   back: { paddingVertical: spacing(1), paddingRight: spacing(1) },
-  backText: { color: colors.accentBlue, fontSize: fontSize.md, fontWeight: fontWeight.medium },
+  backText: { color: colors.electric, fontSize: fontSize.md, fontWeight: fontWeight.medium },
   headerSpacer: { flex: 1 },
   share: { paddingVertical: spacing(1), paddingLeft: spacing(1) },
-  shareText: { color: colors.accent, fontSize: fontSize.md, fontWeight: fontWeight.bold },
+  shareText: { color: colors.flame, fontSize: fontSize.md, fontWeight: fontWeight.bold },
   summary: {
     paddingHorizontal: spacing(5),
     paddingBottom: spacing(3),
@@ -187,27 +188,33 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'center',
   },
-  summaryDate: { color: colors.textPrimary, fontSize: fontSize.xl, fontWeight: fontWeight.heavy },
-  summaryMeta: { color: colors.textSecondary, fontSize: fontSize.sm },
+  summaryDate: { color: colors.ink, fontSize: fontSize.xl, fontWeight: fontWeight.heavy },
+  summaryMeta: { color: colors.inkSecondary, fontSize: fontSize.sm },
   list: { paddingHorizontal: spacing(5), gap: spacing(2), width: '100%', alignSelf: 'center' },
   listEmpty: { flexGrow: 1, justifyContent: 'center' },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
+    backgroundColor: colors.panelSolid,
+    borderColor: colors.hairline,
     borderWidth: 1,
-    borderRadius: radius.md,
+    borderRadius: radiusT.card,
     paddingVertical: spacing(3),
     paddingHorizontal: spacing(4),
   },
   rowLeft: { flexDirection: 'row', alignItems: 'baseline', gap: spacing(1) },
-  mph: { color: colors.accent, fontSize: fontSize.xl, fontWeight: fontWeight.heavy },
-  mphUnit: { color: colors.textMuted, fontSize: fontSize.xs, textTransform: 'uppercase', letterSpacing: 1 },
+  mph: {
+    color: colors.flame,
+    fontFamily: fontFamily.telemetry,
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.heavy,
+    fontVariant: ['tabular-nums'],
+  },
+  mphUnit: { color: colors.inkMuted, fontSize: fontSizeT.xs, textTransform: 'uppercase', letterSpacing: 1 },
   rowRight: { alignItems: 'flex-end', gap: 2 },
-  carName: { color: colors.textPrimary, fontSize: fontSize.sm, fontWeight: fontWeight.bold, maxWidth: 180 },
-  time: { color: colors.textMuted, fontSize: fontSize.xs, fontVariant: ['tabular-nums'] },
-  empty: { color: colors.textMuted, fontSize: fontSize.sm, textAlign: 'center', paddingHorizontal: spacing(6) },
+  carName: { color: colors.ink, fontSize: fontSize.sm, fontWeight: fontWeight.bold, maxWidth: 180 },
+  time: { color: colors.inkMuted, fontSize: fontSizeT.xs, fontVariant: ['tabular-nums'] },
+  empty: { color: colors.inkMuted, fontSize: fontSize.sm, textAlign: 'center', paddingHorizontal: spacing(6) },
   pressed: { opacity: 0.7 },
 });

@@ -11,12 +11,13 @@ import { useCallback, useState } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Link, useFocusEffect } from 'expo-router';
+import { LinkPressable } from '@/components/LinkPressable';
 
 import { getSessionRepository } from '@/store/persistence/historyAccess';
 import type { SessionSummary } from '@/store/persistence/sessionRepository';
 import { useSettingsStore } from '@/store/settingsStore';
 import { speedUnitLabel } from '@/speed/format';
-import { colors, fontSize, fontWeight, radius, spacing } from '@/theme/tokens';
+import { colors, fontFamily, fontSize, fontSizeT, fontWeight, radiusT, spacing } from '@/theme/tokens';
 import { useLayout } from '@/layout/useLayout';
 import {
   formatDuration,
@@ -72,7 +73,7 @@ export default function HistoryScreen() {
   const hasSessions = (sessions?.length ?? 0) > 0;
 
   return (
-    <View style={[styles.screen, { paddingTop: insets.top + spacing(2) }]}>
+    <View style={[styles.screen, { paddingTop: spacing(2) }]}>
       <View style={styles.header}>
         <Text style={styles.title}>History</Text>
         {hasSessions ? (
@@ -115,8 +116,8 @@ function SessionRow({ session, grid }: { session: SessionSummary; grid?: boolean
   const display = { unit: speedUnit, calibration: speedCalibration };
   return (
     <Link href={{ pathname: '/history/[id]', params: { id: String(session.id) } }} asChild>
-      <Pressable
-        style={({ pressed }) => [
+      <LinkPressable
+        contentStyle={({ pressed }) => [
           styles.row,
           grid && styles.rowGrid,
           live && styles.rowLive,
@@ -140,7 +141,7 @@ function SessionRow({ session, grid }: { session: SessionSummary; grid?: boolean
           <Text style={styles.bestMph}>{formatMphLabel(session.bestMph, display)}</Text>
           <Text style={styles.bestMphUnit}>best {speedUnitLabel(speedUnit)}</Text>
         </View>
-      </Pressable>
+      </LinkPressable>
     </Link>
   );
 }
@@ -159,7 +160,7 @@ function EmptyHistory() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.bg },
+  screen: { flex: 1, backgroundColor: colors.void },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -167,16 +168,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing(5),
     paddingBottom: spacing(3),
   },
-  title: { color: colors.textPrimary, fontSize: fontSize.xl, fontWeight: fontWeight.heavy, flex: 1 },
+  title: { color: colors.ink, fontSize: fontSize.xl, fontWeight: fontWeight.heavy, flex: 1 },
   clear: {
-    paddingVertical: spacing(1),
+    paddingVertical: spacing(1.5),
     paddingHorizontal: spacing(3),
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
+    borderRadius: radiusT.field,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.hairline,
+    backgroundColor: colors.panelSolid,
+    minHeight: 32,
+    justifyContent: 'center',
   },
-  clearText: { color: colors.danger, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
+  clearText: { color: colors.fault, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
   clearPlaceholder: { width: spacing(1) },
   list: { gap: spacing(3) },
   column: { gap: spacing(3) },
@@ -186,24 +189,32 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing(3),
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: radius.md,
+    backgroundColor: colors.panelSolid,
+    borderColor: colors.hairline,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: radiusT.card,
     padding: spacing(4),
+    borderLeftWidth: 3,
+    borderLeftColor: 'transparent',
   },
-  rowLive: { borderColor: colors.accent },
-  rowMain: { flex: 1, gap: 4 },
+  rowLive: { borderLeftColor: colors.electric, backgroundColor: colors.panelRaised },
+  rowMain: { flex: 1, gap: 4, minWidth: 0 },
   rowTitleLine: { flexDirection: 'row', alignItems: 'center', gap: spacing(2) },
-  rowDate: { color: colors.textPrimary, fontSize: fontSize.md, fontWeight: fontWeight.bold, flexShrink: 1 },
-  liveTag: { color: colors.accent, fontSize: fontSize.xs, fontWeight: fontWeight.bold },
-  rowMeta: { color: colors.textSecondary, fontSize: fontSize.sm },
+  rowDate: { color: colors.ink, fontSize: fontSize.md, fontWeight: fontWeight.bold, flexShrink: 1 },
+  liveTag: { color: colors.electric, fontSize: fontSizeT.xs, fontWeight: fontWeight.bold, textTransform: 'uppercase', letterSpacing: 0.5 },
+  rowMeta: { color: colors.inkSecondary, fontSize: fontSize.sm },
   rowStats: { alignItems: 'flex-end', gap: 1 },
-  bestMph: { color: colors.accent, fontSize: fontSize.lg, fontWeight: fontWeight.heavy },
-  bestMphUnit: { color: colors.textMuted, fontSize: fontSize.xs, textTransform: 'uppercase', letterSpacing: 1 },
+  bestMph: {
+    color: colors.flame,
+    fontFamily: fontFamily.telemetry,
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.heavy,
+    fontVariant: ['tabular-nums'],
+  },
+  bestMphUnit: { color: colors.inkMuted, fontSize: fontSizeT.xs, textTransform: 'uppercase', letterSpacing: 1 },
   empty: { alignItems: 'center', gap: spacing(2), paddingHorizontal: spacing(6) },
   emptyEmoji: { fontSize: 44 },
-  emptyTitle: { color: colors.textPrimary, fontSize: fontSize.lg, fontWeight: fontWeight.bold },
-  emptyBody: { color: colors.textSecondary, fontSize: fontSize.sm, textAlign: 'center', lineHeight: 19 },
+  emptyTitle: { color: colors.ink, fontSize: fontSize.lg, fontWeight: fontWeight.bold },
+  emptyBody: { color: colors.inkSecondary, fontSize: fontSize.sm, textAlign: 'center', lineHeight: 19 },
   pressed: { opacity: 0.7 },
 });

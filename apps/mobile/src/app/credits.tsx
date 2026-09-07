@@ -6,7 +6,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { CATALOG, CATALOG_PROVENANCE } from '@/catalog/catalog';
 import { ARTWORK, ARTWORK_COUNT, ARTWORK_UPLOADERS } from '@/catalog/artwork';
 import { useLayout } from '@/layout/useLayout';
-import { colors, fontSize, fontWeight, radius, spacing } from '@/theme/tokens';
+import { colors, fontSize, fontWeight, radiusT, spacing } from '@/theme/tokens';
 
 const PRIVACY_URL =
   'https://github.com/burkben/HotWheelsID/blob/main/docs/legal/privacy-policy.md';
@@ -125,7 +125,7 @@ function ExternalLink({ label, url }: { label: string; url: string }) {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.bg },
+  screen: { flex: 1, backgroundColor: colors.void },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -136,8 +136,8 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   back: { paddingVertical: spacing(1), paddingRight: spacing(1) },
-  backText: { color: colors.accentBlue, fontSize: fontSize.md, fontWeight: fontWeight.medium },
-  title: { color: colors.textPrimary, fontSize: fontSize.xl, fontWeight: fontWeight.heavy, flex: 1 },
+  backText: { color: colors.electric, fontSize: fontSize.md, fontWeight: fontWeight.medium },
+  title: { color: colors.ink, fontSize: fontSize.xl, fontWeight: fontWeight.heavy, flex: 1 },
   content: {
     paddingHorizontal: spacing(5),
     gap: spacing(2),
@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   sectionLabel: {
-    color: colors.textMuted,
+    color: colors.inkMuted,
     fontSize: fontSize.xs,
     fontWeight: fontWeight.bold,
     textTransform: 'uppercase',
@@ -155,24 +155,24 @@ const styles = StyleSheet.create({
     marginBottom: spacing(1),
   },
   card: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
+    backgroundColor: colors.panelSolid,
+    borderColor: colors.hairline,
     borderWidth: 1,
-    borderRadius: radius.md,
+    borderRadius: radiusT.card,
     padding: spacing(4),
     gap: spacing(2),
   },
-  cardTitle: { color: colors.textPrimary, fontSize: fontSize.md, fontWeight: fontWeight.bold },
-  body: { color: colors.textSecondary, fontSize: fontSize.sm, lineHeight: 20 },
-  meta: { color: colors.textMuted, fontSize: fontSize.xs, fontVariant: ['tabular-nums'] },
+  cardTitle: { color: colors.ink, fontSize: fontSize.md, fontWeight: fontWeight.bold },
+  body: { color: colors.inkSecondary, fontSize: fontSize.sm, lineHeight: 20 },
+  meta: { color: colors.inkMuted, fontSize: fontSize.xs, fontVariant: ['tabular-nums'] },
   link: {
     alignSelf: 'flex-start',
     paddingVertical: spacing(1),
     paddingRight: spacing(2),
   },
-  linkText: { color: colors.accentBlue, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
+  linkText: { color: colors.electric, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
   disclaimer: {
-    color: colors.textMuted,
+    color: colors.inkMuted,
     fontSize: fontSize.xs,
     lineHeight: 18,
     marginTop: spacing(4),

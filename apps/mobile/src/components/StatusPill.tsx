@@ -9,7 +9,7 @@ import { Alert, Platform, Pressable, StyleSheet, Text, View } from "react-native
 import * as Haptics from "expo-haptics";
 import type { ControlStatus } from "@redlineid/protocol";
 
-import { colors, fontSize, fontWeight, radius, spacing } from "@/theme/tokens";
+import { colors, fontSize, fontWeight, radiusT, spacing } from "@/theme/tokens";
 import type { ConnectionState } from "@/store/portalStore";
 import type { BlePhase } from "@/ble/types";
 import type { PortalMode } from "@/portal/controller";
@@ -46,12 +46,12 @@ export function StatusPill({
   });
   const color =
     status.tone === "connected"
-      ? colors.ok
+      ? colors.okT
       : status.tone === "busy"
-        ? colors.warn
+        ? colors.caution
         : status.tone === "error"
-          ? colors.danger
-          : colors.idle;
+          ? colors.fault
+          : colors.inkMuted;
 
   const confirmDisconnect = () => {
     const disconnect = () => {
@@ -113,10 +113,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing(2),
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: radius.pill,
+    backgroundColor: colors.panelSolid,
+    borderColor: colors.hairline,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: radiusT.pill,
     minHeight: 44,
     paddingVertical: spacing(2),
     paddingHorizontal: spacing(3),
@@ -124,10 +124,10 @@ const styles = StyleSheet.create({
   dot: {
     width: 9,
     height: 9,
-    borderRadius: radius.pill,
+    borderRadius: radiusT.pill,
   },
   label: {
-    color: colors.textPrimary,
+    color: colors.ink,
     fontSize: fontSize.sm,
     fontWeight: fontWeight.medium,
   },

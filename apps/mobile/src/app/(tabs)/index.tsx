@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import {
   AccessibilityInfo,
   Platform,
@@ -12,13 +12,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useReducedMotion } from 'react-native-reanimated';
 
-import { PORTAL_NAME } from '@redlineid/protocol';
 
 import { RecentPasses } from '@/components/RecentPasses';
 import { Speedometer } from '@/components/gauge/Speedometer';
-import { StatusPill } from '@/components/StatusPill';
 import { BleStatusBanner } from '@/components/BleStatusBanner';
-import { CurrentCarHero } from '@/components/CurrentCarHero';
+import { ActiveCarStrip } from '@/components/telemetry/ActiveCarStrip';
+import { SpeedTrace } from '@/components/telemetry/SpeedTrace';
+import { TelemetrySurface } from '@/components/telemetry/TelemetrySurface';
+import { TelemetryValue } from '@/components/telemetry/TelemetryValue';
 import { useCarIdentity } from '@/catalog/useCarIdentity';
 import { useLayout } from '@/layout/useLayout';
 import {
@@ -28,12 +29,10 @@ import {
 import { carHeroModel, portalStatusPresentation } from '@/portal/selectors';
 import { useGarageStore } from '@/store/garageStore';
 import { usePortalStore } from '@/store/portalStore';
+import { useRaceStore } from '@/store/raceStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { formatBestSpeed, speedUnitLabel, type SpeedDisplay } from '@/speed/format';
-import { colors, elevation, fontSize, fontWeight, radius, spacing, speedGauge } from '@/theme/tokens';
-
-/** How long the needle holds a pass before easing back toward zero. */
-const NEEDLE_HOLD_MS = 1300;
+import { colors, fontSize, fontSizeT, fontWeight, radiusT, spacing, speedGauge } from '@/theme/tokens';
 
 export default function SpeedometerScreen() {
   const insets = useSafeAreaInsets();
@@ -43,9 +42,10 @@ export default function SpeedometerScreen() {
   const controlStatus = usePortalStore((s) => s.controlStatus);
   const car = usePortalStore((s) => s.car);
   const lastCar = usePortalStore((s) => s.lastCar);
-  const lastSpeed = usePortalStore((s) => s.lastSpeed);
   const bestMph = usePortalStore((s) => s.bestMph);
   const passes = usePortalStore((s) => s.passes);
+  const lastPass = passes[0];
+  const racePhase = useRaceStore((s) => s.race.phase);
   const garageCars = useGarageStore((s) => s.cars);
 
   const canBle = usePortalController((s) => s.canBle);
@@ -71,9 +71,9 @@ export default function SpeedometerScreen() {
         garageCars,
         catalogCar,
         sessionBestMph: bestMph,
-        lastMph: lastSpeed?.scaleMph,
+        lastMph: lastPass?.scaleMph,
       }),
-    [car, lastCar, garageCars, catalogCar, bestMph, lastSpeed?.scaleMph],
+    [car, lastCar, garageCars, catalogCar, bestMph, lastPass?.scaleMph],
   );
 
   const status = useMemo(
@@ -104,29 +104,23 @@ export default function SpeedometerScreen() {
     );
   }, [hero]);
 
-  // Needle springs to each pass, then eases back to rest; the digital readout
-  // keeps showing the last recorded speed.
-  const [needleValue, setNeedleValue] = useState(0);
-  const [lastPassMph, setLastPassMph] = useState(0);
-  const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Accepted passes survive car-removed/zero notifications and suppress BLE
+  // echoes. Their IDs retrigger equal-speed sweeps without remounting the gauge.
+  const lastPassMph = lastPass?.scaleMph ?? 0;
 
   useEffect(() => {
-    if (!lastSpeed || lastSpeed.scaleMph < 1) return;
-    setLastPassMph(lastSpeed.scaleMph);
-    setNeedleValue(lastSpeed.scaleMph);
-    if (holdTimer.current) clearTimeout(holdTimer.current);
-    holdTimer.current = setTimeout(() => setNeedleValue(0), NEEDLE_HOLD_MS);
+    if (!lastPass) return;
 
     // Tactile punch on each pass; a celebratory cue when it's a new best.
     // (The store has already folded this pass into bestMph by now.)
     if (Platform.OS !== 'web' && useSettingsStore.getState().haptics) {
-      const isRecord = lastSpeed.scaleMph >= usePortalStore.getState().bestMph - 0.001;
+      const isRecord = lastPass.scaleMph >= usePortalStore.getState().bestMph - 0.001;
       const haptic = isRecord
         ? Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
         : Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       haptic.catch(() => {});
     }
-  }, [lastSpeed]);
+  }, [lastPass]);
 
   // Light tick when a new car is detected on the portal.
   useEffect(() => {
@@ -138,16 +132,9 @@ export default function SpeedometerScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [car?.uid]);
 
-  useEffect(() => {
-    return () => {
-      if (holdTimer.current) clearTimeout(holdTimer.current);
-    };
-  }, []);
-
   const isConnected = connection === 'connected';
   const switchMode = (toDemo: boolean) => {
     if ((toDemo ? 'demo' : 'live') === mode) return;
-    setNeedleValue(0);
     void controller.setMode(toDemo ? 'demo' : 'live');
   };
 
@@ -163,28 +150,13 @@ export default function SpeedometerScreen() {
   // Reanimated needle keeps its position instead of remounting at zero.
   const paneWidth = layout.isSplit ? undefined : layout.contentMaxWidth;
 
+  // The PortalStatusRibbon (mounted in the tab shell) now carries connection
+  // state + the connect/retry/disconnect action, so the header is just the
+  // title — no redundant status pill or subtitle duplicating the ribbon.
   const header = (
     <View style={[styles.header, { maxWidth: layout.isSplit ? undefined : layout.contentMaxWidth }]}>
       <View style={styles.headerText}>
         <Text style={styles.title}>Redline ID</Text>
-        <Text style={styles.subtitle}>
-          Portal \u201c{PORTAL_NAME}\u201d \u00b7 {useBle ? 'live BLE' : 'demo mode'}
-        </Text>
-      </View>
-      <View style={styles.headerRight}>
-        <StatusPill
-          connection={connection}
-          controlStatus={controlStatus}
-          phase={blePhase}
-          mode={mode}
-          manuallyDisconnected={manuallyDisconnected}
-          onConnect={() => void controller.connect()}
-          onRetry={() => void controller.retry()}
-          onDisconnect={() => {
-            setNeedleValue(0);
-            void controller.disconnect();
-          }}
-        />
       </View>
     </View>
   );
@@ -236,11 +208,13 @@ export default function SpeedometerScreen() {
     </>
   );
 
-  const heroCard = <CurrentCarHero model={hero} display={speedDisplay} />;
+  const heroCard = <ActiveCarStrip model={hero} display={speedDisplay} />;
 
   const gauge = (
     <Speedometer
-      value={needleValue}
+      value={lastPassMph}
+      sampleKey={lastPass?.id}
+      mode={racePhase === 'idle' ? 'sweep' : 'track'}
       readoutMph={lastPassMph}
       max={speedGauge.maxMph}
       zones={speedGauge.zones}
@@ -252,16 +226,44 @@ export default function SpeedometerScreen() {
     />
   );
 
+  // Live telemetry trace of recent passes (oldest → newest).
+  const traceValues = useMemo(
+    () => passes.map((p) => p.scaleMph).slice(0, 30).reverse(),
+    [passes],
+  );
+
+  const lastDelta =
+    lastPassMph > 0 && bestMph > 0 ? lastPassMph - bestMph : null;
+
   const stats = (
     <View style={[styles.statsRow, { maxWidth: paneWidth }]}>
-      <Stat label="Best" value={formatBestSpeed(bestMph, speedDisplay)} unit={speedUnitLabel(speedUnit)} />
-      <Stat label="Passes" value={passes.length.toString()} unit="total" />
       <Stat
-        label="Last"
-        value={formatBestSpeed(lastPassMph, speedDisplay)}
+        label="Best"
+        value={formatBestSpeed(bestMph, speedDisplay)}
         unit={speedUnitLabel(speedUnit)}
       />
+      <Stat label="Passes" value={passes.length.toString()} unit="total" />
+      <Stat
+        label="Delta"
+        value={lastDelta == null ? '—' : formatBestSpeed(Math.abs(lastDelta), speedDisplay)}
+        unit={speedUnitLabel(speedUnit)}
+        delta={
+          lastDelta == null
+            ? undefined
+            : `${lastDelta >= 0 ? '+' : '−'}${formatBestSpeed(Math.abs(lastDelta), speedDisplay)}`
+        }
+      />
     </View>
+  );
+
+  const trace = (
+    <TelemetrySurface style={[styles.traceCard, { maxWidth: paneWidth }]}>
+      <View style={styles.traceHead}>
+        <Text style={styles.traceLabel}>Speed trace</Text>
+        <Text style={styles.traceMeta}>last {Math.min(traceValues.length, 30)} passes</Text>
+      </View>
+      <SpeedTrace values={traceValues} height={92} />
+    </TelemetrySurface>
   );
 
   // Connect/retry/disconnect all live on the status pill now, so demo mode is
@@ -294,7 +296,7 @@ export default function SpeedometerScreen() {
           styles.screen,
           styles.splitRoot,
           {
-            paddingTop: insets.top + spacing(3),
+            paddingTop: spacing(3),
             paddingBottom: insets.bottom + spacing(3),
             paddingLeft: insets.left + layout.gutter,
             paddingRight: insets.right + layout.gutter,
@@ -307,6 +309,7 @@ export default function SpeedometerScreen() {
             {modeToggle}
             {gauge}
             {stats}
+            {trace}
             {controls}
           </View>
           <ScrollView
@@ -336,7 +339,7 @@ export default function SpeedometerScreen() {
       contentContainerStyle={[
         styles.content,
         {
-          paddingTop: insets.top + spacing(3),
+          paddingTop: spacing(3),
           paddingBottom: insets.bottom + spacing(6),
           paddingHorizontal: layout.gutter,
         },
@@ -348,6 +351,7 @@ export default function SpeedometerScreen() {
       {heroCard}
       {gauge}
       {stats}
+      {trace}
       {controls}
       <RecentPasses
         passes={passes}
@@ -360,28 +364,33 @@ export default function SpeedometerScreen() {
   );
 }
 
-function Stat({ label, value, unit }: { label: string; value: string; unit: string }) {
+function Stat({
+  label,
+  value,
+  unit,
+  delta,
+}: {
+  label: string;
+  value: string;
+  unit: string;
+  delta?: string;
+}) {
   return (
-    <View style={styles.stat}>
+    <TelemetrySurface style={styles.stat}>
       <Text style={styles.statLabel}>{label}</Text>
-      <Text style={styles.statValue} numberOfLines={1}>
-        {value}
-      </Text>
-      <Text style={styles.statUnit} numberOfLines={1}>
-        {unit}
-      </Text>
-    </View>
+      <TelemetryValue value={value} unit={unit} delta={delta} size="md" />
+    </TelemetrySurface>
   );
 }
 
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: colors.bg,
+    backgroundColor: colors.void,
   },
   content: {
     alignItems: 'center',
-    gap: spacing(5),
+    gap: spacing(4),
   },
   /** iPad: a fixed frame, since each pane manages its own scrolling. */
   splitRoot: {
@@ -418,20 +427,10 @@ const styles = StyleSheet.create({
   headerText: {
     flexShrink: 1,
   },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing(2),
-  },
   title: {
-    color: colors.textPrimary,
+    color: colors.ink,
     fontSize: fontSize.xl,
     fontWeight: fontWeight.heavy,
-  },
-  subtitle: {
-    color: colors.textSecondary,
-    fontSize: fontSize.sm,
-    marginTop: 2,
   },
   statsRow: {
     width: '100%',
@@ -440,30 +439,39 @@ const styles = StyleSheet.create({
   },
   stat: {
     flex: 1,
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: radius.md,
     paddingVertical: spacing(3),
     paddingHorizontal: spacing(3),
-    alignItems: 'center',
-    gap: 2,
-    ...elevation.card,
+    alignItems: 'flex-start',
+    gap: 4,
   },
   statLabel: {
-    color: colors.textMuted,
-    fontSize: fontSize.xs,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  statValue: {
-    color: colors.textPrimary,
-    fontSize: fontSize.lg,
+    color: colors.inkMuted,
+    fontSize: fontSizeT.xs,
     fontWeight: fontWeight.bold,
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
   },
-  statUnit: {
-    color: colors.textSecondary,
-    fontSize: fontSize.xs,
+  traceCard: {
+    width: '100%',
+    padding: spacing(3),
+    gap: spacing(2),
+  },
+  traceHead: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+  },
+  traceLabel: {
+    color: colors.inkMuted,
+    fontSize: fontSizeT.xs,
+    fontWeight: fontWeight.bold,
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+  },
+  traceMeta: {
+    color: colors.inkMuted,
+    fontSize: fontSizeT.xs,
+    fontVariant: ['tabular-nums'],
   },
   controls: {
     width: '100%',
@@ -472,73 +480,75 @@ const styles = StyleSheet.create({
   },
   button: {
     flex: 1,
-    borderRadius: radius.md,
+    borderRadius: radiusT.field,
     paddingVertical: spacing(3.5),
     alignItems: 'center',
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   buttonGhost: {
-    backgroundColor: colors.surfaceAlt,
-    borderColor: colors.border,
+    backgroundColor: colors.panelInset,
+    borderColor: colors.hairline,
   },
   lockedBanner: {
     width: '100%',
-    backgroundColor: colors.surface,
-    borderColor: colors.danger,
+    backgroundColor: colors.panelSolid,
+    borderColor: colors.fault,
     borderWidth: 1,
-    borderRadius: radius.md,
+    borderRadius: radiusT.card,
     padding: spacing(4),
     gap: spacing(2),
   },
   lockedTitle: {
-    color: colors.textPrimary,
+    color: colors.ink,
     fontSize: fontSize.md,
     fontWeight: fontWeight.bold,
   },
   lockedBody: {
-    color: colors.textSecondary,
+    color: colors.inkSecondary,
     fontSize: fontSize.sm,
     lineHeight: 19,
   },
   lockedButton: {
     marginTop: spacing(1),
     alignSelf: 'flex-start',
-    backgroundColor: colors.surfaceAlt,
-    borderColor: colors.accent,
+    backgroundColor: colors.panelInset,
+    borderColor: colors.flame,
     borderWidth: 1,
-    borderRadius: radius.md,
+    borderRadius: radiusT.field,
     paddingVertical: spacing(2.5),
     paddingHorizontal: spacing(4),
   },
   lockedButtonText: {
-    color: colors.accent,
+    color: colors.flame,
     fontSize: fontSize.sm,
     fontWeight: fontWeight.bold,
   },
   modeToggle: {
     flexDirection: 'row',
-    backgroundColor: colors.surfaceAlt,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: radius.pill,
-    padding: 3,
-    gap: 3,
+    backgroundColor: colors.panelInset,
+    borderColor: colors.hairline,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: radiusT.field,
+    padding: 2,
+    gap: 2,
   },
   modeOption: {
-    paddingVertical: spacing(1.5),
+    paddingVertical: spacing(2),
     paddingHorizontal: spacing(4),
-    borderRadius: radius.pill,
+    borderRadius: radiusT.field - 2,
+    minHeight: 32,
+    justifyContent: 'center',
   },
   modeOptionActive: {
-    backgroundColor: colors.accent,
+    backgroundColor: colors.electric,
   },
   modeText: {
-    color: colors.textSecondary,
+    color: colors.inkSecondary,
     fontSize: fontSize.sm,
     fontWeight: fontWeight.bold,
   },
   modeTextActive: {
-    color: colors.bg,
+    color: colors.void,
   },
   buttonDisabled: {
     opacity: 0.4,
@@ -547,12 +557,12 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   buttonText: {
-    color: colors.textPrimary,
+    color: colors.ink,
     fontSize: fontSize.md,
     fontWeight: fontWeight.bold,
   },
   note: {
-    color: colors.textMuted,
+    color: colors.inkMuted,
     fontSize: fontSize.xs,
     textAlign: 'center',
     lineHeight: 18,

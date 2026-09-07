@@ -13,8 +13,7 @@
  * particle renderer remains the eventual upgrade (ADR-0005) once it can be
  * verified on a device.
  *
- * `intensity` (0..1) is smoothed on the UI thread, so callers can pass a
- * discrete value (e.g. derived from the live needle target) and still get a
+ * `intensity` (0..1) follows the animated needle on the UI thread for a
  * smooth flare-in / fade-out. Honors "reduce motion": embers stop animating
  * and the layer collapses to a faint static bloom.
  */
@@ -35,7 +34,7 @@ import { colors } from "@/theme/tokens";
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 /** Ember tints, warm to white-hot. */
-const EMBER_COLORS = ["#ff5a1a", colors.accent, "#ffb43a", "#ffe08a"] as const;
+const EMBER_COLORS = ["#ff5a1a", colors.flame, "#ffb43a", "#ffe08a"] as const;
 
 const HEAT_GRADIENT_ID = "hwHeatBloom";
 
@@ -46,8 +45,8 @@ export interface FlameFieldProps {
   cy: number;
   /** Track radius (embers launch from just inside this). */
   r: number;
-  /** 0..1 heat level; smoothed internally. */
-  intensity: number;
+  /** Animated 0..1 heat level supplied by the gauge's UI-thread worklet. */
+  intensity: SharedValue<number>;
   /** When true, embers freeze and only a faint static bloom shows. */
   reduceMotion: boolean;
   /** Number of embers around the hot arc. */
@@ -62,12 +61,7 @@ export function FlameField({
   reduceMotion,
   emberCount = 12,
 }: FlameFieldProps) {
-  // Smoothed heat shared value drives every child on the UI thread.
-  const heat = useSharedValue(0);
-  useEffect(() => {
-    const target = Math.max(0, Math.min(intensity, 1));
-    heat.value = withTiming(target, { duration: 420, easing: Easing.out(Easing.quad) });
-  }, [intensity, heat]);
+  const heat = intensity;
 
   const bloomProps = useAnimatedProps(() => {
     "worklet";
@@ -99,9 +93,9 @@ export function FlameField({
     <G>
       <Defs>
         <RadialGradient id={HEAT_GRADIENT_ID} cx="50%" cy="50%" r="50%">
-          <Stop offset="0%" stopColor={colors.accent} stopOpacity={0.55} />
+          <Stop offset="0%" stopColor={colors.flame} stopOpacity={0.55} />
           <Stop offset="55%" stopColor="#ff5a1a" stopOpacity={0.22} />
-          <Stop offset="100%" stopColor={colors.accent} stopOpacity={0} />
+          <Stop offset="100%" stopColor={colors.flame} stopOpacity={0} />
         </RadialGradient>
       </Defs>
 

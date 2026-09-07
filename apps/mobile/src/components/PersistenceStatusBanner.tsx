@@ -21,7 +21,7 @@ export function PersistenceStatusBanner() {
     : reason === "unavailable"
       ? "You can keep using the app, but changes reset when it closes. Rebuild the native app to restore saving."
       : "You can keep using the app, but changes reset when it closes. Restart the app to try saving again.";
-  const accent = isWeb ? colors.accentBlue : colors.warn;
+  const accent = isWeb ? colors.electric : colors.caution;
 
   return (
     <View
@@ -38,7 +38,7 @@ export function PersistenceStatusBanner() {
 
 const styles = StyleSheet.create({
   banner: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.panelSolid,
     borderBottomWidth: 1,
     paddingVertical: spacing(2),
     paddingHorizontal: spacing(4),
@@ -49,7 +49,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   body: {
-    color: colors.textSecondary,
+    color: colors.inkSecondary,
     fontSize: fontSize.xs,
     lineHeight: 16,
     textAlign: "center",

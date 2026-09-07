@@ -4,7 +4,7 @@
  * An SVG dial (track, colored speed zones, ticks, labels) with a needle animated
  * by Reanimated. The needle endpoint is computed inside a `useAnimatedProps`
  * worklet so updates run on the UI thread without React re-renders; new samples
- * spring in via `withSpring` for an interruptible, lively motion.
+ * animate from the current angle without JavaScript timers.
  *
  * Rendering choice (ADR-0009 / ADR-0010): react-native-svg for rock-solid web +
  * native parity. The Phase 2b flame/particle FX (`FlameField`) is also SVG, hung
@@ -14,15 +14,21 @@
 import { useEffect } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Animated, {
+  Easing,
   ReduceMotion,
+  cancelAnimation,
   useAnimatedProps,
+  useDerivedValue,
   useReducedMotion,
   useSharedValue,
+  withDelay,
+  withSequence,
   withSpring,
+  withTiming,
 } from "react-native-reanimated";
 import Svg, { Circle, G, Line, Path, Text as SvgText } from "react-native-svg";
 
-import { colors, fontSize, fontWeight } from "@/theme/tokens";
+import { colors, fontFamily, fontSize, fontWeight } from "@/theme/tokens";
 import {
   DEFAULT_SPEED_DISPLAY,
   formatSpeedValue,
@@ -49,6 +55,8 @@ export interface SpeedZone {
 export interface SpeedometerProps {
   /** Live needle target in scale mph (animated). */
   value: number;
+  /** Accepted pass ID: retrigger a sweep even when two passes have equal speeds. */
+  sampleKey?: number;
   /** Big digital readout in scale mph (the last recorded pass). */
   readoutMph: number;
   max: number;
@@ -61,10 +69,19 @@ export interface SpeedometerProps {
   display?: SpeedDisplay;
   /** App-level override, OR'd with the operating-system preference. */
   reduceMotion?: boolean;
+  /**
+   * Needle behavior:
+   * - "sweep" (default): a one-off pass. The needle ramps up through the speed,
+   *   holds a beat at the peak, then coasts back to rest — all on the UI thread.
+   * - "track": continuous racing. The needle glides directly from one reading to
+   *   the next and stays there; it never returns to zero between passes.
+   */
+  mode?: "sweep" | "track";
 }
 
 export function Speedometer({
   value,
+  sampleKey,
   readoutMph,
   max,
   zones,
@@ -73,6 +90,7 @@ export function Speedometer({
   size = 300,
   display = DEFAULT_SPEED_DISPLAY,
   reduceMotion: reduceMotionOverride = false,
+  mode = "sweep",
 }: SpeedometerProps) {
   const stroke = 18;
   const cx = size / 2;
@@ -84,15 +102,51 @@ export function Speedometer({
   const reduceMotion = useReducedMotion() || reduceMotionOverride;
 
   useEffect(() => {
-    const fraction = Math.max(0, Math.min(value, max)) / max;
+    const clamped = Math.max(0, Math.min(value, max));
+    const fraction = clamped / max;
     const target = GAUGE_START_ANGLE + fraction * (GAUGE_END_ANGLE - GAUGE_START_ANGLE);
-    angle.value = withSpring(target, {
-      damping: 13,
-      stiffness: 95,
-      mass: 0.7,
-      reduceMotion: reduceMotion ? ReduceMotion.Always : ReduceMotion.System,
-    });
-  }, [value, max, angle, reduceMotion]);
+    const reduce = reduceMotion ? ReduceMotion.Always : ReduceMotion.System;
+
+    // Keep a useful static reading when motion is disabled; a reduced sequence
+    // would otherwise skip straight to its final (zero) target.
+    if (reduceMotion) {
+      angle.value = target;
+      return;
+    }
+
+    if (mode === "track") {
+      // Continuous racing: glide directly from the current reading to the next
+      // and stay there. A well-damped spring keeps it lively without bounce;
+      // the needle never returns to zero between laps.
+      angle.value = withSpring(target, {
+        damping: 20,
+        stiffness: 110,
+        mass: 0.9,
+        reduceMotion: reduce,
+      });
+      return;
+    }
+
+    // One uninterrupted ramp from the current angle. Splitting the ascent into
+    // two eased timings makes the needle hesitate at the intermediate target.
+    // Replacing the animation also lets a new pass interrupt the return smoothly.
+    if (clamped < 1) {
+      // Already at/near rest — just settle to zero.
+      angle.value = withSpring(GAUGE_START_ANGLE, { damping: 22, stiffness: 120, mass: 0.9, reduceMotion: reduce });
+      return;
+    }
+    angle.value = withSequence(
+      reduce,
+      withTiming(target, { duration: 620, easing: Easing.out(Easing.cubic), reduceMotion: reduce }),
+      withDelay(
+        900,
+        withSpring(GAUGE_START_ANGLE, { damping: 24, stiffness: 90, mass: 1.0, reduceMotion: reduce }),
+        reduce,
+      ),
+    );
+  }, [value, sampleKey, max, angle, reduceMotion, mode]);
+
+  useEffect(() => () => cancelAnimation(angle), [angle]);
 
   const needleProps = useAnimatedProps(() => {
     "worklet";
@@ -106,10 +160,11 @@ export function Speedometer({
   const ticks = makeTicks(cx, cy, r - stroke / 2, max, tickStep);
   const isHot = readoutMph >= flameThreshold;
 
-  // Live heat for the flame layer: how far the *current* needle target sits
-  // past the threshold (flares on a fast pass, fades as the needle returns).
-  const headroom = Math.max(1, max - flameThreshold);
-  const liveIntensity = Math.max(0, Math.min((value - flameThreshold) / headroom, 1));
+  // Heat follows the animated needle, including its return, on the UI thread.
+  const liveIntensity = useDerivedValue(() => {
+    const mph = ((angle.value - GAUGE_START_ANGLE) / (GAUGE_END_ANGLE - GAUGE_START_ANGLE)) * max;
+    return Math.max(0, Math.min((mph - flameThreshold) / Math.max(1, max - flameThreshold), 1));
+  });
 
   return (
     <View
@@ -159,7 +214,7 @@ export function Speedometer({
               y1={tick.outer.y}
               x2={tick.inner.x}
               y2={tick.inner.y}
-              stroke={colors.textMuted}
+              stroke={colors.inkMuted}
               strokeWidth={2}
             />
           ))}
@@ -168,7 +223,7 @@ export function Speedometer({
               key={`label-${tick.value}`}
               x={tick.label.x}
               y={tick.label.y + 4}
-              fill={colors.textSecondary}
+              fill={colors.inkSecondary}
               fontSize={11}
               fontWeight="600"
               textAnchor="middle"
@@ -190,17 +245,17 @@ export function Speedometer({
           x2={polarToCartesian(cx, cy, needleLength, GAUGE_START_ANGLE).x}
           y2={polarToCartesian(cx, cy, needleLength, GAUGE_START_ANGLE).y}
           animatedProps={needleProps}
-          stroke={isHot ? colors.accent : colors.accentBlue}
+          stroke={isHot ? colors.flame : colors.electric}
           strokeWidth={4}
           strokeLinecap="round"
         />
-        <Circle cx={cx} cy={cy} r={12} fill={colors.surface} stroke={colors.border} strokeWidth={2} />
-        <Circle cx={cx} cy={cy} r={4} fill={isHot ? colors.accent : colors.accentBlue} />
+        <Circle cx={cx} cy={cy} r={12} fill={colors.panelSolid} stroke={colors.hairline} strokeWidth={2} />
+        <Circle cx={cx} cy={cy} r={4} fill={isHot ? colors.flame : colors.electric} />
       </Svg>
 
       {/* Digital readout overlay */}
       <View pointerEvents="none" style={styles.readout}>
-        <Text style={[styles.readoutValue, isHot && { color: colors.accent }]}>
+        <Text style={[styles.readoutValue, isHot && { color: colors.flame }]}>
           {formatSpeedValue(readoutMph, display)}
         </Text>
         <Text style={styles.readoutUnit}>scale {speedUnitLabel(display.unit)}</Text>
@@ -220,14 +275,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   readoutValue: {
-    color: colors.textPrimary,
+    color: colors.ink,
     fontSize: fontSize.display,
     fontWeight: fontWeight.heavy,
+    fontFamily: fontFamily.telemetry,
     fontVariant: ["tabular-nums"],
     lineHeight: fontSize.display,
   },
   readoutUnit: {
-    color: colors.textSecondary,
+    color: colors.inkSecondary,
     fontSize: fontSize.sm,
     fontWeight: fontWeight.medium,
     letterSpacing: 1,

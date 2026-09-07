@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Proposal C — Night Rally · looping mock</title>
+<style>
+  :root{
+    --bg:#070a12; --panel:rgba(255,255,255,.07); --panel2:rgba(255,255,255,.10);
+    --hair:rgba(255,255,255,.12);
+    --text:#f2f6ff; --sub:#93a4c4; --muted:#5c6b8a;
+    --flame:#ff7a1a; --blue:#26c6ff;
+    --green:#22c55e; --yellow:#eab308; --red:#ef4444;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:#020306 radial-gradient(1200px 500px at 70% -10%, rgba(38,198,255,.06), transparent 60%);
+    color:var(--text);
+    font-family:-apple-system,"SF Pro Text","Helvetica Neue",Arial,sans-serif;
+    min-height:100vh; padding:28px 20px 60px;
+  }
+  header{max-width:1240px;margin:0 auto 22px}
+  h1{font-size:26px;font-weight:800;letter-spacing:.2px}
+  h1 .c{color:var(--flame)}
+  .pitch{color:var(--sub);font-size:14px;margin-top:6px}
+  .tag{display:inline-block;margin-top:10px;font-size:11px;letter-spacing:1.4px;text-transform:uppercase;
+    color:var(--muted);border:1px solid var(--hair);border-radius:999px;padding:5px 12px}
+  .strip{display:flex;gap:28px;overflow-x:auto;padding:26px 4px 34px;scrollbar-color:var(--hair) transparent}
+  .slot{flex:0 0 auto}
+  .slot h2{font-size:12px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:10px;text-align:center}
+  .phone{
+    width:375px;height:760px;border-radius:46px;background:var(--bg);
+    border:1px solid #141c2e; position:relative; overflow:hidden;
+    box-shadow:0 30px 80px rgba(0,0,0,.6), inset 0 0 0 2px #0d1322;
+  }
+  .notch{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:110px;height:26px;border-radius:14px;background:#000;z-index:40}
+  .hintbar{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:120px;height:4px;border-radius:2px;background:rgba(255,255,255,.28);z-index:40}
+
+  /* drifting light streaks (ambient motion) */
+  .streaks{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+  .streak{position:absolute;height:2px;border-radius:2px;opacity:.05;filter:blur(.5px)}
+  .s1{top:12%;width:520px;left:-140px;background:linear-gradient(90deg,transparent,var(--blue),transparent);animation:drift 26s linear infinite alternate}
+  .s2{top:58%;width:640px;left:-220px;background:linear-gradient(90deg,transparent,var(--flame),transparent);animation:drift 34s linear infinite alternate-reverse}
+  .s3{top:82%;width:420px;left:-100px;background:linear-gradient(90deg,transparent,#fff,transparent);animation:drift 22s linear infinite alternate}
+  @keyframes drift{from{transform:translateX(0)}to{transform:translateX(60px)}}
+
+  /* mode rail */
+  .rail{position:absolute;top:48px;left:0;right:0;display:flex;justify-content:center;gap:22px;z-index:30}
+  .tick{width:26px;height:4px;border-radius:2px;background:rgba(255,255,255,.14);position:relative;transition:background .3s}
+  .tick.on{background:var(--blue);box-shadow:0 0 10px rgba(38,198,255,.8)}
+  .tick .dot{position:absolute;top:-5px;left:50%;transform:translateX(-50%);width:6px;height:6px;border-radius:50%;
+    background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+  .page{position:absolute;inset:0;padding-top:70px;display:flex;flex-direction:column}
+
+  /* ---------- SPEED ---------- */
+  .speed-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
+  .dial{position:relative;width:320px;height:320px}
+  .dial svg{position:absolute;inset:0}
+  .needle-glow{position:absolute;inset:0;border-radius:50%;opacity:0;
+    background:radial-gradient(circle at 50% 55%, rgba(255,122,26,.35), transparent 60%)}
+  .needle-glow.hot{animation:bloom 5.4s ease-in-out infinite}
+  @keyframes bloom{0%,38%,100%{opacity:0}46%,62%{opacity:1}}
+  .readout{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .mph{font-family:"Arial Narrow","Helvetica Neue",Arial,sans-serif;font-stretch:condensed;
+    font-size:86px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1;
+    text-shadow:0 0 24px rgba(255,122,26,.25)}
+  .unit{font-size:13px;letter-spacing:3px;color:var(--muted);margin-top:6px;text-transform:uppercase}
+  .ticker{position:absolute;right:14px;top:24px;bottom:120px;width:104px;display:flex;flex-direction:column;gap:8px;justify-content:flex-start;mask-image:linear-gradient(180deg,#000 70%,transparent)}
+  .tick-row{background:var(--panel);border-radius:10px;padding:7px 10px;font-size:12px;font-variant-numeric:tabular-nums;
+    display:flex;justify-content:space-between;animation:tickin 6s ease-in-out infinite;opacity:0}
+  .tick-row b{color:var(--flame)}
+  .tick-row span{color:var(--muted)}
+  .tick-row:nth-child(1){animation-delay:0s}.tick-row:nth-child(2){animation-delay:1.2s}
+  .tick-row:nth-child(3){animation-delay:2.4s}.tick-row:nth-child(4){animation-delay:3.6s}
+  @keyframes tickin{0%{opacity:0;transform:translateY(-10px)}8%{opacity:1;transform:none}70%{opacity:.45}100%{opacity:.35}}
+  .chase{margin:0 16px 26px;background:var(--panel);border-radius:20px;padding:12px 14px;display:flex;align-items:center;gap:12px;
+    animation:chasein 7s ease-in-out infinite}
+  @keyframes chasein{0%{transform:translateY(70px);opacity:0}10%,86%{transform:none;opacity:1}96%{transform:translateY(70px);opacity:0}100%{transform:translateY(70px);opacity:0}}
+  .chase .art{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#1b2540,#0d1322);display:flex;align-items:center;justify-content:center;font-size:22px}
+  .chase .name{font-weight:700;font-size:15px}
+  .chase .meta{color:var(--sub);font-size:12px;margin-top:2px}
+
+  /* ---------- RACE ---------- */
+  .stripdial{margin:8px 16px 0;background:var(--panel);border-radius:20px;height:74px;display:flex;align-items:center;justify-content:center;gap:14px}
+  .stripdial .n{font-size:40px;font-weight:800;font-variant-numeric:tabular-nums;font-family:"Arial Narrow",Arial,sans-serif}
+  .stripdial .lbl{font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase}
+  .countzone{flex:1;position:relative;display:flex;align-items:center;justify-content:center}
+  .count{position:absolute;font-size:170px;font-weight:800;font-family:"Arial Narrow",Arial,sans-serif;
+    color:var(--flame);text-shadow:0 0 40px rgba(255,122,26,.5);opacity:0;animation:slam 3s ease-in-out infinite}
+  .count.c2{animation-delay:1s}.count.c3{animation-delay:2s}
+  @keyframes slam{0%{opacity:0;transform:scale(1.7)}6%{opacity:1;transform:scale(1)}26%{opacity:1;transform:scale(.92)}33%{opacity:0;transform:scale(.85)}100%{opacity:0}}
+  .go{position:absolute;font-size:64px;font-weight:800;letter-spacing:4px;color:var(--green);opacity:0;animation:go 3s ease-in-out infinite;animation-delay:2.95s}
+  @keyframes go{0%,97%{opacity:0}99%{opacity:1}100%{opacity:0}}
+  .laprail{margin:0 16px 30px;background:var(--panel);border-radius:20px;padding:14px}
+  .laprail h3{font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:10px}
+  .rail-row{display:flex;align-items:flex-end;gap:5px;height:56px}
+  .lapbar{flex:1;background:linear-gradient(180deg,var(--blue),rgba(38,198,255,.25));border-radius:4px 4px 2px 2px;transform-origin:bottom;transform:scaleY(0);animation:lap 6s ease-out infinite}
+  .lapbar:nth-child(1){height:60%;animation-delay:.4s}.lapbar:nth-child(2){height:82%;animation-delay:1.2s}
+  .lapbar:nth-child(3){height:48%;animation-delay:2s}.lapbar:nth-child(4){height:95%;animation-delay:2.8s;background:linear-gradient(180deg,var(--flame),rgba(255,122,26,.3))}
+  .lapbar:nth-child(5){height:66%;animation-delay:3.6s}
+  @keyframes lap{0%{transform:scaleY(0)}8%{transform:scaleY(1)}88%{opacity:1}96%{opacity:0}100%{transform:scaleY(0);opacity:0}}
+
+  /* ---------- GARAGE ---------- */
+  .turntable{margin:14px 0 0;height:210px;display:flex;align-items:center;justify-content:center;perspective:600px;position:relative}
+  .car-card{width:230px;height:170px;border-radius:24px;background:linear-gradient(160deg,#141d33,#0a0f1d);
+    border:1px solid var(--hair);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+    animation:tilt 6s ease-in-out infinite;transform-style:preserve-3d;box-shadow:0 18px 50px rgba(0,0,0,.5)}
+  @keyframes tilt{0%,100%{transform:rotateY(-9deg)}50%{transform:rotateY(9deg)}}
+  .car-emoji{font-size:64px;filter:drop-shadow(0 8px 14px rgba(0,0,0,.6))}
+  .car-name{font-weight:800;font-size:17px}
+  .car-tag{font-size:11px;letter-spacing:2px;color:var(--blue);text-transform:uppercase}
+  .dots{display:flex;justify-content:center;gap:8px;margin:6px 0 14px}
+  .dots i{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.18)}
+  .dots i.on{background:var(--blue);box-shadow:0 0 8px rgba(38,198,255,.7)}
+  .statgrid{margin:0 16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+  .stat{background:var(--panel);border-radius:16px;padding:12px 10px;text-align:center;opacity:0;animation:rise 6s ease-out infinite}
+  .stat:nth-child(2){animation-delay:.15s}.stat:nth-child(3){animation-delay:.3s}
+  @keyframes rise{0%,8%{opacity:0;transform:translateY(14px)}18%,92%{opacity:1;transform:none}100%{opacity:1}}
+  .stat .v{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}
+  .stat .k{font-size:10px;letter-spacing:1.6px;color:var(--muted);text-transform:uppercase;margin-top:4px}
+  .stat .v em{font-style:normal;font-size:11px;color:var(--sub)}
+
+  /* ---------- SETTINGS ---------- */
+  .set-scroll{flex:1;padding:6px 18px 0;display:flex;flex-direction:column;gap:0}
+  .set-head{display:flex;align-items:center;margin-bottom:18px;position:relative}
+  .backbtn{width:34px;height:34px;border-radius:50%;background:var(--panel2);display:flex;align-items:center;justify-content:center;color:var(--blue);font-size:18px}
+  .set-title{position:absolute;left:0;right:0;text-align:center;font-size:17px;font-weight:800;pointer-events:none}
+  .group-label{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:var(--muted);margin:22px 0 8px 12px}
+  .group-label:first-of-type{margin-top:0}
+  .group{background:var(--panel);border-radius:20px;overflow:hidden}
+  .row{display:flex;align-items:center;min-height:46px;padding:10px 16px;gap:12px}
+  .row + .row{border-top:1px solid var(--hair)}
+  .row .txt{flex:1;min-width:0}
+  .row .lbl{font-size:15px;font-weight:700;line-height:1.25}
+  .row .hint{font-size:12px;color:var(--sub);line-height:1.35;margin-top:2px}
+  .switch{width:46px;height:28px;border-radius:14px;background:rgba(255,255,255,.14);position:relative;flex:0 0 auto;transition:background .25s}
+  .switch::after{content:"";position:absolute;top:2px;left:2px;width:24px;height:24px;border-radius:50%;background:#fff;transition:transform .25s}
+  .switch.on{background:var(--green)}
+  .switch.on::after{transform:translateX(18px)}
+  .switch.demo{animation:swdemo 8s ease-in-out infinite}
+  @keyframes swdemo{0%,55%{background:rgba(255,255,255,.14)}62%,88%{background:var(--green)}96%,100%{background:rgba(255,255,255,.14)}}
+  .switch.demo::after{animation:swthumb 8s ease-in-out infinite}
+  @keyframes swthumb{0%,55%{transform:none}62%,88%{transform:translateX(18px)}96%,100%{transform:none}}
+  .seg{display:flex;background:rgba(255,255,255,.10);border-radius:10px;padding:2px;flex:0 0 auto}
+  .seg span{font-size:13px;font-weight:700;padding:5px 12px;border-radius:8px;color:var(--sub)}
+  .seg span.on{background:var(--blue);color:#04121c}
+  .stepper{display:flex;align-items:center;gap:10px;flex:0 0 auto}
+  .stepper button{width:30px;height:30px;border-radius:9px;border:0;background:rgba(255,255,255,.10);color:var(--text);font-size:17px;font-weight:800}
+  .stepper .val{min-width:52px;text-align:center;font-variant-numeric:tabular-nums;font-weight:800;font-size:15px}
+  .row.danger .lbl{color:var(--red)}
+  .footnote{max-width:1240px;margin:26px auto 0;color:var(--muted);font-size:12px;line-height:1.6}
+  code{background:rgba(255,255,255,.08);padding:1px 6px;border-radius:6px;font-size:11px}
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important;transition:none !important}
+    .tick-row,.stat,.chase,.lapbar{opacity:1 !important;transform:none !important}
+    .lapbar{transform:scaleY(1) !important}
+    .count.c3{opacity:0}.go{opacity:1 !important}
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Proposal C — <span class="c">Night Rally</span></h1>
+  <p class="pitch">One thing at a time, full-bleed, always moving. Swipe-driven cockpit flow instead of a tab bar; flame orange reserved for speed events; drifting light streaks keep the app quietly alive.</p>
+  <span class="tag">Looping mock · not interactive · swipe shown as auto-paging in frame 1</span>
+</header>
+
+<div class="strip">
+
+  <!-- ================= SPEED ================= -->
+  <div class="slot">
+    <h2>Speed · page 1</h2>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="streaks"><div class="streak s1"></div><div class="streak s2"></div><div class="streak s3"></div></div>
+      <div class="rail">
+        <div class="tick on"><span class="dot"></span></div><div class="tick"></div><div class="tick"></div><div class="tick"></div>
+      </div>
+      <div class="page">
+        <div class="speed-wrap">
+          <div class="dial">
+            <svg viewBox="0 0 320 320">
+              <circle cx="160" cy="160" r="138" fill="none" stroke="#131b30" stroke-width="14"/>
+              <path id="zones" fill="none" stroke-width="14" stroke-linecap="round"/>
+              <g id="ticks"></g>
+              <g id="needleG">
+                <line x1="160" y1="160" x2="160" y2="46" stroke="#ff7a1a" stroke-width="5" stroke-linecap="round"/>
+                <circle cx="160" cy="160" r="10" fill="#ff7a1a"/>
+              </g>
+            </svg>
+            <div class="needle-glow hot"></div>
+            <div class="readout">
+              <div class="mph" id="mph">0</div>
+              <div class="unit">scale mph</div>
+            </div>
+          </div>
+          <div class="ticker">
+            <div class="tick-row"><b>184</b><span>Twin Mill</span></div>
+            <div class="tick-row"><b>151</b><span>Bone Shkr</span></div>
+            <div class="tick-row"><b>203</b><span>GT Hunter</span></div>
+            <div class="tick-row"><b>127</b><span>Rip Rod</span></div>
+          </div>
+        </div>
+        <div class="chase">
+          <div class="art">🏎️</div>
+          <div>
+            <div class="name">GT Hunter</div>
+            <div class="meta">On the portal · best 203 scale mph</div>
+          </div>
+        </div>
+      </div>
+      <div class="hintbar"></div>
+    </div>
+  </div>
+
+  <!-- ================= RACE ================= -->
+  <div class="slot">
+    <h2>Race · page 2</h2>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="streaks"><div class="streak s1"></div><div class="streak s3"></div></div>
+      <div class="rail">
+        <div class="tick"></div><div class="tick on"><span class="dot"></span></div><div class="tick"></div><div class="tick"></div>
+      </div>
+      <div class="page">
+        <div class="stripdial">
+          <div class="n" id="mph2">0</div>
+          <div class="lbl">live<br>speed</div>
+        </div>
+        <div class="countzone">
+          <div class="count c3">3</div>
+          <div class="count c2">2</div>
+          <div class="count">1</div>
+          <div class="go">GO!</div>
+        </div>
+        <div class="laprail">
+          <h3>Laps · 5 target · bar length = lap time</h3>
+          <div class="rail-row">
+            <div class="lapbar"></div><div class="lapbar"></div><div class="lapbar"></div><div class="lapbar"></div><div class="lapbar"></div>
+            <div class="lapbar" style="visibility:hidden"></div>
+          </div>
+        </div>
+      </div>
+      <div class="hintbar"></div>
+    </div>
+  </div>
+
+  <!-- ================= GARAGE ================= -->
+  <div class="slot">
+    <h2>Garage · page 3</h2>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="streaks"><div class="streak s2"></div></div>
+      <div class="rail">
+        <div class="tick"></div><div class="tick"></div><div class="tick on"></div><div class="tick"></div>
+      </div>
+      <div class="page">
+        <div class="turntable">
+          <div class="car-card">
+            <div class="car-emoji">🏎️</div>
+            <div class="car-name">GT Hunter</div>
+            <div class="car-tag">HW Speed Demons</div>
+          </div>
+        </div>
+        <div class="dots"><i class="on"></i><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="statgrid">
+          <div class="stat"><div class="v">203<em> mph</em></div><div class="k">Best speed</div></div>
+          <div class="stat"><div class="v">8.42<em> s</em></div><div class="k">Best lap</div></div>
+          <div class="stat"><div class="v">37</div><div class="k">Passes</div></div>
+        </div>
+      </div>
+      <div class="hintbar"></div>
+    </div>
+  </div>
+
+  <!-- ================= SETTINGS ================= -->
+  <div class="slot">
+    <h2>Settings · aligned</h2>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="page" style="padding-top:56px">
+        <div class="set-scroll">
+          <div class="set-head">
+            <div class="backbtn">‹</div>
+            <div class="set-title">Settings</div>
+          </div>
+
+          <div class="group-label">Profile</div>
+          <div class="group">
+            <div class="row"><div class="txt"><div class="lbl">Player name</div></div><div style="color:var(--sub);font-size:15px">Player 1 ›</div></div>
+          </div>
+
+          <div class="group-label">Racing</div>
+          <div class="group">
+            <div class="row"><div class="txt"><div class="lbl">Default laps</div></div>
+              <div class="seg"><span class="on">5</span><span>10</span><span>15</span><span>20</span></div></div>
+            <div class="row"><div class="txt"><div class="lbl">Units</div></div>
+              <div class="seg"><span class="on">mph</span><span>km/h</span></div></div>
+            <div class="row"><div class="txt"><div class="lbl">Calibration</div>
+              <div class="hint">Trim displayed speeds to a known reference.</div></div>
+              <div class="stepper"><button>−</button><div class="val">×1.00</div><button>+</button></div></div>
+          </div>
+
+          <div class="group-label">Feedback</div>
+          <div class="group">
+            <div class="row"><div class="txt"><div class="lbl">Haptics</div>
+              <div class="hint">Countdown, laps, new-best passes.</div></div><div class="switch on"></div></div>
+            <div class="row"><div class="txt"><div class="lbl">Sound</div>
+              <div class="hint">Race cues on countdown and finish.</div></div><div class="switch on"></div></div>
+            <div class="row"><div class="txt"><div class="lbl">Reduce motion</div>
+              <div class="hint">Damp decorative animation (also honors iOS).</div></div><div class="switch demo"></div></div>
+          </div>
+
+          <div class="group-label">Danger zone</div>
+          <div class="group">
+            <div class="row danger"><div class="txt"><div class="lbl">Reset to defaults</div></div><div style="color:var(--muted)">›</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="hintbar"></div>
+    </div>
+  </div>
+
+</div>
+
+<p class="footnote">
+  Looping mock of <code>03-proposal-night-rally.md</code>. Watch: the needle springs to passes and eases back with a
+  flame bloom at high speed · the mode-rail dot pulses the connection state · the countdown slams 3-2-1-GO · lap bars
+  encode lap time by length · the garage turntable tilts on a loop · settings rows keep controls aligned with the
+  label line (the fix for today's alignment bugs). In the real app the phone frame pages swipe horizontally.
+</p>
+
+<script>
+(function(){
+  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches){
+    // Static showcase: park the needle mid-sweep and skip the spring loop.
+    var needle0=document.getElementById('needleG');
+    if (needle0) needle0.setAttribute('transform','rotate(30 160 160)');
+    var m=document.getElementById('mph'); if(m) m.textContent='203';
+    var m2=document.getElementById('mph2'); if(m2) m2.textContent='203';
+    return;
+  }
+  // --- gauge geometry (shared by speed dial) ---
+  const CX=160, CY=160, R=138, START=-210, SWEEP=240; // arc from -210deg over 240deg
+  const pol=(a,r)=>{const t=(a-90)*Math.PI/180;return [CX+r*Math.cos(t), CY+r*Math.sin(t)];};
+  const arc=(from,to,r,color)=>{
+    const [x1,y1]=pol(from,r),[x2,y2]=pol(to,r);
+    return `<path d="M ${x1} ${y1} A ${r} ${r} 0 ${to-from>180?1:0} 1 ${x2} ${y2}" stroke="${color}" fill="none" stroke-width="14"/>`;
+  };
+  const zones=document.getElementById('zones');
+  // zones in scale-mph -> angle
+  const MAXV=300, a=v=>START+ (v/MAXV)*SWEEP;
+  zones.innerHTML = arc(a(0)+2,a(120)-2,138,'#22c55e') + arc(a(120)+2,a(220)-2,138,'#eab308') + arc(a(220)+2,a(300)-2,138,'#ef4444');
+  // ticks
+  let tg='';
+  for(let v=0;v<=300;v+=60){
+    const ang=a(v), [x1,y1]=pol(ang,120),[x2,y2]=pol(ang,112);
+    tg+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#33415f" stroke-width="3"/>`;
+  }
+  document.getElementById('ticks').innerHTML=tg;
+
+  const needle=document.getElementById('needleG');
+  const mphEl=document.getElementById('mph');
+  const mph2=document.getElementById('mph2');
+
+  // --- springy needle: critically-damped-ish JS spring toward targets ---
+  let cur=0, vel=0, target=0, shown=0;
+  const passes=[184,203,127,241,151]; let pi=0;
+  function nextPass(){ target=passes[pi%passes.length]; pi++;
+    setTimeout(()=>{target=0;}, 1600); // hold then ease back, like the real app
+  }
+  nextPass(); setInterval(nextPass, 3000);
+
+  let last=performance.now();
+  function frame(now){
+    const dt=Math.min((now-last)/1000, .05); last=now;
+    // spring
+    const k=90, c=14;
+    const acc=(target-cur)*k - vel*c;
+    vel+=acc*dt; cur+=vel*dt;
+    needle.setAttribute('transform',`rotate(${a(cur)} 160 160)`);
+    shown+=(cur-shown)*Math.min(1,dt*14);
+    const v=Math.round(shown);
+    mphEl.textContent=v; if(mph2) mph2.textContent=v;
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

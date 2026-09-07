@@ -22,7 +22,7 @@ import { evaluate, summarize, type AchievementView } from '@/achievements/engine
 import { goalProgressLabel, formatUnlockedDate, progressPercent } from '@/achievements/format';
 import { useLayout } from '@/layout/useLayout';
 import { useAchievementsStore } from '@/store/achievementsStore';
-import { colors, fontSize, fontWeight, radius, spacing } from '@/theme/tokens';
+import { colors, fontSize, fontWeight, radiusT, spacing } from '@/theme/tokens';
 
 export default function AchievementsScreen() {
   const insets = useSafeAreaInsets();
@@ -112,7 +112,7 @@ function AchievementRow({ view }: { view: AchievementView }) {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.bg },
+  screen: { flex: 1, backgroundColor: colors.void },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -123,21 +123,21 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   back: { paddingVertical: spacing(1), paddingRight: spacing(1) },
-  backText: { color: colors.accentBlue, fontSize: fontSize.md, fontWeight: fontWeight.medium },
-  title: { color: colors.textPrimary, fontSize: fontSize.xl, fontWeight: fontWeight.heavy, flex: 1 },
+  backText: { color: colors.electric, fontSize: fontSize.md, fontWeight: fontWeight.medium },
+  title: { color: colors.ink, fontSize: fontSize.xl, fontWeight: fontWeight.heavy, flex: 1 },
   countChip: {
     paddingVertical: spacing(1),
     paddingHorizontal: spacing(3),
-    borderRadius: radius.pill,
+    borderRadius: radiusT.pill,
     borderWidth: 1,
-    borderColor: colors.accent,
-    backgroundColor: colors.surface,
+    borderColor: colors.flame,
+    backgroundColor: colors.panelSolid,
   },
-  countText: { color: colors.accent, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
+  countText: { color: colors.flame, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
   list: { paddingHorizontal: spacing(5), gap: spacing(5), width: '100%', alignSelf: 'center' },
   section: { gap: spacing(3) },
   sectionTitle: {
-    color: colors.textMuted,
+    color: colors.inkMuted,
     fontSize: fontSize.xs,
     fontWeight: fontWeight.bold,
     textTransform: 'uppercase',
@@ -147,22 +147,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing(3),
     borderWidth: 1,
-    borderRadius: radius.md,
+    borderRadius: radiusT.card,
     padding: spacing(4),
   },
-  rowUnlocked: { backgroundColor: colors.surface, borderColor: colors.accent },
-  rowLocked: { backgroundColor: colors.surfaceAlt, borderColor: colors.border },
+  rowUnlocked: { backgroundColor: colors.panelSolid, borderColor: colors.flame },
+  rowLocked: { backgroundColor: colors.panelInset, borderColor: colors.hairline },
   icon: { fontSize: 30 },
   iconLocked: { opacity: 0.4 },
   rowMain: { flex: 1, gap: 4 },
   rowTitleLine: { flexDirection: 'row', alignItems: 'center', gap: spacing(2) },
-  rowTitle: { color: colors.textPrimary, fontSize: fontSize.md, fontWeight: fontWeight.bold, flexShrink: 1 },
-  rowTitleLocked: { color: colors.textSecondary },
-  check: { color: colors.accent, fontSize: fontSize.md, fontWeight: fontWeight.heavy },
-  rowDesc: { color: colors.textSecondary, fontSize: fontSize.sm, lineHeight: 18 },
+  rowTitle: { color: colors.ink, fontSize: fontSize.md, fontWeight: fontWeight.bold, flexShrink: 1 },
+  rowTitleLocked: { color: colors.inkSecondary },
+  check: { color: colors.flame, fontSize: fontSize.md, fontWeight: fontWeight.heavy },
+  rowDesc: { color: colors.inkSecondary, fontSize: fontSize.sm, lineHeight: 18 },
   unlockedAt: {
     marginTop: 2,
-    color: colors.accent,
+    color: colors.flame,
     fontSize: fontSize.xs,
     fontWeight: fontWeight.medium,
     textTransform: 'uppercase',
@@ -171,11 +171,11 @@ const styles = StyleSheet.create({
   progressWrap: { marginTop: spacing(1), gap: 4 },
   progressTrack: {
     height: 6,
-    borderRadius: radius.pill,
+    borderRadius: radiusT.pill,
     backgroundColor: colors.track,
     overflow: 'hidden',
   },
-  progressFill: { height: '100%', borderRadius: radius.pill, backgroundColor: colors.accentBlue },
-  progressLabel: { color: colors.textMuted, fontSize: fontSize.xs },
+  progressFill: { height: '100%', borderRadius: radiusT.pill, backgroundColor: colors.electric },
+  progressLabel: { color: colors.inkMuted, fontSize: fontSize.xs },
   pressed: { opacity: 0.7 },
 });

@@ -4,9 +4,10 @@
  * bootstrap hydrates from SQLite and keeps in sync via the portal→garage bridge.
  * The car currently on the portal (from {@link usePortalStore}) is highlighted.
  */
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Link } from 'expo-router';
+import { LinkPressable } from '@/components/LinkPressable';
 
 import { useGarageStore } from '@/store/garageStore';
 import type { CarRecord } from '@/store/persistence/carRepository';
@@ -14,7 +15,7 @@ import { usePortalStore } from '@/store/portalStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { catalogIdForUid, useIdentityStore } from '@/store/identityStore';
 import { speedUnitLabel } from '@/speed/format';
-import { colors, elevation, fontSize, fontWeight, radius, spacing } from '@/theme/tokens';
+import { colors, fontFamily, fontSize, fontSizeT, fontWeight, radius, radiusT, spacing } from '@/theme/tokens';
 import { carLabel, formatLastSeen, formatLap, formatMph } from '@/garage/format';
 import { CarPhoto } from '@/catalog/CarPhoto';
 import { useCarIdentity } from '@/catalog/useCarIdentity';
@@ -45,7 +46,7 @@ export default function GarageScreen() {
           .join('  ·  ') || 'Tap a car to identify it';
 
   return (
-    <View style={[styles.screen, { paddingTop: insets.top + spacing(2) }]}>
+    <View style={[styles.screen, { paddingTop: spacing(2) }]}>
       <View style={styles.header}>
         <View style={styles.headerText}>
           <Text style={styles.title}>Garage</Text>
@@ -86,8 +87,8 @@ function CarRow({ car, onPortal, grid }: { car: CarRecord; onPortal: boolean; gr
   const title = identity?.name ?? carLabel(car);
   return (
     <Link href={{ pathname: '/garage/[uid]', params: { uid: car.uid } }} asChild>
-      <Pressable
-        style={({ pressed }) => [
+      <LinkPressable
+        contentStyle={({ pressed }) => [
           styles.row,
           grid && styles.rowGrid,
           onPortal && styles.rowOnPortal,
@@ -115,7 +116,7 @@ function CarRow({ car, onPortal, grid }: { car: CarRecord; onPortal: boolean; gr
             {formatLap(car.bestLap)} · {car.races} {car.races === 1 ? 'race' : 'races'}
           </Text>
         </View>
-      </Pressable>
+      </LinkPressable>
     </Link>
   );
 }
@@ -134,7 +135,7 @@ function EmptyGarage() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.bg },
+  screen: { flex: 1, backgroundColor: colors.void },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -143,20 +144,22 @@ const styles = StyleSheet.create({
     paddingBottom: spacing(3),
   },
   headerText: { flex: 1, gap: 2 },
-  title: { color: colors.textPrimary, fontSize: fontSize.xl, fontWeight: fontWeight.heavy },
-  subtitle: { color: colors.textSecondary, fontSize: fontSize.sm },
+  title: { color: colors.ink, fontSize: fontSize.xl, fontWeight: fontWeight.heavy },
+  subtitle: { color: colors.inkSecondary, fontSize: fontSize.sm },
   count: {
-    color: colors.textSecondary,
+    color: colors.inkSecondary,
+    fontFamily: fontFamily.telemetry,
     fontSize: fontSize.md,
     fontWeight: fontWeight.bold,
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: radius.pill,
-    minWidth: 32,
+    fontVariant: ['tabular-nums'],
+    backgroundColor: colors.panelSolid,
+    borderColor: colors.hairline,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: radiusT.field,
+    minWidth: 40,
     textAlign: 'center',
-    paddingVertical: 2,
-    paddingHorizontal: spacing(2),
+    paddingVertical: 4,
+    paddingHorizontal: spacing(2.5),
     overflow: 'hidden',
   },
   list: { gap: spacing(3) },
@@ -166,29 +169,37 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing(3),
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: radius.md,
+    backgroundColor: colors.panelSolid,
+    borderColor: colors.hairline,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: radiusT.card,
     padding: spacing(4),
-    ...elevation.card,
+    // Left inset so the on-portal flame rail has somewhere to sit.
+    borderLeftWidth: 3,
+    borderLeftColor: 'transparent',
   },
   // In a grid every tile has to claim an equal share of the row; `minWidth: 0`
   // lets the long car name shrink instead of forcing the column wider.
   rowGrid: { flex: 1, minWidth: 0 },
-  rowOnPortal: { borderColor: colors.accent, backgroundColor: colors.surfaceRaised, ...elevation.accentGlow },
-  rowMain: { flex: 1, gap: 4 },
+  rowOnPortal: { borderLeftColor: colors.flame, backgroundColor: colors.panelRaised },
+  rowMain: { flex: 1, gap: 4, minWidth: 0 },
   rowTitleLine: { flexDirection: 'row', alignItems: 'center', gap: spacing(2) },
-  carName: { color: colors.textPrimary, fontSize: fontSize.md, fontWeight: fontWeight.bold, flexShrink: 1 },
-  onPortal: { color: colors.accent, fontSize: fontSize.xs, fontWeight: fontWeight.bold },
-  carMeta: { color: colors.textSecondary, fontSize: fontSize.sm },
+  carName: { color: colors.ink, fontSize: fontSize.md, fontWeight: fontWeight.bold, flexShrink: 1 },
+  onPortal: { color: colors.flame, fontSize: fontSize.xs, fontWeight: fontWeight.bold, textTransform: 'uppercase', letterSpacing: 0.5 },
+  carMeta: { color: colors.inkSecondary, fontSize: fontSize.sm },
   rowStats: { alignItems: 'flex-end', gap: 1 },
-  bestMph: { color: colors.accent, fontSize: fontSize.lg, fontWeight: fontWeight.heavy },
-  bestMphUnit: { color: colors.textMuted, fontSize: fontSize.xs, textTransform: 'uppercase', letterSpacing: 1 },
-  subStat: { color: colors.textSecondary, fontSize: fontSize.xs, marginTop: 2 },
+  bestMph: {
+    color: colors.flame,
+    fontFamily: fontFamily.telemetry,
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.heavy,
+    fontVariant: ['tabular-nums'],
+  },
+  bestMphUnit: { color: colors.inkMuted, fontSize: fontSizeT.xs, textTransform: 'uppercase', letterSpacing: 1 },
+  subStat: { color: colors.inkSecondary, fontSize: fontSize.xs, marginTop: 2, fontVariant: ['tabular-nums'] },
   empty: { alignItems: 'center', gap: spacing(2), paddingHorizontal: spacing(6) },
   emptyEmoji: { fontSize: 44 },
-  emptyTitle: { color: colors.textPrimary, fontSize: fontSize.lg, fontWeight: fontWeight.bold },
-  emptyBody: { color: colors.textSecondary, fontSize: fontSize.sm, textAlign: 'center', lineHeight: 19 },
+  emptyTitle: { color: colors.ink, fontSize: fontSize.lg, fontWeight: fontWeight.bold },
+  emptyBody: { color: colors.inkSecondary, fontSize: fontSize.sm, textAlign: 'center', lineHeight: 19 },
   pressed: { opacity: 0.7 },
 });

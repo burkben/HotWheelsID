@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
+import { LinkPressable } from '@/components/LinkPressable';
 import * as Haptics from 'expo-haptics';
 import * as WebBrowser from 'expo-web-browser';
 
@@ -17,7 +18,7 @@ import { usePortalStore } from '@/store/portalStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { speedUnitLabel } from '@/speed/format';
 import { carLabel, formatLap, formatLastSeen, formatMph, shortUid } from '@/garage/format';
-import { colors, elevation, fontSize, fontWeight, radius, spacing } from '@/theme/tokens';
+import { colors, fontSize, fontWeight, radiusT, spacing } from '@/theme/tokens';
 import { CarPhoto } from '@/catalog/CarPhoto';
 import { carArtworkCredit } from '@/catalog/artwork';
 import { useCarIdentity, useCastingCoverage } from '@/catalog/useCarIdentity';
@@ -81,27 +82,27 @@ export default function CarDetailScreen() {
             {shortUid(uid)} hasn’t been collected, or the garage was cleared.
           </Text>
           <Link href="/garage" asChild>
-            <Pressable style={({ pressed }) => [styles.missingButton, pressed && styles.pressed]}>
+            <LinkPressable contentStyle={({ pressed }) => [styles.missingButton, pressed && styles.pressed]}>
               <Text style={styles.missingButtonText}>‹ Back to Garage</Text>
-            </Pressable>
+            </LinkPressable>
           </Link>
         </View>
       ) : (
         <>
           {identity ? (
             <Link href={{ pathname: '/identify', params: { uid } }} asChild>
-              <Pressable style={({ pressed }) => [styles.heroPhoto, pressed && styles.pressed]}>
+              <LinkPressable contentStyle={({ pressed }) => [styles.heroPhoto, pressed && styles.pressed]}>
                 <CarPhoto
                   carId={identity?.id}
                   width="100%"
                   aspectRatio={16 / 10}
-                  rounded={radius.lg}
+                  rounded={radiusT.card}
                   ring
                 />
                 <View style={styles.changeBadge}>
                   <Text style={styles.changeBadgeText}>Change</Text>
                 </View>
-              </Pressable>
+              </LinkPressable>
             </Link>
           ) : null}
 
@@ -128,8 +129,8 @@ export default function CarDetailScreen() {
 
           {!identity ? (
             <Link href={{ pathname: '/identify', params: { uid } }} asChild>
-              <Pressable style={({ pressed }) => [styles.identityCard, pressed && styles.pressed]}>
-                <CarPhoto size={64} rounded={radius.md} />
+              <LinkPressable contentStyle={({ pressed }) => [styles.identityCard, pressed && styles.pressed]}>
+                <CarPhoto size={64} rounded={radiusT.card} />
                 <View style={styles.identityText}>
                   <Text style={styles.identityName} numberOfLines={1}>
                     Unidentified car
@@ -141,7 +142,7 @@ export default function CarDetailScreen() {
                   </Text>
                 </View>
                 <Text style={styles.identityCta}>Identify</Text>
-              </Pressable>
+              </LinkPressable>
             </Link>
           ) : null}
 
@@ -191,7 +192,7 @@ export default function CarDetailScreen() {
             onChangeText={setDraft}
             onBlur={saveName}
             placeholder={shortUid(car.uid)}
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor={colors.inkMuted}
             style={styles.input}
             maxLength={28}
             returnKeyType="done"
@@ -232,21 +233,20 @@ function Stat({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.bg },
+  screen: { flex: 1, backgroundColor: colors.void },
   content: { paddingHorizontal: spacing(5), gap: spacing(3), width: '100%', alignSelf: 'center' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   back: { paddingVertical: spacing(1), paddingRight: spacing(2) },
-  backText: { color: colors.accentBlue, fontSize: fontSize.md, fontWeight: fontWeight.medium },
-  onPortal: { color: colors.accent, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
-  title: { color: colors.textPrimary, fontSize: fontSize.xl, fontWeight: fontWeight.heavy, marginTop: spacing(1) },
-  subtitle: { color: colors.textSecondary, fontSize: fontSize.sm },
+  backText: { color: colors.electric, fontSize: fontSize.md, fontWeight: fontWeight.medium },
+  onPortal: { color: colors.flame, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
+  title: { color: colors.ink, fontSize: fontSize.xl, fontWeight: fontWeight.heavy, marginTop: spacing(1) },
+  subtitle: { color: colors.inkSecondary, fontSize: fontSize.sm },
   heroPhoto: {
     marginTop: spacing(1),
-    borderRadius: radius.lg,
-    ...elevation.card,
+    borderRadius: radiusT.card,
   },
   photoCredit: {
-    color: colors.textMuted,
+    color: colors.inkMuted,
     fontSize: fontSize.xs,
     marginTop: spacing(1),
   },
@@ -255,14 +255,14 @@ const styles = StyleSheet.create({
     top: spacing(2),
     right: spacing(2),
     backgroundColor: 'rgba(11,15,26,0.78)',
-    borderColor: colors.accent,
+    borderColor: colors.flame,
     borderWidth: 1,
-    borderRadius: radius.pill,
+    borderRadius: radiusT.pill,
     paddingVertical: 4,
     paddingHorizontal: spacing(3),
   },
   changeBadgeText: {
-    color: colors.accent,
+    color: colors.flame,
     fontSize: fontSize.xs,
     fontWeight: fontWeight.heavy,
     textTransform: 'uppercase',
@@ -272,109 +272,107 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing(3),
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
+    backgroundColor: colors.panelSolid,
+    borderColor: colors.hairline,
     borderWidth: 1,
-    borderRadius: radius.lg,
+    borderRadius: radiusT.card,
     padding: spacing(3),
     marginTop: spacing(2),
   },
   identityText: { flex: 1, gap: 2 },
-  identityName: { color: colors.textPrimary, fontSize: fontSize.md, fontWeight: fontWeight.bold },
-  identityMeta: { color: colors.textSecondary, fontSize: fontSize.sm },
+  identityName: { color: colors.ink, fontSize: fontSize.md, fontWeight: fontWeight.bold },
+  identityMeta: { color: colors.inkSecondary, fontSize: fontSize.sm },
   identityCta: {
-    color: colors.accent,
+    color: colors.flame,
     fontSize: fontSize.sm,
     fontWeight: fontWeight.heavy,
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
   identityPanel: { gap: spacing(2), marginTop: spacing(2) },
-  identitySummary: { color: colors.textSecondary, fontSize: fontSize.sm },
+  identitySummary: { color: colors.inkSecondary, fontSize: fontSize.sm },
   metaWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing(2) },
   metaChip: {
-    backgroundColor: colors.surfaceAlt,
-    borderColor: colors.border,
+    backgroundColor: colors.panelInset,
+    borderColor: colors.hairline,
     borderWidth: 1,
-    borderRadius: radius.pill,
+    borderRadius: radiusT.pill,
     paddingVertical: 6,
     paddingHorizontal: spacing(3),
   },
-  metaChipText: { color: colors.textSecondary, fontSize: fontSize.xs, fontWeight: fontWeight.medium },
+  metaChipText: { color: colors.inkSecondary, fontSize: fontSize.xs, fontWeight: fontWeight.medium },
   wikiButton: {
     alignSelf: 'flex-start',
-    backgroundColor: colors.surface,
-    borderColor: colors.accentBlue,
+    backgroundColor: colors.panelSolid,
+    borderColor: colors.electric,
     borderWidth: 1,
-    borderRadius: radius.md,
+    borderRadius: radiusT.card,
     paddingVertical: spacing(2),
     paddingHorizontal: spacing(3),
   },
-  wikiButtonText: { color: colors.accentBlue, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
+  wikiButtonText: { color: colors.electric, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
   hero: {
     alignItems: 'center',
-    backgroundColor: colors.surfaceRaised,
-    borderColor: colors.accent,
+    backgroundColor: colors.panelRaised,
+    borderColor: colors.flame,
     borderWidth: 1,
-    borderRadius: radius.lg,
+    borderRadius: radiusT.card,
     paddingVertical: spacing(5),
     marginTop: spacing(2),
-    ...elevation.accentGlow,
   },
-  heroValue: { color: colors.accent, fontSize: fontSize.display, fontWeight: fontWeight.heavy },
-  heroUnit: { color: colors.textMuted, fontSize: fontSize.xs, textTransform: 'uppercase', letterSpacing: 1 },
+  heroValue: { color: colors.flame, fontSize: fontSize.display, fontWeight: fontWeight.heavy },
+  heroUnit: { color: colors.inkMuted, fontSize: fontSize.xs, textTransform: 'uppercase', letterSpacing: 1 },
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing(3) },
   stat: {
     flexGrow: 1,
     flexBasis: '45%',
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
+    backgroundColor: colors.panelSolid,
+    borderColor: colors.hairline,
     borderWidth: 1,
-    borderRadius: radius.md,
+    borderRadius: radiusT.card,
     paddingVertical: spacing(3),
     paddingHorizontal: spacing(4),
     gap: 2,
-    ...elevation.card,
   },
-  statLabel: { color: colors.textMuted, fontSize: fontSize.xs, textTransform: 'uppercase', letterSpacing: 1 },
-  statValue: { color: colors.textPrimary, fontSize: fontSize.lg, fontWeight: fontWeight.bold },
+  statLabel: { color: colors.inkMuted, fontSize: fontSize.xs, textTransform: 'uppercase', letterSpacing: 1 },
+  statValue: { color: colors.ink, fontSize: fontSize.lg, fontWeight: fontWeight.bold },
   sectionLabel: {
-    color: colors.textSecondary,
+    color: colors.inkSecondary,
     fontSize: fontSize.sm,
     fontWeight: fontWeight.bold,
     marginTop: spacing(2),
   },
   input: {
-    backgroundColor: colors.surfaceAlt,
-    borderColor: colors.border,
+    backgroundColor: colors.panelInset,
+    borderColor: colors.hairline,
     borderWidth: 1,
-    borderRadius: radius.md,
+    borderRadius: radiusT.card,
     paddingHorizontal: spacing(3.5),
     paddingVertical: spacing(3),
-    color: colors.textPrimary,
+    color: colors.ink,
     fontSize: fontSize.md,
   },
   saveBtn: {
-    backgroundColor: colors.accent,
-    borderRadius: radius.md,
+    backgroundColor: colors.flame,
+    borderRadius: radiusT.card,
     paddingVertical: spacing(3),
     alignItems: 'center',
   },
-  saveBtnDisabled: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 },
-  saveBtnText: { color: colors.bg, fontSize: fontSize.md, fontWeight: fontWeight.heavy },
-  note: { color: colors.textMuted, fontSize: fontSize.xs, lineHeight: 18, marginTop: spacing(1) },
+  saveBtnDisabled: { backgroundColor: colors.panelSolid, borderColor: colors.hairline, borderWidth: 1 },
+  saveBtnText: { color: colors.void, fontSize: fontSize.md, fontWeight: fontWeight.heavy },
+  note: { color: colors.inkMuted, fontSize: fontSize.xs, lineHeight: 18, marginTop: spacing(1) },
   missing: { alignItems: 'center', gap: spacing(2), paddingVertical: spacing(10) },
-  missingTitle: { color: colors.textPrimary, fontSize: fontSize.lg, fontWeight: fontWeight.bold },
-  missingBody: { color: colors.textSecondary, fontSize: fontSize.sm, textAlign: 'center' },
+  missingTitle: { color: colors.ink, fontSize: fontSize.lg, fontWeight: fontWeight.bold },
+  missingBody: { color: colors.inkSecondary, fontSize: fontSize.sm, textAlign: 'center' },
   missingButton: {
     marginTop: spacing(2),
-    backgroundColor: colors.surface,
-    borderColor: colors.accentBlue,
+    backgroundColor: colors.panelSolid,
+    borderColor: colors.electric,
     borderWidth: 1,
-    borderRadius: radius.md,
+    borderRadius: radiusT.card,
     paddingVertical: spacing(2.5),
     paddingHorizontal: spacing(5),
   },
-  missingButtonText: { color: colors.accentBlue, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
+  missingButtonText: { color: colors.electric, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
   pressed: { opacity: 0.7 },
 });
