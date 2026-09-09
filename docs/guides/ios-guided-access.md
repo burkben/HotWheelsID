@@ -36,8 +36,8 @@ re-enter Guided Access afterward.
   (and any "Bluetooth is off" alert) appears *before* you ever start a session — not in the
   middle of one. Demo mode still performs this one-time warmup on a physical device, but never
   starts a scan or connection.
-- It **connects automatically** on a physical device. The top-right status pill shows scanning,
-  connecting, connected, and recovery states; tap it to retry when needed.
+- It **connects automatically** on a physical device. Settings → Portal shows scanning,
+  connecting, connected, and recovery states; tap the connection status to retry when needed.
 - The home **speedometer screen shows a banner** when Bluetooth is off or permission is
   denied, with an **Open Settings** shortcut, so a stalled gauge always explains itself.
 
@@ -50,9 +50,10 @@ The clean fix is still to get Bluetooth sorted out **before** locking the device
 1. **Turn Bluetooth on** — Control Center, or Settings → Bluetooth.
 2. **Open Redline ID** and, on first launch, tap **Allow** on the Bluetooth permission
    prompt.
-3. **Power on the portal** and wait for the status pill to say **Connected**, then roll a car
-   through the gate and confirm the needle moves. If it says Portal not found, tap the pill to
-   retry. This proves permission is granted and the radio works.
+3. **Power on the portal**, open the gear on Speed → **Portal**, and leave **Demo mode off**.
+   Wait for the connection status to say **Connected**, then return to Speed, roll a car
+   through the gate, and confirm the needle moves. If it says Portal not found, tap **Try again**
+   on Speed or the connection status in Settings. This proves permission is granted and the radio works.
 4. **Enable Guided Access:** Settings → Accessibility → **Guided Access** → on, then set a
    **passcode** (Guided Access → Passcode Settings).
 
@@ -77,8 +78,9 @@ Guided Access also keeps the screen awake, so the gauge stays live through a who
 **The speedometer stops registering passes during a session**
 
 - Look for the on-screen banner ("Bluetooth is off" or "Allow Bluetooth") and follow it.
-- End Guided Access (triple-click → enter passcode), make sure **Bluetooth is on**, tap the
-  status pill to retry if needed, then start Guided Access again.
+- End Guided Access (triple-click → enter passcode), make sure **Bluetooth is on**, tap
+  **Try again** on Speed or the connection status in Settings to retry if needed, then start
+  Guided Access again.
 
 **iOS won't start Guided Access ("Guided Access could not be started")**
 

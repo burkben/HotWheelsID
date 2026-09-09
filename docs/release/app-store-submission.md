@@ -64,16 +64,18 @@ Portal. No account, login, subscription, or backend service is required.
 
 The physical accessory is not required for review:
 
-1. Open the Speed tab.
-2. Select Demo in the Live BLE / Demo control.
-3. Simulated car passes begin automatically. Trigger pass can create another.
+1. Open Settings using the gear on Speed, or More → Settings.
+2. Enable Demo mode in the Portal section. The switch takes effect immediately.
+3. Return to Speed. Simulated car passes begin automatically. Settings → Portal
+   also offers Trigger a sample pass.
 4. Open Race, choose a lap count, and start a race.
 5. Use Trigger pass to advance laps and reach the results screen.
 6. Garage, History, Achievements, Settings, race-night lineups, and tournament
    mode remain available from the tab bar and More menu.
 
-For live use, the app scans only after the user selects Live BLE and taps
-Connect portal. Bluetooth is used solely to communicate with the Race Portal.
+For live use, disable Demo mode in Settings. The app connects automatically;
+Settings → Portal also offers connection, retry, and pause controls. Bluetooth is
+used solely to communicate with the Race Portal.
 The app supports both known portal firmware transports.
 
 The app performs a standard P-256 ECDH handshake and AES-128-CTR encryption only
@@ -177,7 +179,8 @@ back-navigation checks against whichever build you actually submit.
 
 - Launch after a clean install; confirm the tab bar and Speed screen render
   without an error.
-- Allow Bluetooth, select Live BLE, and connect to the powered-on portal.
+- Allow Bluetooth, leave Settings → Portal → Demo mode off, and confirm the
+  app connects to the powered-on portal.
 - Pass a car through the portal; confirm the car event and nonzero speed appear.
 - Run a short race to completion; confirm countdown, lap, best-lap, and finish
   sounds respect the Sound setting.
@@ -192,7 +195,7 @@ back-navigation checks against whichever build you actually submit.
 
 ### Demo and review path
 
-- Switch to Demo and confirm simulated passes start without portal hardware.
+- Enable Settings → Portal → Demo mode and confirm simulated passes start without portal hardware.
 - Complete a short demo race using Trigger pass.
 - Open Garage, History, Achievements, Credits, and Settings.
 - From the More tab, open Achievements, Settings, and Credits in turn and back out

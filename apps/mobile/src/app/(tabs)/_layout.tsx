@@ -19,7 +19,6 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 import { colors, fontFamily, fontWeight } from '@/theme/tokens';
 import { PersistenceStatusBanner } from '@/components/PersistenceStatusBanner';
-import { PortalStatusRibbon } from '@/components/telemetry/PortalStatusRibbon';
 
 type IconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
 
@@ -53,10 +52,6 @@ export default function TabsLayout() {
   return (
     <SafeAreaView edges={['top']} style={styles.layout}>
       <PersistenceStatusBanner />
-      {/* Global telemetry channel: portal state stays legible on every tab.
-          It lives here (not the root stack) so pushed screens and the separate
-          /tv surface are excluded automatically. */}
-      <PortalStatusRibbon />
       <Tabs screenOptions={screenOptions}>
         <Tabs.Screen name="index" options={{ title: 'Speed', tabBarIcon: tabIcon('speedometer') }} />
         <Tabs.Screen name="race" options={{ title: 'Race', tabBarIcon: tabIcon('flag-checkered') }} />

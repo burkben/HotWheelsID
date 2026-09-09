@@ -9,9 +9,8 @@
  * overstretched flex chips, compounded section spacing, cramped cards, the
  * orphaned reset, and the off-center header).
  *
- * Behavior is unchanged: reads/writes {@link useSettingsStore} with the same
- * write-through persistence, the same commit-on-blur name editing, and the same
- * eight settings keys. Only the layout system changed.
+ * Uses the same eight settings keys and persistence. Portal controls use the
+ * existing controller; changing demo mode takes effect now and at next launch.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -36,6 +35,9 @@ import { useLayout } from '@/layout/useLayout';
 import { LAP_OPTIONS } from '@/race/raceEngine';
 import { DEFAULT_SETTINGS, useSettingsStore } from '@/store/settingsStore';
 import { useIdentityStore } from '@/store/identityStore';
+import { usePortalStore } from '@/store/portalStore';
+import { StatusPill } from '@/components/StatusPill';
+import { usePortalController, usePortalControllerActions } from '@/portal/PortalControllerProvider';
 import {
   CALIBRATION_STEP,
   MAX_CALIBRATION,
@@ -70,7 +72,6 @@ export default function SettingsScreen() {
   const haptics = useSettingsStore((s) => s.haptics);
   const sound = useSettingsStore((s) => s.sound);
   const reduceMotion = useSettingsStore((s) => s.reduceMotion);
-  const mockModeDefault = useSettingsStore((s) => s.mockModeDefault);
   const speedUnit = useSettingsStore((s) => s.speedUnit);
   const speedCalibration = useSettingsStore((s) => s.speedCalibration);
 
@@ -79,10 +80,18 @@ export default function SettingsScreen() {
   const setHaptics = useSettingsStore((s) => s.setHaptics);
   const setSound = useSettingsStore((s) => s.setSound);
   const setReduceMotion = useSettingsStore((s) => s.setReduceMotion);
-  const setMockModeDefault = useSettingsStore((s) => s.setMockModeDefault);
   const setSpeedUnit = useSettingsStore((s) => s.setSpeedUnit);
   const setSpeedCalibration = useSettingsStore((s) => s.setSpeedCalibration);
   const reset = useSettingsStore((s) => s.reset);
+
+  const connection = usePortalStore((s) => s.connection);
+  const controlStatus = usePortalStore((s) => s.controlStatus);
+  const portalMode = usePortalController((s) => s.mode);
+  const portalPhase = usePortalController((s) => s.phase);
+  const portalReady = usePortalController((s) => s.ready);
+  const canBle = usePortalController((s) => s.canBle);
+  const manuallyDisconnected = usePortalController((s) => s.manuallyDisconnected);
+  const controller = usePortalControllerActions();
 
   // Player name edits commit on blur/submit (one persist, not one per keystroke).
   // `nameDirty` lets a late hydration populate the field, but never clobber an edit
@@ -146,6 +155,7 @@ export default function SettingsScreen() {
         style: 'destructive',
         onPress: () => {
           reset();
+          void controller.setMode(DEFAULT_SETTINGS.mockModeDefault ? 'demo' : 'live');
           nameDirty.current = false;
           setDraftName(DEFAULT_SETTINGS.playerName);
           setEditingName(false);
@@ -182,7 +192,53 @@ export default function SettingsScreen() {
         ]}
         keyboardShouldPersistTaps="handled"
       >
-        <SettingsSection title="Profile" style={styles.firstSection}>
+        <SettingsSection title="Portal" style={styles.firstSection}>
+          <SettingGroup>
+            <SettingRow
+              label="Connection"
+              hint="Tap the status to connect, retry, or pause the portal."
+              control={
+                <StatusPill
+                  connection={connection}
+                  controlStatus={controlStatus}
+                  phase={portalPhase}
+                  mode={portalMode}
+                  manuallyDisconnected={manuallyDisconnected}
+                  onConnect={() => void controller.connect()}
+                  onRetry={() => void controller.retry()}
+                  onDisconnect={() => void controller.disconnect()}
+                />
+              }
+            />
+            <ToggleRow
+              label="Demo mode"
+              hint={canBle
+                ? 'Try simulated cars and speeds without a portal. Your choice is remembered.'
+                : 'Simulated cars and speeds are used because portal Bluetooth is unavailable on this device.'}
+              value={portalMode === 'demo'}
+              disabled={!canBle || !portalReady}
+              onValueChange={(enabled) => {
+                tick();
+                void controller.setMode(enabled ? 'demo' : 'live');
+              }}
+            />
+            {portalMode === 'demo' && (
+              <SettingRow
+                label="Trigger a sample pass"
+                onPress={() => controller.triggerDemoPass()}
+                disabled={connection !== 'connected'}
+                chevron
+              />
+            )}
+            <SettingRow
+              label="Connection details"
+              onPress={() => router.push('/live')}
+              chevron
+            />
+          </SettingGroup>
+        </SettingsSection>
+
+        <SettingsSection title="Profile">
           <SettingGroup>
             {editingName ? (
               <View style={styles.editRow}>
@@ -291,17 +347,6 @@ export default function SettingsScreen() {
           </SettingGroup>
         </SettingsSection>
 
-        <SettingsSection title="Startup">
-          <SettingGroup>
-            <ToggleRow
-              label="Start in demo mode"
-              hint="Start the in-app mock portal instead of scanning for live BLE."
-              value={mockModeDefault}
-              onValueChange={setMockModeDefault}
-            />
-          </SettingGroup>
-        </SettingsSection>
-
         <SettingsSection title="Community">
           <SettingGroup>
             <SettingRow
@@ -353,11 +398,13 @@ function ToggleRow({
   hint,
   value,
   onValueChange,
+  disabled = false,
 }: {
   label: string;
   hint: string;
   value: boolean;
   onValueChange: (v: boolean) => void;
+  disabled?: boolean;
 }) {
   return (
     <SettingRow
@@ -367,6 +414,9 @@ function ToggleRow({
         <Switch
           value={value}
           onValueChange={onValueChange}
+          disabled={disabled}
+          accessibilityLabel={label}
+          accessibilityHint={hint}
           trackColor={{ false: colors.panelInset, true: colors.electric }}
           thumbColor={colors.ink}
           ios_backgroundColor={colors.panelInset}

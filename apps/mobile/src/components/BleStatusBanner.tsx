@@ -14,7 +14,13 @@ import { bleStatusBanner } from "@/ble/bleStatus";
 import type { BlePhase } from "@/ble/types";
 import { colors, fontSize, fontWeight, radiusT, spacing } from "@/theme/tokens";
 
-export function BleStatusBanner({ phase }: { phase: BlePhase | null }) {
+export function BleStatusBanner({
+  phase,
+  onRetry,
+}: {
+  phase: BlePhase | null;
+  onRetry?: () => void;
+}) {
   const banner = bleStatusBanner(phase);
   if (!banner) return null;
 
@@ -44,6 +50,20 @@ export function BleStatusBanner({ phase }: { phase: BlePhase | null }) {
           <Text style={[styles.buttonText, { color: accent }]}>Open Settings</Text>
         </Pressable>
       )}
+      {!banner.openSettings && phase !== "unsupported" && onRetry && (
+        <Pressable
+          onPress={onRetry}
+          accessibilityRole="button"
+          accessibilityLabel="Retry portal connection"
+          style={({ pressed }) => [
+            styles.button,
+            { borderColor: accent },
+            pressed && styles.buttonPressed,
+          ]}
+        >
+          <Text style={[styles.buttonText, { color: accent }]}>Try again</Text>
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -69,6 +89,8 @@ const styles = StyleSheet.create({
     lineHeight: 19,
   },
   button: {
+    minHeight: 44,
+    justifyContent: "center",
     marginTop: spacing(1),
     alignSelf: "flex-start",
     backgroundColor: colors.panelInset,

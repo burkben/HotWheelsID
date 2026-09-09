@@ -11,7 +11,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useReducedMotion } from 'react-native-reanimated';
-
+import { router } from 'expo-router';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 import { RecentPasses } from '@/components/RecentPasses';
 import { Speedometer } from '@/components/gauge/Speedometer';
@@ -48,7 +49,6 @@ export default function SpeedometerScreen() {
   const racePhase = useRaceStore((s) => s.race.phase);
   const garageCars = useGarageStore((s) => s.cars);
 
-  const canBle = usePortalController((s) => s.canBle);
   const mode = usePortalController((s) => s.mode);
   const blePhase = usePortalController((s) => s.phase);
   const manuallyDisconnected = usePortalController((s) => s.manuallyDisconnected);
@@ -132,76 +132,49 @@ export default function SpeedometerScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [car?.uid]);
 
-  const isConnected = connection === 'connected';
-  const switchMode = (toDemo: boolean) => {
-    if ((toDemo ? 'demo' : 'live') === mode) return;
-    void controller.setMode(toDemo ? 'demo' : 'live');
-  };
-
-  const liveHint = useBle
-    ? 'The app connects automatically. Roll a car across the portal to log real passes; tap the status pill to retry or disconnect. Live portal under More shows every decoded BLE event.'
-    : canBle
-      ? 'Demo mode: simulated passes roll automatically. Tap \u201cTrigger pass\u201d to fire one, or use the status pill to pause. Switch to \u201cLive BLE\u201d to use a real race portal.'
-      : 'This screen is a demo: simulated passes roll automatically, driving the flames + haptics. Run a dev build on a physical iPhone to connect a real portal over Bluetooth.';
-
   // Each region is built once and then arranged either as one scrolling column
   // (phone) or as two panes (iPad). Keeping them as locals rather than nested
   // components preserves component identity across a rotation, so the gauge's
   // Reanimated needle keeps its position instead of remounting at zero.
   const paneWidth = layout.isSplit ? undefined : layout.contentMaxWidth;
 
-  // The PortalStatusRibbon (mounted in the tab shell) now carries connection
-  // state + the connect/retry/disconnect action, so the header is just the
-  // title — no redundant status pill or subtitle duplicating the ribbon.
+  // Connection and demo controls live in Settings. Label simulated readings only
+  // while demo is active, in the existing header rather than a separate strip.
   const header = (
     <View style={[styles.header, { maxWidth: layout.isSplit ? undefined : layout.contentMaxWidth }]}>
       <View style={styles.headerText}>
         <Text style={styles.title}>Redline ID</Text>
       </View>
+      <Pressable
+        onPress={() => router.push('/settings')}
+        accessibilityRole="button"
+        accessibilityLabel={`Portal settings. ${status.label}`}
+        accessibilityHint="Connection controls and demo mode."
+        style={({ pressed }) => [styles.settingsButton, pressed && styles.buttonPressed]}
+      >
+        {mode === 'demo' && <Text style={styles.demoLabel}>Demo</Text>}
+        <MaterialCommunityIcons name="cog-outline" size={22} color={colors.inkSecondary} />
+      </Pressable>
     </View>
   );
 
-  const modeToggle = canBle ? (
-    <View style={styles.modeToggle}>
-      <Pressable
-        onPress={() => switchMode(false)}
-        accessibilityRole="button"
-        accessibilityLabel="Use live Bluetooth portal"
-        accessibilityState={{ selected: useBle }}
-        style={[styles.modeOption, useBle && styles.modeOptionActive]}
-      >
-        <Text style={[styles.modeText, useBle && styles.modeTextActive]}>Live BLE</Text>
-      </Pressable>
-      <Pressable
-        onPress={() => switchMode(true)}
-        accessibilityRole="button"
-        accessibilityLabel="Use demo portal"
-        accessibilityState={{ selected: mode === 'demo' }}
-        style={[styles.modeOption, mode === 'demo' && styles.modeOptionActive]}
-      >
-        <Text style={[styles.modeText, mode === 'demo' && styles.modeTextActive]}>Demo</Text>
-      </Pressable>
-    </View>
-  ) : null;
-
   const banners = (
     <>
-      {useBle && <BleStatusBanner phase={blePhase} />}
+      {useBle && <BleStatusBanner phase={blePhase} onRetry={() => void controller.retry()} />}
       {useBle && blePhase === 'locked' && (
         <View style={[styles.lockedBanner, { maxWidth: paneWidth }]}>
           <Text style={styles.lockedTitle}>Portal firmware unsupported</Text>
           <Text style={styles.lockedBody}>
-            This portal exposes neither the legacy control service nor a usable MPID auth
-            handshake, so no car &amp; speed events stream from this unit. Open the raw event log
-            for the full diagnosis, or switch to demo mode to explore the full experience.
+            This portal connected, but cannot send car or speed readings. Connection details
+            can help diagnose the problem.
           </Text>
           <Pressable
-            onPress={() => switchMode(true)}
+            onPress={() => router.push('/live')}
             accessibilityRole="button"
-            accessibilityLabel="Switch to demo mode"
+            accessibilityLabel="View connection details"
             style={({ pressed }) => [styles.lockedButton, pressed && styles.buttonPressed]}
           >
-            <Text style={styles.lockedButtonText}>Switch to demo mode</Text>
+            <Text style={styles.lockedButtonText}>View connection details</Text>
           </Pressable>
         </View>
       )}
@@ -266,28 +239,6 @@ export default function SpeedometerScreen() {
     </TelemetrySurface>
   );
 
-  // Connect/retry/disconnect all live on the status pill now, so demo mode is
-  // the only thing left needing a button here.
-  const controls = !useBle ? (
-    <View style={[styles.controls, { maxWidth: paneWidth }]}>
-      <Pressable
-        onPress={() => controller.triggerDemoPass()}
-        disabled={!isConnected}
-        accessibilityRole="button"
-        accessibilityLabel="Trigger a demo car pass"
-        accessibilityState={{ disabled: !isConnected }}
-        style={({ pressed }) => [
-          styles.button,
-          styles.buttonGhost,
-          !isConnected && styles.buttonDisabled,
-          pressed && styles.buttonPressed,
-        ]}
-      >
-        <Text style={styles.buttonText}>Trigger pass</Text>
-      </Pressable>
-    </View>
-  ) : null;
-
   // --- iPad: gauge holds a fixed left pane, detail scrolls on the right -------
   if (layout.isSplit) {
     return (
@@ -306,11 +257,9 @@ export default function SpeedometerScreen() {
         {header}
         <View style={styles.splitBody}>
           <View style={styles.splitLeft}>
-            {modeToggle}
             {gauge}
             {stats}
             {trace}
-            {controls}
           </View>
           <ScrollView
             style={styles.splitRight}
@@ -326,7 +275,6 @@ export default function SpeedometerScreen() {
               maxWidth={layout.width}
               limit={12}
             />
-            <Text style={[styles.note, styles.noteLeft]}>{liveHint}</Text>
           </ScrollView>
         </View>
       </View>
@@ -346,20 +294,17 @@ export default function SpeedometerScreen() {
       ]}
     >
       {header}
-      {modeToggle}
       {banners}
       {heroCard}
       {gauge}
       {stats}
       {trace}
-      {controls}
       <RecentPasses
         passes={passes}
         bestMph={bestMph}
         display={speedDisplay}
         maxWidth={layout.contentMaxWidth}
       />
-      <Text style={[styles.note, { maxWidth: layout.contentMaxWidth }]}>{liveHint}</Text>
     </ScrollView>
   );
 }
@@ -473,21 +418,19 @@ const styles = StyleSheet.create({
     fontSize: fontSizeT.xs,
     fontVariant: ['tabular-nums'],
   },
-  controls: {
-    width: '100%',
+  settingsButton: {
     flexDirection: 'row',
-    gap: spacing(3),
-  },
-  button: {
-    flex: 1,
-    borderRadius: radiusT.field,
-    paddingVertical: spacing(3.5),
     alignItems: 'center',
-    borderWidth: StyleSheet.hairlineWidth,
+    justifyContent: 'center',
+    minWidth: 44,
+    minHeight: 44,
+    gap: spacing(2),
+    paddingHorizontal: spacing(2),
   },
-  buttonGhost: {
-    backgroundColor: colors.panelInset,
-    borderColor: colors.hairline,
+  demoLabel: {
+    color: colors.inkSecondary,
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.medium,
   },
   lockedBanner: {
     width: '100%',
@@ -523,51 +466,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     fontWeight: fontWeight.bold,
   },
-  modeToggle: {
-    flexDirection: 'row',
-    backgroundColor: colors.panelInset,
-    borderColor: colors.hairline,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: radiusT.field,
-    padding: 2,
-    gap: 2,
-  },
-  modeOption: {
-    paddingVertical: spacing(2),
-    paddingHorizontal: spacing(4),
-    borderRadius: radiusT.field - 2,
-    minHeight: 32,
-    justifyContent: 'center',
-  },
-  modeOptionActive: {
-    backgroundColor: colors.electric,
-  },
-  modeText: {
-    color: colors.inkSecondary,
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.bold,
-  },
-  modeTextActive: {
-    color: colors.void,
-  },
-  buttonDisabled: {
-    opacity: 0.4,
-  },
   buttonPressed: {
     opacity: 0.7,
-  },
-  buttonText: {
-    color: colors.ink,
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.bold,
-  },
-  note: {
-    color: colors.inkMuted,
-    fontSize: fontSize.xs,
-    textAlign: 'center',
-    lineHeight: 18,
-  },
-  noteLeft: {
-    textAlign: 'left',
   },
 });

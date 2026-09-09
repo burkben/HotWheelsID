@@ -100,7 +100,8 @@ export function SettingRow({
   return (
     <View
       style={styles.row}
-      accessible={!!control}
+      // Keep nested switches and buttons reachable individually by VoiceOver.
+      accessible={false}
       accessibilityLabel={accessibilityLabel}
       accessibilityHint={accessibilityHint}
     >
