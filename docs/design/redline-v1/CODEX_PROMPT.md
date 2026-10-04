@@ -91,7 +91,7 @@ hard-code them.
 
 ## 3. How to work
 
-Work through **ISSUES.md in order** (RL-01 → RL-18). Use **one branch and one PR per
+Work through the issues **in order** (RL-01 → RL-18). They are filed on GitHub under epic **#67**; RL-n is issue **#(67+n)**, so RL-01 = #68 … RL-18 = #85, and RL-19 = #86 is stretch and must not be started. Reference the GitHub issue in each PR (`Closes #68`). Use **one branch and one PR per
 issue**, named `redline/rl-XX-short-name`. Base it on the branch that contains
 `docs/design/redline-v1/` (`claude/nice-newton-zavuvp` until that branch is merged,
 then `main`). If you can't open PRs, make one commit per issue on a single branch,
@@ -124,7 +124,8 @@ For each issue:
 6. Update `docs/design/redline-v1/IMPLEMENTATION.md`: what landed, deviations and
    follow-ups.
 7. Commit in the repo's style (`feat(ui): …`, `fix(ui): …`, `docs: …`), with the issue
-   id in the subject, e.g. `feat(ui): redline tokens and bundled fonts (RL-01)`.
+   id in the subject, e.g. `feat(ui): redline tokens and bundled fonts (RL-01)`. The
+   PR body says `Closes #<issue number>`.
 
 ## 4. Known corrections to the mockups (implement the spec, not the picture)
 

@@ -10,6 +10,35 @@ Shared references for every issue:
 - Exact values: `docs/design/redline-v1/source/<Screen>.dc.html`
 - Offline mockups: `docs/design/redline-v1/static/<Screen>.html`
 
+## Filed on GitHub
+
+The epic is [#67](https://github.com/burkben/HotWheelsID/issues/67). Each RL issue is a sub-issue of it:
+
+| Draft | GitHub issue |
+|---|---|
+| RL-00 (epic) | [#67](https://github.com/burkben/HotWheelsID/issues/67) |
+| RL-01 | [#68](https://github.com/burkben/HotWheelsID/issues/68) |
+| RL-02 | [#69](https://github.com/burkben/HotWheelsID/issues/69) |
+| RL-03 | [#70](https://github.com/burkben/HotWheelsID/issues/70) |
+| RL-04 | [#71](https://github.com/burkben/HotWheelsID/issues/71) |
+| RL-05 | [#72](https://github.com/burkben/HotWheelsID/issues/72) |
+| RL-06 | [#73](https://github.com/burkben/HotWheelsID/issues/73) |
+| RL-07 | [#74](https://github.com/burkben/HotWheelsID/issues/74) |
+| RL-08 | [#75](https://github.com/burkben/HotWheelsID/issues/75) |
+| RL-09 | [#76](https://github.com/burkben/HotWheelsID/issues/76) |
+| RL-10 | [#77](https://github.com/burkben/HotWheelsID/issues/77) |
+| RL-11 | [#78](https://github.com/burkben/HotWheelsID/issues/78) |
+| RL-12 | [#79](https://github.com/burkben/HotWheelsID/issues/79) |
+| RL-13 | [#80](https://github.com/burkben/HotWheelsID/issues/80) |
+| RL-14 | [#81](https://github.com/burkben/HotWheelsID/issues/81) |
+| RL-15 | [#82](https://github.com/burkben/HotWheelsID/issues/82) |
+| RL-16 | [#83](https://github.com/burkben/HotWheelsID/issues/83) |
+| RL-17 | [#84](https://github.com/burkben/HotWheelsID/issues/84) |
+| RL-18 | [#85](https://github.com/burkben/HotWheelsID/issues/85) |
+| RL-19 | [#86](https://github.com/burkben/HotWheelsID/issues/86) |
+
+GitHub is the source of truth for status. This file is the original draft.
+
 ---
 
 ## Definition of done (applies to every issue)
