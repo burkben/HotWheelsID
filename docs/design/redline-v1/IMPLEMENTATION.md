@@ -9,8 +9,9 @@ is the source of truth for merge status. Each issue has its own branch and PR.
 | RL-01 / #68 | [PR #88](https://github.com/burkben/HotWheelsID/pull/88), CI and Seed passed |
 | RL-02 / #69 | [PR #89](https://github.com/burkben/HotWheelsID/pull/89), CI and Seed passed |
 | RL-03 / #70 | [PR #90](https://github.com/burkben/HotWheelsID/pull/90), CI and Seed passed |
-| RL-04 / #71 | Implemented; review evidence below |
-| RL-05–RL-18 / #72–#85 | Pending, in order |
+| RL-04 / #71 | [PR #91](https://github.com/burkben/HotWheelsID/pull/91), CI and Seed passed |
+| RL-05 / #72 | Implemented; review evidence below |
+| RL-06–RL-18 / #73–#85 | Pending, in order |
 | RL-19 / #86 | Out of scope; not started |
 
 ## RL-01 — tokens and bundled fonts
@@ -213,3 +214,42 @@ Branch: `redline/rl-04-app-shell`, stacked on RL-03 for an isolated issue diff.
   fallback makes visible status updates available to browser assistive technology.
 
 Next: RL-05 Speed and the Redline gauge. RL-19 remains excluded.
+
+## RL-05 — Speed and Redline gauge
+
+Branch: `redline/rl-05-speed-gauge`, stacked on RL-04 for an isolated issue diff.
+
+- Added the optional `redline` Speedometer renderer; `needle` remains the default.
+  Its 240° progress arc, comet, and flame opacity derive from the existing shared
+  animation value. The ascent/hold/spring sequence and pass-ID dependencies are
+  unchanged. All new motion uses `useTelemetryMotion`.
+- Restyled Speed with rake lines, the gauge above a linked race-plate car card,
+  LAST/BEST/PASSES cells, and 14 recent-pass bars. iPad keeps two panes with details
+  on the right. Artwork comes from `CarPhoto`; unknown cars use `CarSilhouette`.
+- Added 22 pure tests for angles/endpoints, heat, bar colors, tied session bests,
+  and an honest caption for the bounded pass buffer. Existing tests are untouched.
+- Added a controlled, development-only gauge gallery, independent of app data.
+
+### Checks and visual evidence
+
+- `npm ci`, typecheck, zero-warning lint, and web export pass. All 400 mobile and
+  69 protocol tests pass. No dependency or protected-path changes.
+- [Reference comparisons, native captures and reproduction](review/rl-05/README.md).
+  Playwright records the 280 mph sweep/retrigger, hold/return, track up/down/hold,
+  arc-tip correspondence, full flame opacity, app/OS static targets, km/h labels,
+  chart colors, car navigation, iPad layout, and unchanged TV needle.
+- Native Speed and static 280 screenshots inspected. Fixed native readout shrinking
+  discovered during this check. Native JS-blocking performance was not re-measured;
+  VoiceOver and physical-device effects remain follow-ups.
+
+### Decisions and deviations
+
+- The pass store is capped at 20. Once full, the PASSES unit says RECENT instead of
+  claiming an unavailable total session count. Store shape and behavior are intact.
+- Tied bests follow the source/existing haptic treatment. Glow uses layered SVG
+  strokes. Unknown demo identity is displayed honestly; no sample identity is added.
+- The recent-pass chart replaces the old list. Empty chart slots reserve room for
+  future readings. Scrollable layout accommodates accessible controls, text and
+  real safe areas instead of copying fixed artboard positioning.
+
+Next: RL-06 Find your portal state. RL-19 remains excluded.

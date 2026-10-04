@@ -16,8 +16,14 @@ const Controls: ComponentType | null = __DEV__
   ? require('@/components/redline/dev/ControlGallery').ControlGallery
   : null;
 
+const Gauge: ComponentType | null = __DEV__
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  ? require('@/components/redline/dev/GaugeGallery').GaugeGallery
+  : null;
+
 export default function RedlineGalleryRoute() {
   const { section } = useLocalSearchParams<{ section?: string }>();
+  if (section === 'gauge' && Gauge) return <Gauge />;
   if (section === 'controls' && Controls) return <Controls />;
   if (section === 'motifs' && Motifs) return <Motifs />;
   return Gallery ? <Gallery /> : <Redirect href="/" />;

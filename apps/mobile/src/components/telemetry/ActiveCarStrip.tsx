@@ -1,145 +1,45 @@
-/**
- * ActiveCarStrip — the Trackside Telemetry car strip (replaces CurrentCarHero's
- * tall hero card on the Speed cluster). A horizontal 88pt strip: photo, catalog
- * name, UID tail, series, and an `ON PORTAL` flame edge marker for the live car.
- * Reuses the same `CarHeroModel` and accessibility announcements.
- */
-import { StyleSheet, Text, View } from "react-native";
+/** Race-plate card, using the existing hero identity and a derived garage number. */
+import { StyleSheet, View } from 'react-native';
+import { Link } from 'expo-router';
 
-import { CarPhoto } from "@/catalog/CarPhoto";
-import { formatBestSpeed, speedUnitLabel, type SpeedDisplay } from "@/speed/format";
-import { colors, fontSizeT, fontWeight, spacing } from "@/theme/tokens";
-import { TelemetrySurface } from "./TelemetrySurface";
-import type { CarHeroModel } from "@/portal/selectors";
+import { carArtwork } from '@/catalog/artwork';
+import { CarPhoto } from '@/catalog/CarPhoto';
+import { useCarIdentity } from '@/catalog/useCarIdentity';
+import { plateNumber } from '@/garage/plateNumber';
+import type { CarHeroModel } from '@/portal/selectors';
+import { formatBestSpeed, speedUnitLabel, type SpeedDisplay } from '@/speed/format';
+import { useGarageStore } from '@/store/garageStore';
+import { colorsR } from '@/theme/tokens';
+import { LinkPressable } from '../LinkPressable';
+import { CarSilhouette, Kerb, RacePlate, RText } from '../redline';
+import { decorative } from '../redline/decorative';
+import { spokenUnit } from '../redline/readoutPresentation';
 
-export function ActiveCarStrip({
-  model,
-  display,
-}: {
-  model: CarHeroModel | null;
-  display: SpeedDisplay;
-}) {
-  if (!model) {
-    return (
-      <TelemetrySurface style={styles.strip}>
-        <View
-          style={styles.row}
-          accessible
-          accessibilityLabel="No car scanned yet. Place a car on the portal."
-        >
-          <CarPhoto size={56} accessibilityLabel="No car photo" />
-          <View style={styles.copy}>
-            <Text style={styles.eyebrow}>Ready for a car</Text>
-            <Text style={styles.title}>No car scanned yet</Text>
-            <Text style={styles.meta}>Place a car on the portal to identify it.</Text>
-          </View>
-        </View>
-      </TelemetrySurface>
-    );
-  }
-
-  const context =
-    model.lastMph != null && model.lastMph >= 1
-      ? `Last ${formatBestSpeed(model.lastMph, display)} ${speedUnitLabel(display.unit)}`
-      : model.bestMph > 0
-        ? `Best ${formatBestSpeed(model.bestMph, display)} ${speedUnitLabel(display.unit)}`
-        : "No speed recorded yet";
-  const identity = model.serial ? `#${model.serial}` : `UID ${shortTail(model.uid)}`;
-  const label = `${model.isCurrent ? "Current car" : "Last scanned car"}: ${model.title}. ${identity}. ${context}.`;
-
-  return (
-    <TelemetrySurface style={styles.strip}>
-      {/* flame edge rail on the live car */}
-      {model.isCurrent && <View style={styles.edge} pointerEvents="none" />}
-      <View style={styles.row} accessible accessibilityLabel={label}>
-        <CarPhoto
-          carId={model.catalogId}
-          size={56}
-          ring={model.isCurrent}
-          accessibilityLabel={`${model.title} car photo`}
-        />
-        <View style={styles.copy}>
-          <View style={styles.topLine}>
-            <Text style={[styles.eyebrow, model.isCurrent && styles.eyebrowLive]}>
-              {model.isCurrent ? "ON PORTAL" : "LAST SCANNED"}
-            </Text>
-            <Text style={styles.uid}>{identity}</Text>
-          </View>
-          <Text style={styles.title} numberOfLines={1}>
-            {model.title}
-          </Text>
-          <Text style={styles.context}>{context}</Text>
-        </View>
-      </View>
-    </TelemetrySurface>
-  );
+export function ActiveCarStrip({ model, display }: { model: CarHeroModel | null; display: SpeedDisplay }) {
+  const cars = useGarageStore(s => s.cars);
+  const catalog = useCarIdentity(model?.uid);
+  const plate = model ? plateNumber(cars, model.uid) : '?';
+  const metadata = [catalog?.series, catalog?.year].filter(Boolean).join(' · ');
+  const content = <>
+    <View {...decorative} style={styles.kerb}><Kerb /></View>
+    <RacePlate number={plate} />
+    <View style={styles.copy}>
+      <RText variant="chip" style={{ fontSize: 11, color: model?.isCurrent ? colorsR.flame : colorsR.inkMuted }}>{model ? model.isCurrent ? '● ON PORTAL' : 'LAST SCANNED' : 'READY FOR A CAR'}</RText>
+      <RText variant="carName" numberOfLines={1}>{model?.title ?? 'No car scanned yet'}</RText>
+      <RText variant="bodySmall" style={styles.meta}>{metadata || (model ? 'Unidentified car' : 'Place a car on the portal')}</RText>
+    </View>
+    <View {...decorative} style={styles.photo}>{carArtwork(model?.catalogId) ? <CarPhoto carId={model?.catalogId} width={86} height={58} rounded={0} contentFit="contain" /> : <CarSilhouette width={86} outline={!model} />}</View>
+  </>;
+  if (!model) return <View accessible accessibilityLabel="No car scanned yet. Place a car on the portal." style={styles.card}>{content}</View>;
+  const context = model.lastMph != null && model.lastMph >= 1 ? `Last ${formatBestSpeed(model.lastMph, display)} ${spokenUnit(speedUnitLabel(display.unit))}.` : '';
+  return <Link href={{ pathname: '/garage/[uid]', params: { uid: model.uid } }} asChild>
+    <LinkPressable testID="active-car-card" accessibilityRole="button" accessibilityLabel={`${model.isCurrent ? 'Car on portal' : 'Last scanned car'}: ${model.title}. Race number ${plate}. ${metadata ? `${metadata}. ` : ''}${context}`} accessibilityHint="Open car details" contentStyle={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]}>{content}</LinkPressable>
+  </Link>;
 }
-
-function shortTail(uid: string): string {
-  return uid.replace(/:/g, "").slice(-4).toUpperCase();
-}
-
 const styles = StyleSheet.create({
-  strip: {
-    width: "100%",
-  },
-  edge: {
-    position: "absolute",
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 3,
-    backgroundColor: colors.flame,
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing(3),
-    paddingVertical: spacing(3),
-    paddingHorizontal: spacing(4),
-    minHeight: 88,
-  },
-  copy: {
-    flex: 1,
-    minWidth: 0,
-    gap: 3,
-  },
-  topLine: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: spacing(2),
-  },
-  eyebrow: {
-    color: colors.inkMuted,
-    fontSize: fontSizeT.xs,
-    fontWeight: fontWeight.bold,
-    textTransform: "uppercase",
-    letterSpacing: 1.2,
-  },
-  eyebrowLive: {
-    color: colors.flame,
-  },
-  uid: {
-    color: colors.inkMuted,
-    fontSize: fontSizeT.nano + 2,
-    fontWeight: fontWeight.bold,
-    fontVariant: ["tabular-nums"],
-    letterSpacing: 1,
-  },
-  title: {
-    color: colors.ink,
-    fontSize: fontSizeT.lg,
-    fontWeight: fontWeight.heavy,
-  },
-  meta: {
-    color: colors.inkSecondary,
-    fontSize: fontSizeT.sm,
-  },
-  context: {
-    color: colors.electric,
-    fontSize: fontSizeT.sm,
-    fontWeight: fontWeight.medium,
-    fontVariant: ["tabular-nums"],
-  },
+  card: { width: '100%', minHeight: 96, backgroundColor: colorsR.pitLane, flexDirection: 'row', alignItems: 'center', gap: 14, paddingLeft: 14, paddingRight: 16, paddingVertical: 16, overflow: 'hidden' },
+  kerb: { position: 'absolute', left: 0, right: 0, top: 0 },
+  copy: { flex: 1, minWidth: 0, gap: 3 },
+  meta: { color: colorsR.inkSecondary, fontSize: 13 },
+  photo: { width: 86, alignItems: 'center', justifyContent: 'center' },
 });
