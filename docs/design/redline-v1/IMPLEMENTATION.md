@@ -8,8 +8,9 @@ is the source of truth for merge status. Each issue has its own branch and PR.
 | --- | --- |
 | RL-01 / #68 | [PR #88](https://github.com/burkben/HotWheelsID/pull/88), CI and Seed passed |
 | RL-02 / #69 | [PR #89](https://github.com/burkben/HotWheelsID/pull/89), CI and Seed passed |
-| RL-03 / #70 | Implemented; review evidence below |
-| RL-04–RL-18 / #71–#85 | Pending, in order |
+| RL-03 / #70 | [PR #90](https://github.com/burkben/HotWheelsID/pull/90), CI and Seed passed |
+| RL-04 / #71 | Implemented; review evidence below |
+| RL-05–RL-18 / #72–#85 | Pending, in order |
 | RL-19 / #86 | Out of scope; not started |
 
 ## RL-01 — tokens and bundled fonts
@@ -172,3 +173,43 @@ Branch: `redline/rl-03-controls`, stacked on RL-02 for an isolated issue diff.
   artboard tones. Gallery values are examples only and never enter stores.
 
 Next: RL-04 app shell, tab bar, and portal status. RL-19 remains excluded.
+
+## RL-04 — app shell, tab bar, and portal status
+
+Branch: `redline/rl-04-app-shell`, stacked on RL-03 for an isolated issue diff.
+
+- Restyled the five-tab shell with condensed italic labels, existing icons, a
+  flame skewed underline, and actual bottom/side safe-area insets. Navigation
+  press/long-press events and routes are preserved. Indicator motion uses the
+  existing reduced-motion hook; app and OS flags both snap it to its destination.
+- Speed now carries the Redline wordmark and shared status chip. Garage, History,
+  Race, and More use the shared screen header; Garage's count is derived from cars.
+- Restored `PortalStatusRibbon` on non-Speed tabs using public controller selectors
+  and actions. It shares the connect/retry/disconnect confirmation behavior of the
+  header chip. Native announcements remain, with focus gating to avoid duplicate
+  announcements from inactive screens. Status text has a web-only polite live region.
+
+### Checks and visual evidence
+
+- `npm ci`, typecheck, zero-warning lint, and web export pass. All 378 mobile and
+  69 protocol tests pass; no existing test or dependency changed.
+- [Web, iOS and TV captures with comparisons](review/rl-04/README.md).
+  Speed, Garage, History, Race, Countdown, and Achievements references were inspected
+  for the shell/header language. Playwright verifies all five routes and 44 pt
+  targets, selected states, keyboard activation, status actions/announcements,
+  both reduced-motion flags, and TV isolation. Zero browser errors.
+- iOS Speed and Garage confirm fonts, header, ribbon and native safe-area placement.
+  VoiceOver and physical BLE/feedback remain unverified.
+- Protected paths, store shapes, schema, settings keys, and TV code are untouched.
+
+### Decisions and deviations
+
+- RL-04 explicitly requires the ribbon despite its removal by PR #66. It is restored
+  only on non-Speed tabs, at 44 pt for accessibility; the mockups omit this channel.
+- Native safe-area dimensions replace the mockups' fixed bottom spacer. Web keeps
+  the existing browser-session persistence notice. Full screen bodies are assigned
+  to subsequent issues, so these captures deliberately show mixed old/new surfaces.
+- RN Web's announcement API is a no-op in the installed version; the live-region
+  fallback makes visible status updates available to browser assistive technology.
+
+Next: RL-05 Speed and the Redline gauge. RL-19 remains excluded.

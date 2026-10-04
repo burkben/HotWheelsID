@@ -17,8 +17,9 @@ import { getSessionRepository } from '@/store/persistence/historyAccess';
 import type { SessionSummary } from '@/store/persistence/sessionRepository';
 import { useSettingsStore } from '@/store/settingsStore';
 import { speedUnitLabel } from '@/speed/format';
-import { colors, fontFamily, fontSize, fontSizeT, fontWeight, radiusT, spacing } from '@/theme/tokens';
+import { colors, colorsR, fontR, fontFamily, fontSize, fontSizeT, fontWeight, radiusT, spacing } from '@/theme/tokens';
 import { useLayout } from '@/layout/useLayout';
+import { RText, ScreenHeader } from '@/components/redline';
 import {
   formatDuration,
   formatMphLabel,
@@ -75,18 +76,11 @@ export default function HistoryScreen() {
   return (
     <View style={[styles.screen, { paddingTop: spacing(2) }]}>
       <View style={styles.header}>
-        <Text style={styles.title}>History</Text>
-        {hasSessions ? (
-          <Pressable
-            hitSlop={8}
-            onPress={confirmClear}
-            style={({ pressed }) => [styles.clear, pressed && styles.pressed]}
-          >
-            <Text style={styles.clearText}>Clear</Text>
+        <ScreenHeader title="History" right={hasSessions ? (
+          <Pressable onPress={confirmClear} accessibilityRole="button" accessibilityLabel="Clear history" style={({ pressed }) => [styles.clear, pressed && styles.pressed]}>
+            <RText style={{ color: colorsR.electric, fontFamily: fontR.bodySemi }}>Clear</RText>
           </Pressable>
-        ) : (
-          <View style={styles.clearPlaceholder} />
-        )}
+        ) : undefined} />
       </View>
 
       <FlatList
@@ -162,9 +156,6 @@ function EmptyHistory() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.void },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing(3),
     paddingHorizontal: spacing(5),
     paddingBottom: spacing(3),
   },
@@ -172,11 +163,10 @@ const styles = StyleSheet.create({
   clear: {
     paddingVertical: spacing(1.5),
     paddingHorizontal: spacing(3),
-    borderRadius: radiusT.field,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.hairline,
-    backgroundColor: colors.panelSolid,
-    minHeight: 32,
+    borderRadius: 0,
+    backgroundColor: 'transparent',
+    minHeight: 44,
+    minWidth: 44,
     justifyContent: 'center',
   },
   clearText: { color: colors.fault, fontSize: fontSize.sm, fontWeight: fontWeight.bold },

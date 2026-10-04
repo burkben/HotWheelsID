@@ -15,11 +15,12 @@ import { usePortalStore } from '@/store/portalStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { catalogIdForUid, useIdentityStore } from '@/store/identityStore';
 import { speedUnitLabel } from '@/speed/format';
-import { colors, fontFamily, fontSize, fontSizeT, fontWeight, radius, radiusT, spacing } from '@/theme/tokens';
+import { colors, colorsR, fontFamily, fontSize, fontSizeT, fontWeight, radius, radiusT, spacing } from '@/theme/tokens';
 import { carLabel, formatLastSeen, formatLap, formatMph } from '@/garage/format';
 import { CarPhoto } from '@/catalog/CarPhoto';
 import { useCarIdentity } from '@/catalog/useCarIdentity';
 import { useLayout } from '@/layout/useLayout';
+import { RText, ScreenHeader } from '@/components/redline';
 
 export default function GarageScreen() {
   const insets = useSafeAreaInsets();
@@ -48,13 +49,8 @@ export default function GarageScreen() {
   return (
     <View style={[styles.screen, { paddingTop: spacing(2) }]}>
       <View style={styles.header}>
-        <View style={styles.headerText}>
-          <Text style={styles.title}>Garage</Text>
-          <Text style={styles.subtitle} numberOfLines={1}>
-            {summary}
-          </Text>
-        </View>
-        <Text style={styles.count}>{cars.length}</Text>
+        <ScreenHeader title="Garage" right={<View accessible accessibilityLabel={`${cars.length} cars`} style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}><RText variant="statValue" style={{ fontSize: 40, lineHeight: 40, color: colorsR.flame }}>{cars.length}</RText><RText variant="eyebrow" style={{ color: colorsR.inkMuted }}>CARS</RText></View>} />
+        <RText variant="bodySmall" style={{ color: colorsR.inkSecondary }}>{summary}</RText>
       </View>
 
       <FlatList
@@ -137,9 +133,7 @@ function EmptyGarage() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.void },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing(3),
+    gap: 4,
     paddingHorizontal: spacing(5),
     paddingBottom: spacing(3),
   },
