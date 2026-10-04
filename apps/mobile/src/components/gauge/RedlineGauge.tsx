@@ -1,5 +1,6 @@
+import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
-import Animated, { useAnimatedProps, useAnimatedStyle, useDerivedValue, type SharedValue } from 'react-native-reanimated';
+import Animated, { useAnimatedProps, useAnimatedStyle, useDerivedValue, useSharedValue, withSpring, type SharedValue } from 'react-native-reanimated';
 import Svg, { Circle, Line, Path } from 'react-native-svg';
 
 import { colorsR, fontR } from '@/theme/tokens';
@@ -15,7 +16,7 @@ const CIRCUMFERENCE = 2 * Math.PI * 134;
 const ARC_LENGTH = CIRCUMFERENCE * (REDLINE_END_ANGLE - REDLINE_START_ANGLE) / 360;
 
 /** Presentation only: shares the needle's existing UI-thread animation value. */
-export function RedlineGauge({ angle, readoutMph, max, zones, flameThreshold, size, display, newBest }: {
+export function RedlineGauge({ angle, readoutMph, max, zones, flameThreshold, size, display, newBest, sampleKey, reduceMotion }: {
   angle: SharedValue<number>;
   readoutMph: number;
   max: number;
@@ -24,8 +25,21 @@ export function RedlineGauge({ angle, readoutMph, max, zones, flameThreshold, si
   size: number;
   display: SpeedDisplay;
   newBest: boolean;
+  sampleKey?: number;
+  reduceMotion: boolean;
 }) {
   const scale = size / 340;
+  // The parent supplies useTelemetryMotion's combined OS/app gate.
+  const bestScale = useSharedValue(1);
+  useEffect(() => {
+    if (!newBest || reduceMotion) {
+      bestScale.value = 1;
+      return;
+    }
+    bestScale.value = 0.8;
+    bestScale.value = withSpring(1, { damping: 28, stiffness: 260, mass: 0.7, overshootClamping: true });
+  }, [newBest, sampleKey, reduceMotion, bestScale]);
+  const bestAnimation = useAnimatedStyle(() => ({ transform: [{ scale: bestScale.value }] }));
   const fraction = useDerivedValue(() => Math.max(0, Math.min(1, (angle.value - GAUGE_START_ANGLE) / (GAUGE_END_ANGLE - GAUGE_START_ANGLE))));
   const arcProps = useAnimatedProps(() => ({ strokeDashoffset: ARC_LENGTH * (1 - fraction.value) }));
   const tipProps = useAnimatedProps(() => {
@@ -63,7 +77,7 @@ export function RedlineGauge({ angle, readoutMph, max, zones, flameThreshold, si
         const point = polarToCartesian(170, 165, 100, valueToAngle(value, max, REDLINE_START_ANGLE, REDLINE_END_ANGLE));
         return <View {...decorative} key={value} style={{ position: 'absolute', left: (point.x - 24) * scale, top: (point.y - 9) * scale, width: 48 * scale, alignItems: 'center' }}><RText variant="lapTime" maxFontSizeMultiplier={1} style={{ fontSize: 13 * scale, lineHeight: 18 * scale, color: value >= 240 ? colorsR.redFlag : colorsR.inkMuted, fontFamily: value >= 240 ? fontR.hudBold : fontR.hud }}>{formatSpeedValue(value, display)}</RText></View>;
       })}
-      {newBest && <View {...decorative} style={[styles.center, { top: 90 * scale }]}><SkewBox style={{ backgroundColor: colorsR.caution, paddingHorizontal: 10 * scale, paddingVertical: 3 * scale }}><RText variant="wordmark" maxFontSizeMultiplier={1} style={{ color: colorsR.asphalt, fontSize: 15 * scale, lineHeight: 18 * scale, letterSpacing: 1.5 * scale }}>NEW BEST</RText></SkewBox></View>}
+      {newBest && <Animated.View {...decorative} testID="gauge-best" style={[styles.center, { top: 90 * scale }, bestAnimation]}><SkewBox style={{ backgroundColor: colorsR.caution, paddingHorizontal: 10 * scale, paddingVertical: 3 * scale }}><RText variant="wordmark" maxFontSizeMultiplier={1} style={{ color: colorsR.asphalt, fontSize: 15 * scale, lineHeight: 18 * scale, letterSpacing: 1.5 * scale }}>NEW BEST</RText></SkewBox></Animated.View>}
       <View {...decorative} style={[styles.center, { top: 116 * scale }]}><RText variant="gaugeReadout" style={{ fontSize: 84 * scale, lineHeight: 84 * scale, width: '100%', textAlign: 'center' }} numberOfLines={1}>{formatSpeedValue(readoutMph, display)}</RText></View>
       <View {...decorative} style={[styles.center, { top: 206 * scale }]}><RText variant="eyebrow" maxFontSizeMultiplier={1} style={{ fontSize: 13 * scale, lineHeight: 18 * scale, letterSpacing: 3 * scale, color: colorsR.inkSecondary }}>SCALE {speedUnitLabel(display.unit).toUpperCase()}</RText></View>
     </View>

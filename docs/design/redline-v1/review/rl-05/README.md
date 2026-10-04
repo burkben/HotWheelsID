@@ -14,7 +14,7 @@ ramp, and bar colors from [Speed.dc.html](../../source/Speed.dc.html).
 
 `tools/check-rl-05.cjs` records arc/tip/heat values per animation frame in
 [web-verification.json](web-verification.json). It verifies the 620 ms ascent,
-900 ms hold, return, second equal-speed pass, tracking in both directions without
+900 ms hold, return, second equal-speed pass, NEW BEST tag spring, tracking in both directions without
 returning to zero, and static targets beyond the hold duration for app and OS
 reduced motion. It also checks converted units, bar colors, car-detail navigation,
 iPad panes, TV exclusion, and browser errors. Run with `PLAYWRIGHT_CHANNEL=chrome`

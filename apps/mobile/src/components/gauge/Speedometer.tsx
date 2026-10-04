@@ -174,7 +174,7 @@ export function Speedometer({
   });
 
   if (variant === "redline") {
-    return <RedlineGauge angle={angle} readoutMph={readoutMph} max={max} zones={zones} flameThreshold={flameThreshold} size={size} display={display} newBest={newBest} />;
+    return <RedlineGauge angle={angle} readoutMph={readoutMph} max={max} zones={zones} flameThreshold={flameThreshold} size={size} display={display} newBest={newBest} sampleKey={sampleKey} reduceMotion={reduceMotion} />;
   }
 
   return (

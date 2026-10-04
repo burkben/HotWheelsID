@@ -15,7 +15,7 @@ async function record(page, label, duration) {
     function tick() {
       const arc = document.querySelector('[data-testid="gauge-arc"]');
       const tip = document.querySelector('[data-testid="gauge-tip"]');
-      frames.push({ t: performance.now() - start, offset: Number(arc.getAttribute('stroke-dashoffset')), x: Number(tip.getAttribute('cx')), y: Number(tip.getAttribute('cy')), heat: Number(getComputedStyle(document.querySelector('[data-testid="gauge-flames"]')).opacity) });
+      frames.push({ t: performance.now() - start, offset: Number(arc.getAttribute('stroke-dashoffset')), x: Number(tip.getAttribute('cx')), y: Number(tip.getAttribute('cy')), heat: Number(getComputedStyle(document.querySelector('[data-testid="gauge-flames"]')).opacity), bestScale: document.querySelector('[data-testid="gauge-best"]') ? new DOMMatrix(getComputedStyle(document.querySelector('[data-testid="gauge-best"]')).transform).m11 : null });
       if (frames.at(-1).t < duration) requestAnimationFrame(tick); else resolve(frames);
     }
     requestAnimationFrame(tick);
@@ -47,6 +47,8 @@ async function main() {
     close(mph(at(sweep, 700)), 280);
     close(mph(at(sweep, 1400)), 280);
     assert.equal(at(sweep, 700).heat, 1);
+    assert.ok(sweep.some(frame => frame.bestScale < 0.95));
+    close(at(sweep, 700).bestScale, 1, 0.01);
     assert.ok(mph(at(sweep, 1900)) < 100);
     close(mph(sweep.at(-1)), 0);
     close(at(sweep, 700).x, 170 + 134 * Math.cos(14 * Math.PI / 180), 0.1);
@@ -70,6 +72,7 @@ async function main() {
     const appReduced = await record(page, 'Pass 280', 1800);
     close(mph(at(appReduced, 50)), 280);
     close(mph(appReduced.at(-1)), 280);
+    close(at(appReduced, 50).bestScale, 1, 0.001);
     await page.getByRole('button', { name: 'Show km/h', exact: true }).click();
     await page.getByRole('img', { name: 'Speedometer, 451 kilometers per hour, new session best', exact: true }).waitFor();
     await page.evaluate(() => document.querySelector('[data-testid="redline-gauge"]').scrollIntoView());
@@ -85,6 +88,7 @@ async function main() {
     const osReduced = await record(reduced, 'Pass 280', 1800);
     close(mph(at(osReduced, 50)), 280);
     close(mph(osReduced.at(-1)), 280);
+    close(at(osReduced, 50).bestScale, 1, 0.001);
     const demo = await open('/', { reducedMotion: 'reduce' });
     await demo.getByTestId('tab-indicator').waitFor();
     await demo.waitForFunction(() => document.querySelectorAll('[data-testid="pass-bar"]').length === 14, null, { timeout: 55000 });

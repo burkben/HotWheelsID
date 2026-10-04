@@ -222,7 +222,8 @@ Branch: `redline/rl-05-speed-gauge`, stacked on RL-04 for an isolated issue diff
 - Added the optional `redline` Speedometer renderer; `needle` remains the default.
   Its 240° progress arc, comet, and flame opacity derive from the existing shared
   animation value. The ascent/hold/spring sequence and pass-ID dependencies are
-  unchanged. All new motion uses `useTelemetryMotion`.
+  unchanged. The NEW BEST tag springs from 0.8 to 1 per accepted best pass.
+  All new motion uses `useTelemetryMotion`.
 - Restyled Speed with rake lines, the gauge above a linked race-plate car card,
   LAST/BEST/PASSES cells, and 14 recent-pass bars. iPad keeps two panes with details
   on the right. Artwork comes from `CarPhoto`; unknown cars use `CarSilhouette`.
