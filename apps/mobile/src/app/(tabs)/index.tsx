@@ -12,6 +12,8 @@ import * as Haptics from 'expo-haptics';
 import { router, useIsFocused } from 'expo-router';
 import { RakeLines, RText, StatCell, StatRow, StatusChip, Wordmark } from '@/components/redline';
 
+import { FindPortal } from '@/components/redline/FindPortal';
+import { shouldShowFindPortal } from '@/speed/connectState';
 import { Speedometer } from '@/components/gauge/Speedometer';
 import { BleStatusBanner } from '@/components/BleStatusBanner';
 import { ActiveCarStrip } from '@/components/telemetry/ActiveCarStrip';
@@ -208,6 +210,10 @@ export default function SpeedometerScreen() {
     </View>
   );
   const background = <View {...decorative} style={styles.rake}><RakeLines height={420} opacity={0.03} spacing={20} /></View>;
+
+  if (shouldShowFindPortal({ connection, car, passCount: passes.length, mode })) {
+    return <FindPortal status={{ connection, controlStatus, phase: blePhase, mode, manuallyDisconnected, onConnect: () => void controller.connect(), onRetry: () => void controller.retry(), onDisconnect: () => void controller.disconnect() }} onDemo={() => void controller.setMode('demo')} />;
+  }
 
   // --- iPad: gauge holds a fixed left pane, detail scrolls on the right -------
   if (layout.isSplit) {

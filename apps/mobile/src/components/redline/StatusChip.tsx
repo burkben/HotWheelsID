@@ -6,7 +6,7 @@ import { decorative } from './decorative';
 import { RText } from './RText';
 import { statusChipPresentation } from './statusChipPresentation';
 
-export function StatusChip({ variant = 'pill', ...props }: StatusPillProps & { variant?: 'pill' | 'ribbon' }) {
+export function StatusChip({ variant = 'pill', label: displayLabel, ...props }: StatusPillProps & { variant?: 'pill' | 'ribbon'; label?: string }) {
   const { status, onPress } = usePortalStatusAction(props);
   const { tone, label, error, hollow } = statusChipPresentation(props);
   const palette = colorsR.status[tone];
@@ -14,7 +14,7 @@ export function StatusChip({ variant = 'pill', ...props }: StatusPillProps & { v
   return (
     <Pressable onPress={onPress} disabled={status.action === 'none'} accessibilityRole="button" accessibilityLabel={status.accessibilityLabel} accessibilityHint={status.accessibilityHint} aria-busy={status.busy} accessibilityState={{ disabled: status.action === 'none', busy: status.busy }} style={({ pressed }) => [styles.chip, { backgroundColor: variant === 'ribbon' ? colorsR.asphalt : palette.fill, borderColor: variant === 'ribbon' ? colorsR.hairline : error ? colorsR.redFlag : palette.border }, variant === 'ribbon' && styles.ribbon, pressed && { opacity: 0.85 }]}>
       <View {...decorative} style={[styles.dot, { backgroundColor: hollow ? 'transparent' : ink, borderColor: ink, borderWidth: hollow ? 2 : 0, boxShadow: tone === 'connected' ? `0 0 8px ${ink}` : undefined }]} />
-      <RText variant="chip" aria-live={Platform.OS === 'web' ? 'polite' : undefined} style={{ color: ink, flexShrink: 1 }}>{label}</RText>
+      <RText variant="chip" aria-live={Platform.OS === 'web' ? 'polite' : undefined} style={{ color: ink, flexShrink: 1 }}>{displayLabel ?? label}</RText>
     </Pressable>
   );
 }
