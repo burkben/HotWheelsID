@@ -1,0 +1,17 @@
+{
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "deviceScaleFactor": 2,
+  "errors": [],
+  "patterns": [
+    "kerb-_r_0_",
+    "kerb-_r_1_",
+    "checker-_r_2_",
+    "rake-_r_3_",
+    "kerb-_r_4_"
+  ],
+  "svgCount": 16,
+  "exposed": []
+}
