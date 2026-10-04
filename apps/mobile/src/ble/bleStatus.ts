@@ -43,7 +43,7 @@ export function bleStatusBanner(phase: BlePhase | null): BleBanner | null {
         tone: "warn",
         title: "Bluetooth is off",
         body:
-          "Turn Bluetooth on in Control Center or Settings, then tap the status pill to retry. " +
+          "Turn Bluetooth on in Control Center or Settings, then try again. " +
           GUIDED_ACCESS_TIP,
       };
     case "unauthorized":
@@ -62,19 +62,19 @@ export function bleStatusBanner(phase: BlePhase | null): BleBanner | null {
         title: "No Bluetooth radio here",
         body:
           "This device has no usable Bluetooth radio (for example the iOS Simulator). Run on a " +
-          "physical iPhone, or switch to Demo to explore the app.",
+          "physical iPhone, or enable Demo mode in Settings to explore the app.",
       };
     case "error":
       return {
         tone: "warn",
         title: "Bluetooth hiccup",
-        body: "Something interrupted the Bluetooth connection. Tap the status pill to try again.",
+        body: "Something interrupted the Bluetooth connection. Try again.",
       };
     case "notFound":
       return {
         tone: "warn",
         title: "Portal not found",
-        body: "Make sure the portal is powered on and nearby, then tap the status pill to scan again.",
+        body: "Make sure the portal is powered on and nearby, then scan again.",
       };
     default:
       return null;

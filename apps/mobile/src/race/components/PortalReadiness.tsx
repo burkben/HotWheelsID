@@ -42,14 +42,14 @@ export function PortalRecovery({ connection }: { readonly connection: Connection
         <Text style={styles.readinessTitle}>{readiness.label}</Text>
         <Text style={styles.readinessDetail}>{readiness.detail}</Text>
       </View>
-      <Link href="/" asChild>
+      <Link href="/settings" asChild>
         <LinkPressable
           accessibilityRole="link"
-          accessibilityLabel="Connect portal on Speed tab"
-          accessibilityHint="Opens the Speed tab where you can connect a portal or start Demo"
+          accessibilityLabel="Open portal settings"
+          accessibilityHint="Connect your portal or enable Demo mode in Settings"
           contentStyle={({ pressed }) => pressed && styles.pressed}
         >
-          <Text style={styles.recoveryLink}>Connect on Speed</Text>
+          <Text style={styles.recoveryLink}>Open portal settings</Text>
         </LinkPressable>
       </Link>
     </View>

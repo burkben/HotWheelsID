@@ -1,7 +1,7 @@
 /**
  * Race Mode composes the pure race engine/store with portal events and Race-owned
  * presentation. It never creates or controls the BLE transport: connect (or start
- * Demo) on Speed, then portal passes flow through the shared portal store.
+ * Demo) in Settings, then portal passes flow through the shared portal store.
  */
 import { useCallback, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";

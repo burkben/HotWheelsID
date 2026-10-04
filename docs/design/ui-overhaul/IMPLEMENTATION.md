@@ -9,6 +9,32 @@ living counterpart to the proposal; the proposal remains the design intent.
 
 ## What's implemented (branch `burkben/ui-overhaul-proposals`)
 
+**Post-merge simplification (2026-09-09)**
+
+- Removed the global portal/status ribbon, including its standby and demo text.
+  The tab shell still reserves the iOS safe area.
+- Removed Speed's full-width Live BLE / Demo switch, manual sample-pass button,
+  and explanatory footer. Demo appears only as a small label in the existing
+  header when simulated readings are active.
+- Speed's Settings shortcut opens portal controls at the top of Settings.
+  Demo switches immediately using the existing controller and startup preference;
+  connect/retry/pause and manual sample passes live alongside it.
+- Connection failures remain actionable in the screen body with a retry or
+  device-settings button. Race setup links to Settings for connection recovery.
+- Settings keeps nested controls individually accessible; switches have explicit
+  labels and hints. Reset restores the active portal mode as well as its preference.
+
+Verification: mobile typecheck and zero-warning lint, 318 mobile tests, 69 protocol
+tests, and the 20-route web export pass. Native checks on iPhone 17 Pro / iOS 26.5
+confirmed the safe-area layout, Speed → Settings → back navigation, conditional
+Demo label, sample-pass action, and Race → Settings recovery link. An injected
+simulator-only transport exercised live/demo switching, the saved startup choice,
+and the in-body not-found retry action. Physical BLE was not exercised; controller,
+protocol, persistence, settings-store API, and needle animation code are unchanged.
+
+The sections below describe the original rollout, including the ribbon that this
+follow-up replaces.
+
 **Foundation**
 - `theme/tokens.ts`: added the telemetry ramp — `void`, `panelSolid`,
   `panelInset`, `panelRaised`, `glassFill`, `glassHighlight`, `hairline`, the

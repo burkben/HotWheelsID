@@ -127,7 +127,7 @@ function EmptyGarage() {
       <Text style={styles.emptyEmoji}>🏎️</Text>
       <Text style={styles.emptyTitle}>No cars yet</Text>
       <Text style={styles.emptyBody}>
-        Place a Hot Wheels id car on the portal (or run a demo pass from the Speed tab) and
+        Place a Hot Wheels id car on the portal and
         it’ll be collected here automatically — every car you scan, forever.
       </Text>
     </View>
