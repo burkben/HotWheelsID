@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -8,6 +9,8 @@ import { ARTWORK, ARTWORK_COUNT, ARTWORK_UPLOADERS } from '@/catalog/artwork';
 import { useLayout } from '@/layout/useLayout';
 import { colors, fontSize, fontWeight, radiusT, spacing } from '@/theme/tokens';
 
+import fontLicenses from '@/theme/fontLicenses.json';
+
 const PRIVACY_URL =
   'https://github.com/burkben/HotWheelsID/blob/main/docs/legal/privacy-policy.md';
 const NOTICES_URL =
@@ -15,6 +18,7 @@ const NOTICES_URL =
 
 export default function CreditsScreen() {
   const insets = useSafeAreaInsets();
+  const [showFontLicense, setShowFontLicense] = useState(false);
   const layout = useLayout();
   const { source, licensing } = CATALOG_PROVENANCE;
   const column = { maxWidth: layout.contentMaxWidth };
@@ -87,6 +91,31 @@ export default function CreditsScreen() {
             <ExternalLink key={license.url} label={license.name} url={license.url} />
           ))}
           <ExternalLink label="Full third-party notices" url={NOTICES_URL} />
+        </View>
+
+        <Text style={styles.sectionLabel}>Bundled fonts</Text>
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Barlow & Barlow Condensed</Text>
+          <Text style={styles.body}>Copyright 2017 The Barlow Project Authors.</Text>
+          <Text style={styles.cardTitle}>Chakra Petch</Text>
+          <Text style={styles.body}>Copyright 2018 The Chakra Petch Project Authors.</Text>
+          <Text style={styles.body}>
+            Licensed under the SIL Open Font License 1.1. Fonts are bundled unmodified
+            and work offline.
+          </Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ expanded: showFontLicense }}
+            onPress={() => setShowFontLicense((shown) => !shown)}
+            style={({ pressed }) => [styles.fontLicenseButton, pressed && styles.pressed]}
+          >
+            <Text style={styles.linkText}>{showFontLicense ? 'Hide' : 'Read'} font licenses</Text>
+          </Pressable>
+          {showFontLicense && (
+            <Text selectable style={styles.body}>
+              {fontLicenses.barlow}{'\n'}{fontLicenses.chakraPetch}
+            </Text>
+          )}
         </View>
 
         <Text style={styles.sectionLabel}>Privacy</Text>
@@ -170,6 +199,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing(1),
     paddingRight: spacing(2),
   },
+  fontLicenseButton: { minHeight: 44, justifyContent: 'center' },
   linkText: { color: colors.electric, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
   disclaimer: {
     color: colors.inkMuted,

@@ -1,0 +1,216 @@
+{
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "deviceScaleFactor": 2,
+  "fonts": [
+    {
+      "family": "Barlow_400Regular",
+      "status": "loaded"
+    },
+    {
+      "family": "Barlow_500Medium",
+      "status": "loaded"
+    },
+    {
+      "family": "Barlow_600SemiBold",
+      "status": "loaded"
+    },
+    {
+      "family": "Barlow_700Bold",
+      "status": "loaded"
+    },
+    {
+      "family": "BarlowCondensed_700Bold_Italic",
+      "status": "loaded"
+    },
+    {
+      "family": "BarlowCondensed_800ExtraBold_Italic",
+      "status": "loaded"
+    },
+    {
+      "family": "BarlowCondensed_900Black_Italic",
+      "status": "loaded"
+    },
+    {
+      "family": "ChakraPetch_500Medium",
+      "status": "loaded"
+    },
+    {
+      "family": "ChakraPetch_600SemiBold",
+      "status": "loaded"
+    },
+    {
+      "family": "ChakraPetch_700Bold",
+      "status": "loaded"
+    }
+  ],
+  "variants": [
+    {
+      "id": "type-wordmark",
+      "family": "BarlowCondensed_900Black_Italic",
+      "weight": "400",
+      "style": "normal"
+    },
+    {
+      "id": "type-screenTitle",
+      "family": "BarlowCondensed_900Black_Italic",
+      "weight": "400",
+      "style": "normal"
+    },
+    {
+      "id": "type-raceDigit",
+      "family": "BarlowCondensed_900Black_Italic",
+      "weight": "400",
+      "style": "normal"
+    },
+    {
+      "id": "type-storeHeadline",
+      "family": "BarlowCondensed_900Black_Italic",
+      "weight": "400",
+      "style": "normal"
+    },
+    {
+      "id": "type-sectionTitle",
+      "family": "BarlowCondensed_800ExtraBold_Italic",
+      "weight": "400",
+      "style": "normal"
+    },
+    {
+      "id": "type-carName",
+      "family": "BarlowCondensed_800ExtraBold_Italic",
+      "weight": "400",
+      "style": "normal"
+    },
+    {
+      "id": "type-buttonPrimary",
+      "family": "BarlowCondensed_900Black_Italic",
+      "weight": "400",
+      "style": "normal"
+    },
+    {
+      "id": "type-buttonGhost",
+      "family": "BarlowCondensed_800ExtraBold_Italic",
+      "weight": "400",
+      "style": "normal"
+    },
+    {
+      "id": "type-tabLabel",
+      "family": "BarlowCondensed_800ExtraBold_Italic",
+      "weight": "400",
+      "style": "normal"
+    },
+    {
+      "id": "type-gaugeReadout",
+      "family": "ChakraPetch_700Bold",
+      "weight": "400",
+      "style": "normal"
+    },
+    {
+      "id": "type-heroNumber",
+      "family": "ChakraPetch_700Bold",
+      "weight": "400",
+      "style": "normal"
+    },
+    {
+      "id": "type-statValue",
+      "family": "ChakraPetch_700Bold",
+      "weight": "400",
+      "style": "normal"
+    },
+    {
+      "id": "type-lapTime",
+      "family": "ChakraPetch_600SemiBold",
+      "weight": "400",
+      "style": "normal"
+    },
+    {
+      "id": "type-eyebrow",
+      "family": "ChakraPetch_600SemiBold",
+      "weight": "400",
+      "style": "normal"
+    },
+    {
+      "id": "type-chip",
+      "family": "ChakraPetch_700Bold",
+      "weight": "400",
+      "style": "normal"
+    },
+    {
+      "id": "type-body",
+      "family": "Barlow_400Regular",
+      "weight": "400",
+      "style": "normal"
+    },
+    {
+      "id": "type-bodySmall",
+      "family": "Barlow_400Regular",
+      "weight": "400",
+      "style": "normal"
+    },
+    {
+      "id": "face-display",
+      "family": "BarlowCondensed_900Black_Italic",
+      "weight": "400",
+      "style": "normal"
+    },
+    {
+      "id": "face-display800",
+      "family": "BarlowCondensed_800ExtraBold_Italic",
+      "weight": "400",
+      "style": "normal"
+    },
+    {
+      "id": "face-display700",
+      "family": "BarlowCondensed_700Bold_Italic",
+      "weight": "400",
+      "style": "normal"
+    },
+    {
+      "id": "face-hud",
+      "family": "ChakraPetch_600SemiBold",
+      "weight": "400",
+      "style": "normal"
+    },
+    {
+      "id": "face-hudBold",
+      "family": "ChakraPetch_700Bold",
+      "weight": "400",
+      "style": "normal"
+    },
+    {
+      "id": "face-hudMedium",
+      "family": "ChakraPetch_500Medium",
+      "weight": "400",
+      "style": "normal"
+    },
+    {
+      "id": "face-body",
+      "family": "Barlow_400Regular",
+      "weight": "400",
+      "style": "normal"
+    },
+    {
+      "id": "face-bodyMedium",
+      "family": "Barlow_500Medium",
+      "weight": "400",
+      "style": "normal"
+    },
+    {
+      "id": "face-bodySemi",
+      "family": "Barlow_600SemiBold",
+      "weight": "400",
+      "style": "normal"
+    },
+    {
+      "id": "face-bodyBold",
+      "family": "Barlow_700Bold",
+      "weight": "400",
+      "style": "normal"
+    }
+  ],
+  "offlineLicenses": true,
+  "fallbackFamily": "-apple-system, \"system-ui\", \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif",
+  "errors": []
+}
