@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Speed</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;1,700;1,800;1,900&amp;family=Barlow:wght@400;500;600;700&amp;family=Chakra+Petch:wght@500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#07090F}
+a{color:#2BD1FF}a:hover{color:#8DE6FF}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #07090F; color: #F5F7FA; font-family: 'Barlow', system-ui, sans-serif">
+
+  <!-- background rake lines -->
+  <div style="position: absolute; left: 0; right: 0; top: 0; height: 420px; background: repeating-linear-gradient(-60deg, rgba(245,247,250,0.03) 0 2px, transparent 2px 20px)"></div>
+
+  <!-- header -->
+  <header style="position: absolute; left: 20px; right: 20px; top: 58px; height: 36px; display: flex; align-items: center; justify-content: space-between">
+    <div style="display: flex; align-items: center; gap: 6px">
+      <span style="font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 30px; line-height: 1; letter-spacing: -0.5px">REDLINE</span>
+      <span style="transform: skewX(-12deg); background: #FF6A13; padding: 2px 7px 1px"><span style="display: block; transform: skewX(12deg); font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 22px; line-height: 1; color: #07090F">ID</span></span>
+    </div>
+    <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(57,217,138,0.12); border: 1px solid rgba(57,217,138,0.5); padding: 6px 12px 6px 10px; border-radius: 999px">
+      <span style="width: 8px; height: 8px; border-radius: 50%; background: #39D98A; box-shadow: 0 0 8px #39D98A"></span>
+      <span style="font-family: 'Chakra Petch', monospace; font-weight: 700; font-size: 12px; letter-spacing: 1.5px; color: #39D98A">PORTAL LIVE</span>
+    </div>
+  </header>
+
+  <!-- gauge -->
+  <div style="position: absolute; left: 25px; top: 104px; width: 340px; height: 300px">
+    <svg style="position: absolute; left: 0; top: 196px; opacity: {{flameOpacity}}" width="120" height="96" viewBox="0 0 120 96" aria-hidden="true">
+      <path d="M6 96 C10 70 0 56 16 32 C20 54 32 62 30 82 C38 70 40 58 38 44 C54 62 54 82 48 96 Z" fill="#FF6A13"></path>
+      <path d="M44 96 C50 66 40 46 60 12 C64 42 82 54 80 84 C88 72 90 60 86 46 C104 66 102 84 96 96 Z" fill="#FF6A13"></path>
+      <path d="M54 96 C58 78 52 66 64 48 C68 66 78 74 76 96 Z" fill="#FFD23F"></path>
+      <path d="M14 96 C16 84 12 76 20 66 C24 76 30 82 28 96 Z" fill="#FFD23F"></path>
+    </svg>
+    <svg style="position: absolute; right: 0; top: 196px; opacity: {{flameOpacity}}; transform: scaleX(-1)" width="120" height="96" viewBox="0 0 120 96" aria-hidden="true">
+      <path d="M6 96 C10 70 0 56 16 32 C20 54 32 62 30 82 C38 70 40 58 38 44 C54 62 54 82 48 96 Z" fill="#FF6A13"></path>
+      <path d="M44 96 C50 66 40 46 60 12 C64 42 82 54 80 84 C88 72 90 60 86 46 C104 66 102 84 96 96 Z" fill="#FF6A13"></path>
+      <path d="M54 96 C58 78 52 66 64 48 C68 66 78 74 76 96 Z" fill="#FFD23F"></path>
+      <path d="M14 96 C16 84 12 76 20 66 C24 76 30 82 28 96 Z" fill="#FFD23F"></path>
+    </svg>
+
+    <svg style="position: absolute; left: 0; top: 0" width="340" height="300" viewBox="0 0 340 300" role="img" aria-label="Speed gauge reading {{speedText}} miles per hour">
+      <circle cx="170" cy="165" r="152" fill="none" stroke="#39D98A" stroke-opacity="0.75" stroke-width="4" stroke-dasharray="254.7 955" transform="rotate(150 170 165)"></circle>
+      <circle cx="170" cy="165" r="152" fill="none" stroke="#FFD23F" stroke-width="4" stroke-dasharray="212.2 955" transform="rotate(246 170 165)"></circle>
+      <circle cx="170" cy="165" r="152" fill="none" stroke="#FF4D5E" stroke-width="4" stroke-dasharray="169.8 955" transform="rotate(326 170 165)"></circle>
+      <circle cx="170" cy="165" r="134" fill="none" stroke="#161C27" stroke-width="18" stroke-dasharray="561.3 841.95" transform="rotate(150 170 165)"></circle>
+      <circle cx="170" cy="165" r="134" fill="none" stroke="#FF6A13" stroke-width="18" stroke-dasharray="{{arcDash}}" transform="rotate(150 170 165)" style="filter: drop-shadow(0 0 8px rgba(255,106,19,0.7))"></circle>
+      <circle cx="170" cy="165" r="116" fill="none" stroke="#3A4556" stroke-width="5" stroke-dashoffset="0.75" stroke-dasharray="1.5 14.976 1.5 14.976 1.5 14.976 1.5 14.976 1.5 14.976 1.5 14.976 1.5 14.976 1.5 14.976 1.5 14.976 1.5 14.976 1.5 14.976 1.5 14.976 1.5 14.976 1.5 14.976 1.5 14.976 1.5 14.976 1.5 14.976 1.5 14.976 1.5 14.976 1.5 14.976 1.5 14.976 1.5 14.976 1.5 14.976 1.5 14.976 1.5 14.976 1.5 14.976 1.5 14.976 1.5 14.976 1.5 14.976 1.5 14.976 1.5 800" transform="rotate(150 170 165)"></circle>
+      <circle cx="170" cy="165" r="116" fill="none" stroke="#A3B1C2" stroke-width="11" stroke-dashoffset="1.5" stroke-dasharray="3 46.43 3 46.43 3 46.43 3 46.43 3 46.43 3 46.43 3 46.43 3 46.43 3 46.43 3 46.43 3 800" transform="rotate(150 170 165)"></circle>
+      <text x="83.4" y="215" text-anchor="middle" dominant-baseline="middle" font-family="Chakra Petch, monospace" font-weight="600" font-size="13" fill="#8494A6">0</text>
+      <text x="74.9" y="134.1" text-anchor="middle" dominant-baseline="middle" font-family="Chakra Petch, monospace" font-weight="600" font-size="13" fill="#8494A6">60</text>
+      <text x="129.3" y="73.6" text-anchor="middle" dominant-baseline="middle" font-family="Chakra Petch, monospace" font-weight="600" font-size="13" fill="#8494A6">120</text>
+      <text x="210.7" y="73.6" text-anchor="middle" dominant-baseline="middle" font-family="Chakra Petch, monospace" font-weight="600" font-size="13" fill="#8494A6">180</text>
+      <text x="265.1" y="134.1" text-anchor="middle" dominant-baseline="middle" font-family="Chakra Petch, monospace" font-weight="700" font-size="13" fill="#FF4D5E">240</text>
+      <text x="256.6" y="215" text-anchor="middle" dominant-baseline="middle" font-family="Chakra Petch, monospace" font-weight="700" font-size="13" fill="#FF4D5E">300</text>
+      <circle cx="{{tipX}}" cy="{{tipY}}" r="15" fill="#FF6A13" fill-opacity="0.3"></circle>
+      <circle cx="{{tipX}}" cy="{{tipY}}" r="6" fill="#F5F7FA"></circle>
+    </svg>
+
+    <sc-if value="{{isBest}}" hint-placeholder-val="{{ true }}">
+      <div style="position: absolute; left: 0; right: 0; top: 90px; display: flex; justify-content: center">
+        <span style="transform: skewX(-12deg); background: #FFD23F; padding: 3px 10px">
+          <span style="display: block; transform: skewX(12deg); font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 15px; letter-spacing: 1.5px; color: #07090F">NEW BEST</span>
+        </span>
+      </div>
+    </sc-if>
+    <div style="position: absolute; left: 0; right: 0; top: 116px; text-align: center; font-family: 'Chakra Petch', monospace; font-weight: 700; font-size: 84px; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -2px">{{speedText}}</div>
+    <div style="position: absolute; left: 0; right: 0; top: 206px; text-align: center; font-family: 'Chakra Petch', monospace; font-weight: 600; font-size: 13px; letter-spacing: 3px; color: #A3B1C2">SCALE MPH</div>
+  </div>
+
+  <!-- car on portal -->
+  <a href="CarDetail.dc.html" style="position: absolute; left: 16px; right: 16px; top: 412px; height: 96px; background: #111620; text-decoration: none; color: #F5F7FA; display: flex; align-items: center; gap: 14px; padding: 0 16px 0 14px; box-sizing: border-box; overflow: hidden">
+    <div style="position: absolute; left: 0; right: 0; top: 0; height: 5px; background: repeating-linear-gradient(-45deg, #FF6A13 0 10px, #F5F7FA 10px 20px)"></div>
+    <div style="width: 52px; height: 44px; flex-shrink: 0; background: #F5F7FA; border-radius: 7px; transform: skewX(-10deg); display: flex; align-items: center; justify-content: center">
+      <span style="transform: skewX(10deg); font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 34px; line-height: 1; color: #07090F">07</span>
+    </div>
+    <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px">
+      <span style="font-family: 'Chakra Petch', monospace; font-weight: 700; font-size: 11px; letter-spacing: 1.5px; color: #FF6A13">● ON PORTAL</span>
+      <span style="font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 23px; line-height: 1.05; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">'70 DODGE CHARGER R/T</span>
+      <span style="font-size: 13px; color: #A3B1C2">Speed Demons · 2019</span>
+    </div>
+    <svg width="86" height="26" viewBox="0 0 200 60" aria-hidden="true" style="flex-shrink: 0">
+      <path d="M6 42 C6 36 10 33 18 32 L52 28 C64 18 82 12 104 12 C122 12 136 18 150 27 L182 31 C190 32 194 36 194 42 L194 46 C194 48 192 49 190 49 L166 49 A14 14 0 0 0 138 49 L64 49 A14 14 0 0 0 36 49 L10 49 C7 49 6 47 6 45 Z" fill="#FF6A13"></path>
+      <path d="M66 28 C76 20 89 16 104 16 C117 16 127 20 137 27 Z" fill="#07090F"></path>
+      <circle cx="50" cy="49" r="11" fill="#07090F"></circle><circle cx="50" cy="49" r="5" fill="#A3B1C2"></circle>
+      <circle cx="152" cy="49" r="11" fill="#07090F"></circle><circle cx="152" cy="49" r="5" fill="#A3B1C2"></circle>
+    </svg>
+  </a>
+
+  <!-- stats -->
+  <div style="position: absolute; left: 16px; right: 16px; top: 520px; height: 78px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; background: #07090F">
+    <div style="background: #111620; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px">
+      <span style="font-family: 'Chakra Petch', monospace; font-weight: 600; font-size: 11px; letter-spacing: 2px; color: #8494A6">LAST</span>
+      <span style="font-family: 'Chakra Petch', monospace; font-weight: 700; font-size: 30px; line-height: 1.1; font-variant-numeric: tabular-nums">{{speedText}}</span>
+      <span style="font-family: 'Chakra Petch', monospace; font-size: 11px; color: #8494A6">MPH</span>
+    </div>
+    <div style="background: #111620; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; box-shadow: inset 0 3px 0 #FFD23F">
+      <span style="font-family: 'Chakra Petch', monospace; font-weight: 600; font-size: 11px; letter-spacing: 2px; color: #8494A6">BEST</span>
+      <span style="font-family: 'Chakra Petch', monospace; font-weight: 700; font-size: 30px; line-height: 1.1; font-variant-numeric: tabular-nums; color: #FFD23F">{{bestText}}</span>
+      <span style="font-family: 'Chakra Petch', monospace; font-size: 11px; color: #8494A6">MPH</span>
+    </div>
+    <div style="background: #111620; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px">
+      <span style="font-family: 'Chakra Petch', monospace; font-weight: 600; font-size: 11px; letter-spacing: 2px; color: #8494A6">PASSES</span>
+      <span style="font-family: 'Chakra Petch', monospace; font-weight: 700; font-size: 30px; line-height: 1.1">14</span>
+      <span style="font-family: 'Chakra Petch', monospace; font-size: 11px; color: #8494A6">SESSION</span>
+    </div>
+  </div>
+
+  <!-- speed trace -->
+  <section style="position: absolute; left: 16px; right: 16px; top: 610px; height: 136px; background: #111620; padding: 12px 14px 10px; box-sizing: border-box; display: flex; flex-direction: column; gap: 8px">
+    <div style="display: flex; justify-content: space-between; align-items: baseline">
+      <span style="font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 17px; letter-spacing: 0.5px">RECENT PASSES</span>
+      <span style="font-family: 'Chakra Petch', monospace; font-size: 11px; letter-spacing: 1px; color: #8494A6">LAST 14</span>
+    </div>
+    <div style="flex: 1; display: flex; align-items: flex-end; gap: 6px; border-bottom: 1px solid rgba(163,177,194,0.2); position: relative">
+      <div style="position: absolute; left: 0; right: 0; bottom: 62px; border-top: 1px dashed rgba(255,77,94,0.5)"></div>
+      <sc-for list="{{bars}}" as="bar" hint-placeholder-count="14">
+        <div style="flex: 1; height: {{bar.h}}px; background: {{bar.color}}; transform: skewX(-10deg)"></div>
+      </sc-for>
+    </div>
+  </section>
+
+  <!-- tab bar -->
+  <nav aria-label="Main" style="position: absolute; left: 0; right: 0; bottom: 0; height: 86px; background: #0B0E15; border-top: 1px solid rgba(163,177,194,0.14); display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); padding-bottom: 24px; box-sizing: border-box">
+    <a href="Speed.dc.html" aria-current="page" style="position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: #FF6A13; text-decoration: none">
+      <span style="position: absolute; top: -1px; left: 24%; right: 24%; height: 3px; background: #FF6A13; transform: skewX(-24deg)"></span>
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 17a8 8 0 1 1 16 0"></path><path d="M12 17l4-5"></path></svg>
+      <span style="font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: 1px">SPEED</span>
+    </a>
+    <a href="Countdown.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: #8494A6; text-decoration: none">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21V4"></path><path d="M5 4h13l-2.5 4 2.5 4H5"></path></svg>
+      <span style="font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: 1px">RACE</span>
+    </a>
+    <a href="Garage.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: #8494A6; text-decoration: none">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21V9l9-5 9 5v12"></path><path d="M7 21v-8h10v8"></path><path d="M7 17h10"></path></svg>
+      <span style="font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: 1px">GARAGE</span>
+    </a>
+    <a href="History.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: #8494A6; text-decoration: none">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"></path><path d="M3 4v5h5"></path><path d="M12 8v4l3 2"></path></svg>
+      <span style="font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: 1px">HISTORY</span>
+    </a>
+    <a href="Achievements.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: #8494A6; text-decoration: none">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
+      <span style="font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: 1px">MORE</span>
+    </a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"speed":{"editor":"range","default":247,"min":0,"max":300,"step":1,"unit":"mph"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var raw = this.props.speed ?? 247;
+    var s = Math.max(0, Math.min(300, Number(raw) || 0));
+    var best = Math.max(247, s);
+    var theta = (150 + 0.8 * s) * Math.PI / 180;
+    var flame = s >= 240 ? 1 : (s > 200 ? (s - 200) / 40 * 0.6 : 0);
+    var history = [142, 168, 155, 190, 176, 201, 188, 214, 197, 226, 209, 231, 219, s];
+    var bars = history.map(function (v, i) {
+      var last = i === history.length - 1;
+      var color = last ? (v >= best ? '#FFD23F' : '#FF6A13') : (v >= 220 ? '#FF6A13' : '#2E3A4D');
+      return { h: Math.max(4, Math.round(v / 300 * 84)), color: color };
+    });
+    return {
+      speedText: String(Math.round(s)),
+      bestText: String(Math.round(best)),
+      arcDash: (561.3 * s / 300).toFixed(1) + ' 841.95',
+      tipX: (170 + 134 * Math.cos(theta)).toFixed(1),
+      tipY: (165 + 134 * Math.sin(theta)).toFixed(1),
+      flameOpacity: flame.toFixed(2),
+      isBest: s >= best,
+      bars: bars
+    };
+  }
+}
+</script>
+</body>
+</html>

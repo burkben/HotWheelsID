@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>App Store 3 · Race live</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;1,700;1,800;1,900&amp;family=Barlow:wght@400;500;600;700&amp;family=Chakra+Petch:wght@500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#07090F}
+a{color:#2BD1FF}a:hover{color:#8DE6FF}
+</style>
+</helmet>
+<div style="width: 430px; height: 932px; position: relative; overflow: hidden; background: #0D1119; color: #F5F7FA; font-family: 'Barlow', system-ui, sans-serif">
+  <div style="position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(163,177,194,0.05) 0 1px, transparent 1px 32px), repeating-linear-gradient(90deg, rgba(163,177,194,0.05) 0 1px, transparent 1px 32px)"></div>
+  <svg style="position: absolute; left: -60px; top: 380px" width="560" height="420" viewBox="0 0 358 200" aria-hidden="true">
+    <path d="M70 30 H270 C310 30 335 55 320 92 L290 160 C278 186 240 190 222 166 L196 132 C184 116 162 116 150 132 L124 166 C106 190 66 186 52 160 L30 110 C14 70 34 30 70 30 Z" fill="none" stroke="#FF6A13" stroke-opacity="0.22" stroke-width="16" stroke-linejoin="round"></path>
+  </svg>
+
+  <div style="position: absolute; left: 32px; right: 32px; top: 60px; display: flex; flex-direction: column; gap: 10px">
+    <span style="font-family: 'Chakra Petch', monospace; font-weight: 700; font-size: 14px; letter-spacing: 2px; color: #2BD1FF">LAP TIMING</span>
+    <h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 64px; line-height: 0.86; letter-spacing: -1px">EVERY LAP<br>ON THE CLOCK.</h1>
+  </div>
+
+  <div style="position: absolute; left: 53px; top: 244px; width: 324px; height: 678px; box-sizing: border-box; padding: 10px; border-radius: 54px; background: #1A2230; box-shadow: 0 30px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(245,247,250,0.14)">
+    <div style="position: relative; width: 304px; height: 658px; border-radius: 44px; overflow: hidden; background: #07090F">
+      <div style="width: 390px; height: 844px; transform: scale(0.7795); transform-origin: 0 0">
+        <dc-import name="Race" hint-size="390px,844px"></dc-import>
+      </div>
+      <div style="position: absolute; left: 107px; top: 9px; width: 90px; height: 26px; border-radius: 13px; background: #000000"></div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":430,"height":932}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>
