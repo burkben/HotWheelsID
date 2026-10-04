@@ -7,8 +7,9 @@ is the source of truth for merge status. Each issue has its own branch and PR.
 | Issue | Implementation status |
 | --- | --- |
 | RL-01 / #68 | [PR #88](https://github.com/burkben/HotWheelsID/pull/88), CI and Seed passed |
-| RL-02 / #69 | Implemented; review evidence below |
-| RL-03–RL-18 / #70–#85 | Pending, in order |
+| RL-02 / #69 | [PR #89](https://github.com/burkben/HotWheelsID/pull/89), CI and Seed passed |
+| RL-03 / #70 | Implemented; review evidence below |
+| RL-04–RL-18 / #71–#85 | Pending, in order |
 | RL-19 / #86 | Out of scope; not started |
 
 ## RL-01 — tokens and bundled fonts
@@ -121,3 +122,53 @@ this issue's changes; retarget to main after the dependency merges.
   the accessible pressable and its label outside it (RL-03).
 
 Next: RL-03 controls and building blocks. RL-19 remains excluded.
+
+## RL-03 — controls and building blocks
+
+Branch: `redline/rl-03-controls`, stacked on RL-02 for an isolated issue diff.
+
+- Added `RaceButton`, `StatusChip`, `SectionHeader`, `ScreenHeader`, `TimingRow`,
+  `FilterChip`, and `SkewSwitch`, exported through the Redline barrel.
+- Restyled `TelemetryValue` (with `StatCell`/`StatRow` exports),
+  `TelemetrySegmentedControl`, `CompactStepper`, and the settings row/group/section
+  components. Existing props and callbacks remain supported. Optional stat labels,
+  accent bars, and section numbers support the later screen issues.
+- Moved the existing pill action policy into `usePortalStatusAction`, shared by
+  `StatusPill` and `StatusChip`. Controller selectors, disconnect confirmation,
+  haptic settings checks, and callbacks retain their existing behavior.
+- Added pure status presentation and timing/spoken-unit helpers with 19 tests.
+  Missing timing stays unavailable; gate speed is omitted when absent.
+- Added every component/state to the development gallery, including disabled
+  controls, slower/faster/fastest/running timing, errors, and disconnect states.
+
+### Checks and visual evidence
+
+- `npm ci`, typecheck, zero-warning lint, and web export pass. All 378 mobile and
+  69 protocol tests pass. Existing tests and dependencies are unchanged.
+- [Phone, wide, and iOS screenshots with reference comparisons](review/rl-03/README.md).
+  Main's Pit equipment and Settings source/PNG were inspected. Speed's shared stat
+  readout still fits its current cards; TV still renders its legacy needle gauge.
+- Playwright checks every gallery control at ≥44 pt, full-width skew insets, button
+  presses, status connect/retry/disconnect confirmation, keyboard switch toggling,
+  segment/filter selection, stepper bounds, and instant knob movement under both
+  app and OS reduced motion. Zero browser errors.
+- Native first viewport inspected. Full native scrolling, VoiceOver, BLE, and
+  physical feedback remain unverified; no native-only behavior was introduced.
+- Protected paths, store shapes, persistence, settings keys, and TV are untouched.
+
+### Decisions and deviations
+
+- Compact visible controls are centered in real 44 pt targets. Full-width button
+  margins use the measured height × tan(12°), so wrapped labels remain contained.
+- Existing readout-only `TelemetryValue` callers retain their parent panel's
+  padding. `StatCell` provides the complete new panel; RL-05 adopts it on Speed.
+- The segmented control's optional `accent` prop remains accepted; selected
+  segments now use the specified chalk fill. Existing measured label widths and
+  reduce-motion behavior remain in place.
+- Explicit ARIA state accompanies native accessibility state because the installed
+  RN Web ignores `accessibilityState.checked/selected`. Space-key handling is added
+  for switch/tab roles, which RN Web does not activate with Space by default.
+- Error labels and their red fault treatment remain available beyond the four
+  artboard tones. Gallery values are examples only and never enter stores.
+
+Next: RL-04 app shell, tab bar, and portal status. RL-19 remains excluded.

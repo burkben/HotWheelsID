@@ -1,6 +1,13 @@
 export { RText } from './RText';
 export type { RTextProps } from './RText';
 export { SkewBox } from './SkewBox';
+export { RaceButton, type RaceButtonProps } from './RaceButton';
+export { StatusChip } from './StatusChip';
+export { SectionHeader, ScreenHeader } from './Headers';
+export { TimingRow } from './TimingRow';
+export { FilterChip } from './FilterChip';
+export { SkewSwitch } from './SkewSwitch';
+export { StatCell, StatRow } from '../telemetry/TelemetryValue';
 export { Kerb, Checker, RakeLines, TrackLane } from './Patterns';
 export { RacePlate, Roundel, Wordmark } from './Marks';
 export { CarSilhouette, Chevrons, FlameTongues, SpeedStreaks, Medallion } from './Illustrations';
