@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Race live</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;1,700;1,800;1,900&amp;family=Barlow:wght@400;500;600;700&amp;family=Chakra+Petch:wght@500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#07090F}
+a{color:#2BD1FF}a:hover{color:#8DE6FF}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #07090F; color: #F5F7FA; font-family: 'Barlow', system-ui, sans-serif">
+
+  <!-- header -->
+  <header style="position: absolute; left: 16px; right: 16px; top: 54px; height: 76px; display: flex; align-items: flex-end; justify-content: space-between">
+    <div style="display: flex; align-items: baseline; gap: 8px">
+      <span style="font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 22px; color: #A3B1C2">LAP</span>
+      <span style="font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 80px; line-height: 0.82">3</span>
+      <span style="font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 36px; line-height: 0.82; color: #8494A6">/5</span>
+    </div>
+    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px">
+      <span style="display: inline-flex; align-items: center; gap: 6px; font-family: 'Chakra Petch', monospace; font-weight: 700; font-size: 11px; letter-spacing: 1.5px; color: #39D98A"><span style="width: 7px; height: 7px; border-radius: 50%; background: #39D98A"></span>GREEN FLAG</span>
+      <span style="font-family: 'Chakra Petch', monospace; font-weight: 600; font-size: 26px; font-variant-numeric: tabular-nums">00:08.412</span>
+      <span style="font-family: 'Chakra Petch', monospace; font-size: 11px; letter-spacing: 1.5px; color: #8494A6">TOTAL</span>
+    </div>
+  </header>
+
+  <!-- lap segments -->
+  <div role="img" aria-label="Lap 3 of 5 in progress" style="position: absolute; left: 22px; right: 22px; top: 144px; height: 14px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px">
+    <div style="background: #FF6A13; transform: skewX(-20deg)"></div>
+    <div style="background: #2BD1FF; transform: skewX(-20deg)"></div>
+    <div style="background: #232C3B; transform: skewX(-20deg); overflow: hidden"><div style="width: 78%; height: 100%; background: repeating-linear-gradient(-45deg, #FF6A13 0 6px, #F5F7FA 6px 12px)"></div></div>
+    <div style="background: #232C3B; transform: skewX(-20deg)"></div>
+    <div style="background: #232C3B; transform: skewX(-20deg)"></div>
+  </div>
+
+  <!-- track map -->
+  <section style="position: absolute; left: 16px; right: 16px; top: 176px; height: 222px; background: #0D1119; overflow: hidden">
+    <div style="position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(163,177,194,0.05) 0 1px, transparent 1px 24px), repeating-linear-gradient(90deg, rgba(163,177,194,0.05) 0 1px, transparent 1px 24px)"></div>
+    <svg style="position: absolute; left: 0; top: 4px" width="358" height="200" viewBox="0 0 358 200" aria-hidden="true">
+      <path d="M70 30 H270 C310 30 335 55 320 92 L290 160 C278 186 240 190 222 166 L196 132 C184 116 162 116 150 132 L124 166 C106 190 66 186 52 160 L30 110 C14 70 34 30 70 30 Z" fill="none" stroke="#1A2230" stroke-width="28" stroke-linejoin="round"></path>
+      <path d="M70 30 H270 C310 30 335 55 320 92 L290 160 C278 186 240 190 222 166 L196 132 C184 116 162 116 150 132 L124 166 C106 190 66 186 52 160 L30 110 C14 70 34 30 70 30 Z" fill="none" stroke="#FF6A13" stroke-width="16" stroke-linejoin="round"></path>
+      <path d="M70 30 H270 C310 30 335 55 320 92 L290 160 C278 186 240 190 222 166 L196 132 C184 116 162 116 150 132 L124 166 C106 190 66 186 52 160 L30 110 C14 70 34 30 70 30 Z" fill="none" stroke="#07090F" stroke-opacity="0.35" stroke-width="1.5" stroke-dasharray="6 8"></path>
+      <path d="M214 25 l6 5 -6 5 M226 25 l6 5 -6 5" fill="none" stroke="#07090F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path>
+      <rect x="165" y="20" width="10" height="20" fill="#F5F7FA"></rect>
+      <rect x="165" y="20" width="5" height="5" fill="#07090F"></rect>
+      <rect x="170" y="25" width="5" height="5" fill="#07090F"></rect>
+      <rect x="165" y="30" width="5" height="5" fill="#07090F"></rect>
+      <rect x="170" y="35" width="5" height="5" fill="#07090F"></rect>
+      <path d="M156 46 V18 C156 10 162 6 170 6 C178 6 184 10 184 18 V46" fill="none" stroke="#F5F7FA" stroke-width="3.5"></path>
+      <text x="170" y="64" text-anchor="middle" font-family="Chakra Petch, monospace" font-weight="700" font-size="10" letter-spacing="1.5" fill="#A3B1C2">PORTAL GATE</text>
+      <circle cx="296" cy="146" r="11" fill="#2BD1FF" fill-opacity="0.25"></circle>
+      <circle cx="296" cy="146" r="5.5" fill="none" stroke="#2BD1FF" stroke-width="2.5"></circle>
+      <circle cx="317" cy="99" r="14" fill="#F5F7FA" fill-opacity="0.2"></circle>
+      <circle cx="317" cy="99" r="7" fill="#F5F7FA" stroke="#07090F" stroke-width="2"></circle>
+    </svg>
+    <div style="position: absolute; left: 12px; bottom: 10px; display: flex; gap: 14px">
+      <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #A3B1C2"><span style="width: 10px; height: 10px; border-radius: 50%; background: #F5F7FA"></span>You</span>
+      <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #A3B1C2"><span style="width: 10px; height: 10px; border-radius: 50%; border: 2px solid #2BD1FF; box-sizing: border-box"></span>Best-lap ghost</span>
+    </div>
+    <span style="position: absolute; right: 12px; bottom: 10px; font-family: 'Chakra Petch', monospace; font-size: 10px; letter-spacing: 1px; color: #8494A6">PACE ESTIMATE</span>
+  </section>
+
+  <!-- current lap -->
+  <section style="position: absolute; left: 16px; right: 16px; top: 412px; height: 92px; display: flex; align-items: center; justify-content: space-between">
+    <div style="display: flex; flex-direction: column; gap: 2px">
+      <span style="font-family: 'Chakra Petch', monospace; font-weight: 600; font-size: 11px; letter-spacing: 2px; color: #8494A6">CURRENT LAP</span>
+      <span style="font-family: 'Chakra Petch', monospace; font-weight: 700; font-size: 64px; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -1px">2.31<span style="font-size: 30px; color: #8494A6">s</span></span>
+    </div>
+    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px">
+      <span style="font-family: 'Chakra Petch', monospace; font-weight: 600; font-size: 11px; letter-spacing: 2px; color: #8494A6">VS FASTEST</span>
+      <span style="transform: skewX(-12deg); background: rgba(57,217,138,0.15); border: 1px solid rgba(57,217,138,0.6); padding: 4px 10px"><span style="display: block; transform: skewX(12deg); font-family: 'Chakra Petch', monospace; font-weight: 700; font-size: 22px; color: #39D98A">−0.12</span></span>
+    </div>
+  </section>
+
+  <!-- timing tower -->
+  <section style="position: absolute; left: 16px; right: 16px; top: 520px; display: flex; flex-direction: column; gap: 6px">
+    <div style="display: flex; justify-content: space-between; padding: 0 2px 4px">
+      <span style="font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 17px">TIMING</span>
+      <span style="font-family: 'Chakra Petch', monospace; font-size: 11px; letter-spacing: 1px; color: #8494A6">GATE SPEED</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 14px; background: #111620; height: 50px; padding-right: 14px">
+      <span style="width: 42px; height: 50px; background: #1A2230; display: flex; align-items: center; justify-content: center; font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 21px">L1</span>
+      <span style="flex: 1; font-family: 'Chakra Petch', monospace; font-weight: 600; font-size: 20px; font-variant-numeric: tabular-nums">3.012</span>
+      <span style="font-family: 'Chakra Petch', monospace; font-weight: 600; font-size: 14px; color: #FF8F8F; width: 60px; text-align: right">+0.165</span>
+      <span style="font-family: 'Chakra Petch', monospace; font-weight: 600; font-size: 14px; color: #A3B1C2; width: 54px; text-align: right">212</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 14px; background: #111620; height: 50px; padding-right: 14px; box-shadow: inset 0 0 0 1px rgba(43,209,255,0.5)">
+      <span style="width: 42px; height: 50px; background: #2BD1FF; color: #07090F; display: flex; align-items: center; justify-content: center; font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 21px">L2</span>
+      <span style="flex: 1; font-family: 'Chakra Petch', monospace; font-weight: 700; font-size: 20px; font-variant-numeric: tabular-nums; color: #2BD1FF">2.847</span>
+      <span style="font-family: 'Chakra Petch', monospace; font-weight: 700; font-size: 11px; letter-spacing: 1px; color: #2BD1FF; width: 60px; text-align: right">FASTEST</span>
+      <span style="font-family: 'Chakra Petch', monospace; font-weight: 600; font-size: 14px; color: #A3B1C2; width: 54px; text-align: right">231</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 14px; background: #111620; height: 50px; padding-right: 14px; opacity: 0.75">
+      <span style="width: 42px; height: 50px; background: #1A2230; display: flex; align-items: center; justify-content: center; font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 21px; color: #FF6A13">L3</span>
+      <span style="flex: 1; font-family: 'Chakra Petch', monospace; font-weight: 600; font-size: 20px; color: #A3B1C2">running…</span>
+      <span style="font-family: 'Chakra Petch', monospace; font-weight: 600; font-size: 14px; color: #8494A6; width: 54px; text-align: right">—</span>
+    </div>
+  </section>
+
+  <div style="position: absolute; left: 16px; right: 16px; bottom: 34px; display: flex; gap: 12px">
+    <a href="Results.dc.html" style="flex: 1; height: 54px; border: 2px solid #FF4D5E; color: #FF4D5E; transform: skewX(-12deg); display: flex; align-items: center; justify-content: center; text-decoration: none; box-sizing: border-box">
+      <span style="display: inline-block; transform: skewX(12deg); font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 800; font-size: 20px; letter-spacing: 1px">END RACE EARLY</span>
+    </a>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>
