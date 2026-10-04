@@ -1,0 +1,44 @@
+{
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "deviceScaleFactor": 2,
+  "targets": [
+    {
+      "label": "Speed",
+      "width": 78,
+      "height": 62
+    },
+    {
+      "label": "Race",
+      "width": 78,
+      "height": 62
+    },
+    {
+      "label": "Garage",
+      "width": 78,
+      "height": 62
+    },
+    {
+      "label": "History",
+      "width": 78,
+      "height": 62
+    },
+    {
+      "label": "More",
+      "width": 78,
+      "height": 62
+    }
+  ],
+  "appReduced": 174.72,
+  "osReduced": 252.72,
+  "announcements": [
+    "Browser sessionGarage, History, and Settings work while this page is open, but reset when it closes.",
+    "DEMO PAUSED",
+    "DEMO PAUSED",
+    "Portal disconnected",
+    ""
+  ],
+  "errors": []
+}

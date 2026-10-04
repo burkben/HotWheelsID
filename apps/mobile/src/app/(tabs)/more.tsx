@@ -18,6 +18,7 @@ import { LinkPressable } from '@/components/LinkPressable';
 import { useAchievementsStore } from '@/store/achievementsStore';
 import { colors, fontSize, fontSizeT, fontWeight, radiusT, spacing } from '@/theme/tokens';
 import { useLayout } from '@/layout/useLayout';
+import { ScreenHeader } from '@/components/redline';
 
 type IconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
 type Href = '/achievements' | '/live' | '/tv' | '/settings' | '/credits';
@@ -31,7 +32,7 @@ export default function MoreScreen() {
   return (
     <View style={[styles.screen, { paddingTop: spacing(2) }]}>
       <View style={[styles.header, { maxWidth: layout.contentMaxWidth }]}>
-        <Text style={styles.title}>More</Text>
+        <ScreenHeader title="More" />
       </View>
 
       <ScrollView

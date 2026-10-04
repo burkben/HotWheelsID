@@ -11,8 +11,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useReducedMotion } from 'react-native-reanimated';
-import { router } from 'expo-router';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { router, useIsFocused } from 'expo-router';
+import { StatusChip, Wordmark } from '@/components/redline';
 
 import { RecentPasses } from '@/components/RecentPasses';
 import { Speedometer } from '@/components/gauge/Speedometer';
@@ -37,6 +37,7 @@ import { colors, fontSize, fontSizeT, fontWeight, radiusT, spacing, speedGauge }
 
 export default function SpeedometerScreen() {
   const insets = useSafeAreaInsets();
+  const focused = useIsFocused();
   const layout = useLayout();
 
   const connection = usePortalStore((s) => s.connection);
@@ -91,8 +92,8 @@ export default function SpeedometerScreen() {
   useEffect(() => {
     if (status.label === previousStatus.current) return;
     previousStatus.current = status.label;
-    AccessibilityInfo.announceForAccessibility(status.accessibilityLabel);
-  }, [status]);
+    if (focused) AccessibilityInfo.announceForAccessibility(status.accessibilityLabel);
+  }, [status, focused]);
 
   const previousHero = useRef(hero ? `${hero.uid}:${hero.isCurrent}` : null);
   useEffect(() => {
@@ -138,23 +139,12 @@ export default function SpeedometerScreen() {
   // Reanimated needle keeps its position instead of remounting at zero.
   const paneWidth = layout.isSplit ? undefined : layout.contentMaxWidth;
 
-  // Connection and demo controls live in Settings. Label simulated readings only
-  // while demo is active, in the existing header rather than a separate strip.
   const header = (
     <View style={[styles.header, { maxWidth: layout.isSplit ? undefined : layout.contentMaxWidth }]}>
-      <View style={styles.headerText}>
-        <Text style={styles.title}>Redline ID</Text>
+      <View accessible accessibilityRole="header" accessibilityLabel="Redline ID"><Wordmark /></View>
+      <View style={{ maxWidth: '58%', flexShrink: 1 }}>
+        <StatusChip connection={connection} controlStatus={controlStatus} phase={blePhase} mode={mode} manuallyDisconnected={manuallyDisconnected} onConnect={() => void controller.connect()} onRetry={() => void controller.retry()} onDisconnect={() => void controller.disconnect()} />
       </View>
-      <Pressable
-        onPress={() => router.push('/settings')}
-        accessibilityRole="button"
-        accessibilityLabel={`Portal settings. ${status.label}`}
-        accessibilityHint="Connection controls and demo mode."
-        style={({ pressed }) => [styles.settingsButton, pressed && styles.buttonPressed]}
-      >
-        {mode === 'demo' && <Text style={styles.demoLabel}>Demo</Text>}
-        <MaterialCommunityIcons name="cog-outline" size={22} color={colors.inkSecondary} />
-      </Pressable>
     </View>
   );
 

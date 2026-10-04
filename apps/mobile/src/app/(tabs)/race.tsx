@@ -58,6 +58,7 @@ import { usePortalStore } from "@/store/portalStore";
 import { useRaceStore } from "@/store/raceStore";
 import { useSettingsStore } from "@/store/settingsStore";
 import { spacing } from "@/theme/tokens";
+import { ScreenHeader } from "@/components/redline";
 
 /** Heat times accumulated per match until both racers are in and it can be decided. */
 type MatchTimes = Record<string, { a?: number; b?: number }>;
@@ -262,13 +263,8 @@ export default function RaceScreen() {
   // element instances across the phone and split branches keeps the live lap
   // clock and the countdown animation from remounting on rotation.
   const header = (
-    <View style={[styles.header, layout.isSplit && styles.headerWide]}>
-      <Text accessibilityRole="header" style={styles.title}>
-        Race Mode
-      </Text>
-      <View style={styles.headerRight}>
-        <PortalStatusPill connection={connection} />
-      </View>
+    <View style={[styles.header, layout.isSplit && styles.headerWide, { flexDirection: 'column', alignItems: 'stretch' }]}>
+      <ScreenHeader title="Race Mode" right={<PortalStatusPill connection={connection} />} />
     </View>
   );
 
