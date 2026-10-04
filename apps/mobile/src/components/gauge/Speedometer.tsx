@@ -19,7 +19,6 @@ import Animated, {
   cancelAnimation,
   useAnimatedProps,
   useDerivedValue,
-  useReducedMotion,
   useSharedValue,
   withDelay,
   withSequence,
@@ -35,6 +34,8 @@ import {
   speedUnitLabel,
   type SpeedDisplay,
 } from "@/speed/format";
+import { useTelemetryMotion } from "@/components/telemetry/useTelemetryMotion";
+import { RedlineGauge } from "./RedlineGauge";
 import { FlameField } from "./FlameField";
 import {
   GAUGE_END_ANGLE,
@@ -53,6 +54,9 @@ export interface SpeedZone {
 }
 
 export interface SpeedometerProps {
+  /** TV and existing callers retain the original needle renderer. */
+  variant?: "needle" | "redline";
+  newBest?: boolean;
   /** Live needle target in scale mph (animated). */
   value: number;
   /** Accepted pass ID: retrigger a sweep even when two passes have equal speeds. */
@@ -81,6 +85,8 @@ export interface SpeedometerProps {
 
 export function Speedometer({
   value,
+  variant = "needle",
+  newBest = false,
   sampleKey,
   readoutMph,
   max,
@@ -99,7 +105,8 @@ export function Speedometer({
   const needleLength = r - stroke / 2 - 6;
 
   const angle = useSharedValue(GAUGE_START_ANGLE);
-  const reduceMotion = useReducedMotion() || reduceMotionOverride;
+  const motion = useTelemetryMotion();
+  const reduceMotion = motion.reduceMotion || reduceMotionOverride;
 
   useEffect(() => {
     const clamped = Math.max(0, Math.min(value, max));
@@ -165,6 +172,10 @@ export function Speedometer({
     const mph = ((angle.value - GAUGE_START_ANGLE) / (GAUGE_END_ANGLE - GAUGE_START_ANGLE)) * max;
     return Math.max(0, Math.min((mph - flameThreshold) / Math.max(1, max - flameThreshold), 1));
   });
+
+  if (variant === "redline") {
+    return <RedlineGauge angle={angle} readoutMph={readoutMph} max={max} zones={zones} flameThreshold={flameThreshold} size={size} display={display} newBest={newBest} sampleKey={sampleKey} reduceMotion={reduceMotion} />;
+  }
 
   return (
     <View

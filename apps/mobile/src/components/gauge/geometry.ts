@@ -101,3 +101,13 @@ export function makeTicks(
   }
   return ticks;
 }
+
+/** Redline's 240° sweep; the legacy needle constants above stay unchanged. */
+export const REDLINE_START_ANGLE = -120;
+export const REDLINE_END_ANGLE = 120;
+
+/** Source artboard heat: ramp over the last 40 mph, fully lit at the threshold. */
+export function redlineHeat(mph: number, threshold: number): number {
+  'worklet';
+  return mph >= threshold ? 1 : Math.max(0, (mph - (threshold - 40)) / 40 * 0.6);
+}
