@@ -11,9 +11,14 @@ const Motifs: ComponentType | null = __DEV__
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   ? require('@/components/redline/dev/MotifGallery').MotifGallery
   : null;
+const Controls: ComponentType | null = __DEV__
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  ? require('@/components/redline/dev/ControlGallery').ControlGallery
+  : null;
 
 export default function RedlineGalleryRoute() {
   const { section } = useLocalSearchParams<{ section?: string }>();
+  if (section === 'controls' && Controls) return <Controls />;
   if (section === 'motifs' && Motifs) return <Motifs />;
   return Gallery ? <Gallery /> : <Redirect href="/" />;
 }

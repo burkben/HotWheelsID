@@ -5,16 +5,14 @@
  * should always be able to tell whether the portal is connected and whether a
  * car is on the pad.
  */
-import { Alert, Platform, Pressable, StyleSheet, Text, View } from "react-native";
-import * as Haptics from "expo-haptics";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { ControlStatus } from "@redlineid/protocol";
 
 import { colors, fontSize, fontWeight, radiusT, spacing } from "@/theme/tokens";
 import type { ConnectionState } from "@/store/portalStore";
 import type { BlePhase } from "@/ble/types";
 import type { PortalMode } from "@/portal/controller";
-import { portalStatusPresentation } from "@/portal/selectors";
-import { useSettingsStore } from "@/store/settingsStore";
+import { usePortalStatusAction } from "./usePortalStatusAction";
 
 export interface StatusPillProps {
   connection: ConnectionState;
@@ -27,23 +25,8 @@ export interface StatusPillProps {
   onDisconnect: () => void;
 }
 
-export function StatusPill({
-  connection,
-  controlStatus,
-  phase,
-  mode,
-  manuallyDisconnected,
-  onConnect,
-  onRetry,
-  onDisconnect,
-}: StatusPillProps) {
-  const status = portalStatusPresentation({
-    connection,
-    controlStatus,
-    phase,
-    mode,
-    manuallyDisconnected,
-  });
+export function StatusPill(props: StatusPillProps) {
+  const { status, onPress } = usePortalStatusAction(props);
   const color =
     status.tone === "connected"
       ? colors.okT
@@ -52,45 +35,6 @@ export function StatusPill({
         : status.tone === "error"
           ? colors.fault
           : colors.inkMuted;
-
-  const confirmDisconnect = () => {
-    const disconnect = () => {
-      if (Platform.OS !== "web" && useSettingsStore.getState().haptics) {
-        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      }
-      onDisconnect();
-    };
-    if (Platform.OS === "web") {
-      if (
-        typeof globalThis.confirm === "function" &&
-        globalThis.confirm("Disconnect portal? Automatic reconnect will stay paused.")
-      ) {
-        disconnect();
-      }
-      return;
-    }
-    Alert.alert("Disconnect portal?", "Automatic reconnect will stay paused until you connect again.", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Disconnect",
-        style: "destructive",
-        onPress: disconnect,
-      },
-    ]);
-  };
-
-  const onPress = () => {
-    if (status.action === "none") return;
-    if (status.action === "disconnect") {
-      confirmDisconnect();
-      return;
-    }
-    if (Platform.OS !== "web" && useSettingsStore.getState().haptics) {
-      void Haptics.selectionAsync();
-    }
-    if (status.action === "retry") onRetry();
-    else onConnect();
-  };
 
   return (
     <Pressable

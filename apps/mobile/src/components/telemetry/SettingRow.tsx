@@ -9,14 +9,17 @@
  * vertically centered with the label — never floating mid-block against a
  * two-line label+hint stack.
  *
- * - SettingGroup: the inset card (hairline, 10pt radius) with inset dividers.
+ * - SettingGroup: square pit-lane groups with inset dividers.
  * - SettingRow: label + trailing control on one line; optional hint below.
- * - SettingsSection: a label + group, owning the only vertical rhythm (24/8pt).
+ * - SettingsSection: a label + group, owning the only vertical rhythm (22/8pt).
  */
 import type { PropsWithChildren, ReactNode } from "react";
-import { Pressable, StyleSheet, Text, View, type ViewStyle } from "react-native";
+import { Pressable, StyleSheet, View, type ViewStyle } from "react-native";
 
-import { colors, fontSize, fontWeight, radiusT, spacing } from "@/theme/tokens";
+import { colorsR, fontR } from "@/theme/tokens";
+import { RText } from "../redline/RText";
+import { SectionHeader } from "../redline/Headers";
+import { decorative } from "../redline/decorative";
 
 /** The inset grouped card. Rows are children; dividers are drawn between them. */
 export function SettingGroup({ children, style }: PropsWithChildren<{ style?: ViewStyle }>) {
@@ -65,18 +68,17 @@ export function SettingRow({
       <View style={styles.textCol}>
         {/* Label line: label left, control right, both centered on this line. */}
         <View style={styles.labelLine}>
-          <Text
+          <RText
             style={[styles.label, destructive && styles.labelDestructive, disabled && styles.dim]}
-            numberOfLines={2}
           >
             {label}
-          </Text>
+          </RText>
           {control ? <View style={styles.control}>{control}</View> : null}
-          {chevron ? <Text style={styles.chevron}>›</Text> : null}
+          {chevron ? <RText {...decorative} style={styles.chevron}>›</RText> : null}
         </View>
         {/* Hint is a sibling of the label line, aligned to the label column. */}
         {hint ? (
-          <Text style={[styles.hint, disabled && styles.dim]}>{hint}</Text>
+          <RText variant="bodySmall" style={[styles.hint, disabled && styles.dim]}>{hint}</RText>
         ) : null}
       </View>
     </>
@@ -115,84 +117,29 @@ export function SettingsSection({
   title,
   children,
   style,
-}: PropsWithChildren<{ title: string; style?: ViewStyle }>) {
+  index,
+}: PropsWithChildren<{ title: string; style?: ViewStyle; index?: string | number }>) {
   return (
     <View style={[styles.section, style]}>
-      <Text style={styles.sectionLabel}>{title}</Text>
+      <View style={styles.sectionLabel}><SectionHeader title={title} index={index} /></View>
       {children}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  section: {
-    // The single source of section rhythm: 24pt before, 8pt after the label.
-    marginTop: spacing(6),
-  },
-  sectionLabel: {
-    color: colors.inkMuted,
-    fontSize: fontSize.xs,
-    fontWeight: fontWeight.bold,
-    textTransform: "uppercase",
-    letterSpacing: 1.2,
-    marginBottom: spacing(2),
-    marginLeft: spacing(3),
-  },
-  group: {
-    backgroundColor: colors.panelSolid,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.hairline,
-    borderRadius: radiusT.group,
-    overflow: "hidden",
-  },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.hairline,
-    // Inset to the label column, not full-bleed.
-    marginLeft: spacing(4),
-  },
-  row: {
-    paddingVertical: spacing(2.5),
-    paddingHorizontal: spacing(4),
-    minHeight: 44,
-    justifyContent: "center",
-  },
-  textCol: {
-    flex: 1,
-    minWidth: 0,
-  },
-  labelLine: {
-    flexDirection: "row",
-    alignItems: "center",
-    minHeight: 30,
-    gap: spacing(3),
-  },
-  label: {
-    flex: 1,
-    color: colors.ink,
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.bold,
-    lineHeight: 21,
-  },
-  labelDestructive: {
-    color: colors.fault,
-  },
-  control: {
-    flexShrink: 0,
-    justifyContent: "center",
-  },
-  chevron: {
-    color: colors.inkMuted,
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.medium,
-    marginLeft: spacing(1),
-  },
-  hint: {
-    color: colors.inkSecondary,
-    fontSize: fontSize.sm,
-    lineHeight: 18,
-    marginTop: spacing(1),
-  },
+  section: { marginTop: 22 },
+  sectionLabel: { marginBottom: 8 },
+  group: { backgroundColor: colorsR.pitLane, borderRadius: 0, overflow: "hidden" },
+  divider: { height: 1, backgroundColor: colorsR.divider, marginLeft: 14 },
+  row: { paddingVertical: 5, paddingHorizontal: 14, minHeight: 54, justifyContent: "center" },
+  textCol: { flex: 1, minWidth: 0 },
+  labelLine: { flexDirection: "row", alignItems: "center", minHeight: 44, gap: 12 },
+  label: { flex: 1, color: colorsR.chalk, fontFamily: fontR.bodyMedium, fontSize: 16, lineHeight: 23.2 },
+  labelDestructive: { color: colorsR.destructiveInk },
+  control: { flexShrink: 0, justifyContent: "center" },
+  chevron: { color: colorsR.inkMuted, fontSize: 24, marginLeft: 4 },
+  hint: { color: colorsR.inkSecondary, fontSize: 13, lineHeight: 18.2, marginTop: 4, marginBottom: 7 },
   pressed: { opacity: 0.7 },
   dim: { opacity: 0.5 },
 });

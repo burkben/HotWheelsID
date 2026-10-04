@@ -1,0 +1,180 @@
+{
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "deviceScaleFactor": 2,
+  "targets": [
+    {
+      "label": "Start race",
+      "width": 306.21875,
+      "height": 56
+    },
+    {
+      "label": "Try demo mode",
+      "width": 307.90625,
+      "height": 52
+    },
+    {
+      "label": "End race",
+      "width": 307.90625,
+      "height": 52
+    },
+    {
+      "label": "Start disabled",
+      "width": 306.21875,
+      "height": 56
+    },
+    {
+      "label": "Ghost disabled",
+      "width": 307.90625,
+      "height": 52
+    },
+    {
+      "label": "End disabled",
+      "width": 307.90625,
+      "height": 52
+    },
+    {
+      "label": "Portal status: Connected",
+      "width": 131.375,
+      "height": 44
+    },
+    {
+      "label": "Portal status: Scanning…",
+      "width": 122.296875,
+      "height": 44
+    },
+    {
+      "label": "Portal status: Car on portal",
+      "width": 120.015625,
+      "height": 44
+    },
+    {
+      "label": "Portal status: Demo ready",
+      "width": 125.859375,
+      "height": 44
+    },
+    {
+      "label": "Portal status: portal not found",
+      "width": 180.890625,
+      "height": 44
+    },
+    {
+      "label": "Portal status: Disconnected",
+      "width": 149.8125,
+      "height": 44
+    },
+    {
+      "label": "Back to More",
+      "width": 54.859375,
+      "height": 44
+    },
+    {
+      "label": "3",
+      "width": 44,
+      "height": 44
+    },
+    {
+      "label": "5",
+      "width": 44,
+      "height": 44
+    },
+    {
+      "label": "10",
+      "width": 44,
+      "height": 44
+    },
+    {
+      "label": "Miles per hour",
+      "width": 55.890625,
+      "height": 44
+    },
+    {
+      "label": "Kilometers per hour",
+      "width": 62.75,
+      "height": 44
+    },
+    {
+      "label": "Speed calibration, decrease",
+      "width": 44,
+      "height": 44
+    },
+    {
+      "label": "Speed calibration, increase",
+      "width": 44,
+      "height": 44
+    },
+    {
+      "label": "Haptics",
+      "width": 62,
+      "height": 44
+    },
+    {
+      "label": "Sound",
+      "width": 62,
+      "height": 44
+    },
+    {
+      "label": "Reduce motion",
+      "width": 62,
+      "height": 44
+    },
+    {
+      "label": "Unavailable",
+      "width": 62,
+      "height": 44
+    },
+    {
+      "label": "Share car identities",
+      "width": 358,
+      "height": 101.40625
+    },
+    {
+      "label": "Reset to defaults",
+      "width": 358,
+      "height": 54
+    },
+    {
+      "label": "Disabled action",
+      "width": 358,
+      "height": 54
+    },
+    {
+      "label": "All",
+      "width": 49.4375,
+      "height": 44
+    },
+    {
+      "label": "HW Race Team",
+      "width": 129,
+      "height": 44
+    },
+    {
+      "label": "Factory Fresh",
+      "width": 132.625,
+      "height": 44
+    },
+    {
+      "label": "Unavailable",
+      "width": 103.921875,
+      "height": 44
+    }
+  ],
+  "inset": {
+    "height": 56,
+    "margin": 11.9032
+  },
+  "appReducedKnob": "matrix(1, 0, 0, 1, 26, 0)",
+  "osReducedKnob": "matrix(1, 0, 0, 1, 26, 0)",
+  "errors": [],
+  "interactions": [
+    "button press",
+    "connect/retry",
+    "disconnect cancel/confirm",
+    "switch keyboard toggle",
+    "segment selection",
+    "stepper limit",
+    "filter selection"
+  ]
+}
