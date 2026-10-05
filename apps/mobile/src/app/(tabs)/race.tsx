@@ -3,13 +3,14 @@
  * presentation. It never creates or controls the BLE transport: connect (or start
  * Demo) in Settings, then portal passes flow through the shared portal store.
  */
-import { useCallback, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import { Modal, Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useReducedMotion } from "react-native-reanimated";
 
 import { findCatalogCar } from "@/catalog/catalog";
 import { useLayout } from "@/layout/useLayout";
+import { countdownBestLap } from "@/race/countdownPresentation";
 import { RaceCountdown } from "@/race/components/RaceCountdown";
 import { RaceLeaderboard } from "@/race/components/RaceLeaderboard";
 import {
@@ -122,6 +123,17 @@ export default function RaceScreen() {
     [identifications, links, seed],
   );
 
+  const [showGo, setShowGo] = useState(false);
+  const startRacingWithGo = useCallback(() => {
+    startRacing();
+    setShowGo(true);
+  }, [startRacing]);
+  useEffect(() => {
+    if (!showGo) return;
+    const timer = setTimeout(() => setShowGo(false), 400);
+    return () => clearTimeout(timer);
+  }, [showGo]);
+
   const nextRacer =
     mode === "raceNight" && lineup.length > 1 ? nextUpRacer(lineup) : null;
   const session = useRaceSession({
@@ -130,7 +142,7 @@ export default function RaceScreen() {
     reduceMotion,
     nextRacerName: nextRacer?.name ?? null,
     gate,
-    startRacing,
+    startRacing: startRacingWithGo,
   });
 
   const canStart = canStartRace(mode, connection, lineup.length);
@@ -349,18 +361,24 @@ export default function RaceScreen() {
       />
     ) : null;
 
-  const countdown =
-    race.phase === "countdown" ? (
+  const countdown = (
+    <Modal visible={race.phase === "countdown" || (race.phase === "racing" && showGo)} animationType="none" presentationStyle="fullScreen" onRequestClose={abort}>
+      {announcement}
       <RaceCountdown
-        count={session.count}
+        count={race.phase === "racing" ? 0 : session.count}
         pulse={session.pulse}
         reduceMotion={reduceMotion}
         player={race.player}
         car={activeCar}
         large={layout.isSplit}
+        targetLaps={race.targetLaps}
+        modeLabel={inTournament ? 'TOURNAMENT' : mode === 'raceNight' ? 'RACE NIGHT' : 'SPRINT'}
+        bestLap={countdownBestLap(leaderboard, race.player, activeCar.uid)}
+        nextRacer={nextRacer ? { player: nextRacer.name, car: resolveCar(nextRacer.carUid, 'Car not assigned') } : null}
         onCancel={abort}
       />
-    ) : null;
+    </Modal>
+  );
 
   const progress =
     race.phase === "racing" ? (
@@ -429,7 +447,7 @@ export default function RaceScreen() {
         ]}
       >
         {header}
-        {announcement}
+        {race.phase !== "countdown" && !showGo ? announcement : null}
         <View style={styles.splitBody}>
           <ScrollView
             style={styles.splitLeft}
@@ -471,7 +489,7 @@ export default function RaceScreen() {
     >
       {header}
       <PortalRecovery connection={connection} />
-      {announcement}
+      {race.phase !== "countdown" && !showGo ? announcement : null}
       {race.phase === "idle" ? bracket : null}
       {tournamentControls}
       {setup}

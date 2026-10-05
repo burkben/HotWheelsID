@@ -11,8 +11,9 @@ is the source of truth for merge status. Each issue has its own branch and PR.
 | RL-03 / #70 | [PR #90](https://github.com/burkben/HotWheelsID/pull/90), CI and Seed passed |
 | RL-04 / #71 | [PR #91](https://github.com/burkben/HotWheelsID/pull/91), CI and Seed passed |
 | RL-05 / #72 | [PR #92](https://github.com/burkben/HotWheelsID/pull/92), CI and Seed passed |
-| RL-06 / #73 | Implemented; review evidence below |
-| RL-07–RL-18 / #74–#85 | Pending, in order |
+| RL-06 / #73 | [PR #93](https://github.com/burkben/HotWheelsID/pull/93), CI and Seed passed |
+| RL-07 / #74 | Implemented; review evidence below |
+| RL-08–RL-18 / #75–#85 | Pending, in order |
 | RL-19 / #86 | Out of scope; not started |
 
 ## RL-01 — tokens and bundled fonts
@@ -296,3 +297,39 @@ Branch: `redline/rl-06-connect-state`, stacked on RL-05 for an isolated issue di
   says so, rather than claiming that the controller will connect automatically.
 
 Next: RL-07 race countdown. RL-19 remains excluded.
+
+## RL-07 — Race countdown
+
+Branch: `redline/rl-07-countdown`, stacked on RL-06 for an isolated issue diff.
+
+- Replaced `RaceCountdown` presentation with the source gantry, 320 pt digit and
+  outline echoes, cancel/header, racer/next-up rows, and checker start strip.
+- Added optional glow animation to shared `StartLights`; countdown digit spring,
+  echo slide, and lamp bloom all use the shared OS/app motion gate.
+- Added seven pure tests for countdown-to-light mapping and player/car best laps.
+  Plate and history are derived from existing data; missing values stay unavailable.
+- Integrated an immersive core Modal and a 400 ms GO presentation after the existing
+  start call. `useRaceSession`, its 800 ms ticks, announcements, haptics and sound
+  remain unchanged. Racing/gate timing begins normally under the brief GO overlay.
+- Added an isolated development gallery and browser verification script.
+
+### Checks and visual evidence
+
+- `npm ci`, typecheck, zero-warning lint, web export, and all 413 mobile plus 69
+  protocol tests pass. Existing tests, dependencies and protected paths are unchanged.
+- [Reference comparison and six captures](review/rl-07/README.md): count 2 and GO
+  on web/iOS, actual demo race, and iPad layout. Browser checks cover light mapping,
+  spring/slide/glow, both reduced-motion flags, announcements and cancellation.
+- Native fonts/outlines/glow verified in Simulator. VoiceOver, native modal focus,
+  sound, haptics and physical BLE remain device follow-ups.
+
+### Decisions and deviations
+
+- The old hook changes directly from 1 to racing. The local GO overlay supplies the
+  specified zero state without delaying the race engine or changing cue behavior.
+- Scrollable content and actual safe areas replace fixed artboard coordinates.
+  Unknown car plates show `?`; absent bests show `—`; next-up is conditional.
+- SVG text uses equivalent native OpenType/web CSS tabular-number settings. GO
+  echoes turn green and may extend offscreen, while the main word remains visible.
+
+Next: RL-08 race live. RL-19 remains excluded.
