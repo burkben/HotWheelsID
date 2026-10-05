@@ -31,8 +31,14 @@ const Countdown: ComponentType | null = __DEV__
   ? require('@/components/redline/dev/CountdownGallery').CountdownGallery
   : null;
 
+const RaceLive: ComponentType | null = __DEV__
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  ? require('@/components/redline/dev/RaceLiveGallery').RaceLiveGallery
+  : null;
+
 export default function RedlineGalleryRoute() {
   const { section } = useLocalSearchParams<{ section?: string }>();
+  if (section === 'race-live' && RaceLive) return <RaceLive />;
   if (section === 'countdown' && Countdown) return <Countdown />;
   if (section === 'connect' && Connect) return <Connect />;
   if (section === 'gauge' && Gauge) return <Gauge />;

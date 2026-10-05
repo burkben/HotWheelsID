@@ -1,0 +1,9 @@
+{
+  "secondsAfterDeepLink": [
+    2.105023375,
+    2.9583492920000003
+  ],
+  "fixture": "moving=1&slow=1&stall=1",
+  "stallDelayMs": 1950,
+  "stallDurationMs": 1800
+}
