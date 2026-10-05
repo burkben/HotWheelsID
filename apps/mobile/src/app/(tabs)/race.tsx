@@ -17,7 +17,7 @@ import {
   PortalRecovery,
   PortalStatusPill,
 } from "@/race/components/PortalReadiness";
-import { LapList, RaceProgress } from "@/race/components/RaceProgress";
+import { LapList, LiveLapList, RaceProgress } from "@/race/components/RaceProgress";
 import { RaceResults } from "@/race/components/RaceResults";
 import { RaceSetup } from "@/race/components/RaceSetup";
 import {
@@ -389,6 +389,7 @@ export default function RaceScreen() {
         canTriggerDemo={session.canTriggerDemo}
         large={layout.isSplit}
         showLaps={!layout.isSplit}
+        showRacer={mode === "raceNight" || inTournament}
         onTriggerDemo={session.triggerDemoPass}
         onFinish={() => stop()}
       />
@@ -415,10 +416,7 @@ export default function RaceScreen() {
   // In the split layout the lap lists move to the right pane, so a race never
   // hides its own lap times behind a scroll.
   const paneLaps = !layout.isSplit ? null : race.phase === "racing" ? (
-    <LapList
-      lapTimes={race.lapTimes}
-      bestLap={race.lapTimes.length > 0 ? Math.min(...race.lapTimes) : null}
-    />
+    <LiveLapList race={race} />
   ) : race.phase === "finished" && race.result ? (
     <LapList lapTimes={race.result.lapTimes} bestLap={race.result.bestLap} />
   ) : null;
@@ -482,6 +480,7 @@ export default function RaceScreen() {
         styles.content,
         {
           paddingTop: spacing(3),
+          paddingHorizontal: race.phase === "racing" ? 16 : spacing(5),
           paddingBottom: insets.bottom + spacing(8),
         },
       ]}

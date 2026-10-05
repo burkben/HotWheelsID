@@ -12,8 +12,9 @@ is the source of truth for merge status. Each issue has its own branch and PR.
 | RL-04 / #71 | [PR #91](https://github.com/burkben/HotWheelsID/pull/91), CI and Seed passed |
 | RL-05 / #72 | [PR #92](https://github.com/burkben/HotWheelsID/pull/92), CI and Seed passed |
 | RL-06 / #73 | [PR #93](https://github.com/burkben/HotWheelsID/pull/93), CI and Seed passed |
-| RL-07 / #74 | Implemented; review evidence below |
-| RL-08–RL-18 / #75–#85 | Pending, in order |
+| RL-07 / #74 | [PR #94](https://github.com/burkben/HotWheelsID/pull/94), CI and Seed passed |
+| RL-08 / #75 | Implemented; review evidence below |
+| RL-09–RL-18 / #76–#85 | Pending, in order |
 | RL-19 / #86 | Out of scope; not started |
 
 ## RL-01 — tokens and bundled fonts
@@ -333,3 +334,52 @@ Branch: `redline/rl-07-countdown`, stacked on RL-06 for an isolated issue diff.
   echoes turn green and may extend offscreen, while the main word remains visible.
 
 Next: RL-08 race live. RL-19 remains excluded.
+
+## RL-08 — Live race
+
+Branch: `redline/rl-08-race-live`, stacked on RL-07 for an isolated issue diff.
+
+- Reworked `RaceProgress`: display lap header, green flag and total clock, skewed
+  lap segments, source track/gate/chevrons, current timer/delta, timing tower, racer
+  identity for lineup/heats, and the existing no-confirm early-finish action.
+- Added `paceProjection` with a precomputed 201-point polyline and worklet-safe
+  fraction/wrap/overflow projection. Ghost uses race best then car best; the chalk
+  marker uses the last lap. Missing references hide markers. All are pace estimates.
+- UI-thread clocks and marker worklets read the authoritative gate timestamp.
+  `useTelemetryMotion` gates marker/fill/pulse motion and the 300 ms segment and
+  220 ms row transitions. Measurement clocks continue with reduced motion.
+- Added exact car/closing-time pass matching for gate speeds. Any missing/ambiguous
+  match omits the entire column. Values respect current units/calibration.
+- Shared `TimingRow` gains optional seconds formatting and explicit spoken
+  faster/slower/tie labels; its existing clock default remains unchanged.
+  `LiveLapList` supplies both phone and existing split-layout towers. The shared
+  Results lap rows also adopt the tower; its complete redesign and leaderboard
+  styling remain in RL-09.
+- Added 26 pure tests covering projection, reference fallback, clock formatting,
+  gate-speed matching and spoken deltas. Existing tests are untouched.
+
+### Checks and visual evidence
+
+- `npm ci`, typecheck, zero-warning lint, web export, and all 439 mobile plus 69
+  protocol tests pass. No dependencies or protected areas changed.
+- [Ten visual captures, comparisons and reproduction](review/rl-08/README.md).
+  Browser checks cover first-gate/first-lap/overflow states, clock and marker motion,
+  app/OS static decoration, completion/row animation, targets, long timers, real
+  demo passes, both layouts and immediate early finish without a dialog.
+- Native Simulator captures demonstrate clock/marker progress while JS is blocked
+  for 1.8 seconds. Native font and numeric clipping issues found during review were
+  fixed. Physical frame-rate measurement, VoiceOver and hardware effects remain
+  follow-ups; existing session cues/announcements are untouched.
+
+### Decisions and deviations
+
+- Computed totals/deltas replace the mockup's inconsistent sample arithmetic;
+  identical last/best references legitimately place both markers together.
+- The Race tab keeps navigation, status and demo actions. The standalone development
+  fixture provides a direct artboard comparison. Countdown remains immersive.
+- Unmatched gate speeds are omitted; reference-less markers are hidden. Under
+  reduced motion decorative positions remain at the gate, while time still updates.
+- Body content scrolls/wraps, buttons use safe skew margins, and long timers fit.
+  Native review images use compact JPEG exports for the connector upload limit.
+
+Next: RL-09 results, setup, lineup and tournament. RL-19 remains excluded.
