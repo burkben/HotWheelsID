@@ -64,17 +64,18 @@ Portal. No account, login, subscription, or backend service is required.
 
 The physical accessory is not required for review:
 
-1. Open Settings using the gear on Speed, or More → Settings.
-2. Enable Demo mode in the Portal section. The switch takes effect immediately.
-3. Return to Speed. Simulated car passes begin automatically. Settings → Portal
-   also offers Trigger a sample pass.
+1. Open More → Settings.
+2. Turn on **Start in demo mode** (section 05 Startup). The switch takes effect
+   immediately. The first-run "Find your portal" screen also offers **Try demo mode**.
+3. Return to Speed. Simulated car passes begin automatically. The Settings portal
+   card also offers Trigger a sample pass.
 4. Open Race, choose a lap count, and start a race.
 5. Use Trigger pass to advance laps and reach the results screen.
-6. Garage, History, Achievements, Settings, race-night lineups, and tournament
+6. Garage, History, Trophy case, Settings, race-night lineups, and tournament
    mode remain available from the tab bar and More menu.
 
-For live use, disable Demo mode in Settings. The app connects automatically;
-Settings → Portal also offers connection, retry, and pause controls. Bluetooth is
+For live use, turn off Start in demo mode. The app connects automatically; the
+portal card at the top of Settings also offers connect, retry, and pause controls. Bluetooth is
 used solely to communicate with the Race Portal.
 The app supports both known portal firmware transports.
 
@@ -117,44 +118,56 @@ function.
 
 ## Screenshots
 
-Keep iPad support enabled. Capture the iPhone set in portrait on the largest
-required iPhone size. **Capture the iPad set in landscape** — the iPad build
-rotates freely and lays out in two panes above 900pt, so a portrait iPad
-screenshot no longer represents the experience being shipped.
+The store frames follow the Redline V1 design (SPEC §6) and are composited from real
+simulator captures by `docs/release/screenshots/` (template, render script and
+capture instructions in its README). Keep iPad support enabled.
 
-| Order | Screen | Caption |
+**Required sizes** (App Store Connect screenshot specifications, checked October
+2026; re-check before each submission):
+
+| Set | Pixels | Notes |
 |---|---|---|
-| 1 | Speed tab in Demo mode | Bring your Race Portal back to life |
-| 2 | Active Race | Live lap timing and personal bests |
-| 3 | Garage | Every car and every best, saved locally |
-| 4 | Race-night lineup | Put every racer and car in the queue |
-| 5 | Tournament bracket | Run a complete elimination tournament |
-| 6 | History or Achievements | Keep the moments worth remembering |
+| iPhone, Dynamic Island medium display | 1206 × 2622 | Required. Capture on an iPhone 17 Pro simulator. |
+| iPhone 6.9" | 1320 × 2868 | Optional. The render script produces it from the same captures. |
+| iPad 13" | 2752 × 2064 | Required while iPad is supported. **Landscape**: the iPad build lays out in two panes above 900 pt, so a portrait iPad shot would not represent it. |
 
-iPad-only additions, both landscape:
+Final set, the same order and captions on iPhone and iPad:
 
-| Order | Screen | Caption |
+| Order | Screen (demo mode) | Headline |
 |---|---|---|
-| 7 | Race tab, two panes, mid-race | The whole race night on one screen |
-| 8 | TV mode preview (More → TV mode) | Put the race on the big screen |
+| 1 | Speed, readout ≥ 240 so the flames show | THE PORTAL IS BACK. |
+| 2 | Race countdown at "2" | LIGHTS OUT. LET'S RACE. |
+| 3 | Race live, lap 3/5 | EVERY LAP ON THE CLOCK. |
+| 4 | Results with NEW RECORD | BEAT YOUR BEST. |
+| 5 | Garage | EVERY CAR, REMEMBERED. |
+| 6 | Trophy case | 13 TROPHIES TO HUNT. |
 
-Do not use Mattel logos or packaging in screenshots.
+This replaces the earlier lineup. Race-night lineup and tournament bracket move out of
+the screenshot set and stay described in the product page copy. On iPad, frames 2–4
+show the two-pane Race tab, which covers the old "whole race night on one screen" shot.
+The TV mode preview is dropped: TV mode keeps the legacy look in V1.
 
-Catalog car photos now appear in the app UI (Identify, Garage, car detail). They are
+Rules:
+
+- No Mattel or Hot Wheels logos, wordmarks, packaging or flame logos in any frame. The
+  product is **Redline ID**. The render script fails if a frame's text contains "Hot
+  Wheels" or "Mattel".
+- Capture with demo mode on and a clean status bar (`xcrun simctl status_bar booted
+  override --time 9:41 …`).
+- Outputs are 8-bit RGB PNGs with no alpha channel, which App Store Connect requires.
+
+Catalog car photos appear in the app UI (Identify, Garage, car detail). They are
 CC BY-SA wiki photographs, and App Store screenshots are a distribution surface that
 carries no attribution. The low-risk options, in order:
 
-1. Prefer screens where photos are absent or incidental — Speed, Race, Tournament,
-   History, Achievements. These carry the product story anyway.
-2. If you want a Garage or Identify shot, keep it and rely on the in-app Credits
+1. Prefer screens where photos are absent or incidental. Frames 1–4 and 6 have none.
+2. For the Garage frame, a grid of trading cards is fine. Rely on the in-app Credits
    screen, which names every photographer. This is the common practice for CC BY-SA
    media shown inside a product UI.
 3. Avoid a screenshot whose subject *is* a single car photo blown up full-bleed.
 
-Note: screenshots captured before build 5 show emoji placeholder tiles, and build 5
-itself renders car photos oversized on Garage detail and Identify. Recapture any
-Garage or Identify shots against build 6 or later, or they will not match the
-shipped app.
+Recapture every frame against the Redline V1 build; older captures show the previous
+Trackside visual design.
 
 ## Final submission checklist
 
@@ -179,7 +192,7 @@ back-navigation checks against whichever build you actually submit.
 
 - Launch after a clean install; confirm the tab bar and Speed screen render
   without an error.
-- Allow Bluetooth, leave Settings → Portal → Demo mode off, and confirm the
+- Allow Bluetooth, leave Settings → Start in demo mode off, and confirm the
   app connects to the powered-on portal.
 - Pass a car through the portal; confirm the car event and nonzero speed appear.
 - Run a short race to completion; confirm countdown, lap, best-lap, and finish
@@ -195,10 +208,10 @@ back-navigation checks against whichever build you actually submit.
 
 ### Demo and review path
 
-- Enable Settings → Portal → Demo mode and confirm simulated passes start without portal hardware.
+- Turn on Settings → 05 Startup → Start in demo mode and confirm simulated passes start without portal hardware.
 - Complete a short demo race using Trigger pass.
-- Open Garage, History, Achievements, Credits, and Settings.
-- From the More tab, open Achievements, Settings, and Credits in turn and back out
+- Open Garage, History, Trophy case, Credits, and Settings.
+- From the More tab, open Trophy case, Settings, and Credits in turn and back out
   of each. Confirm Back returns to **More** every time — before build 10 these three
   screens jumped to the Speed tab instead of popping.
 - Identify a car, then open its Garage detail screen. Confirm the photo sits fully

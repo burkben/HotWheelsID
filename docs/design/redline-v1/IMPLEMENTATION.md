@@ -21,8 +21,9 @@ is the source of truth for merge status. Each issue has its own branch and PR.
 | RL-13 / #80 | [PR #100](https://github.com/burkben/HotWheelsID/pull/100) |
 | RL-14 / #81 | [PR #101](https://github.com/burkben/HotWheelsID/pull/101) |
 | RL-15 / #82 | [PR #102](https://github.com/burkben/HotWheelsID/pull/102) |
-| RL-16 / #83 | Implemented; review evidence below |
-| RL-17–RL-18 / #84–#85 | Pending, in order |
+| RL-16 / #83 | [PR #103](https://github.com/burkben/HotWheelsID/pull/103) |
+| RL-17 / #84 | Implemented; review evidence below |
+| RL-18 / #85 | Pending |
 | RL-19 / #86 | Out of scope; not started |
 
 ## RL-01 — tokens and bundled fonts
@@ -743,4 +744,51 @@ Branch: `redline/rl-16-app-icon`, stacked on RL-15.
   SIMD paths can differ across CPU architectures, so CI only probes the committed
   PNGs.
 - Alternate icons (RL-19) remain out of scope.
+
+## RL-17 — App Store screenshot pipeline and submission doc
+
+Branch: `redline/rl-17-store-screenshots`, stacked on RL-16.
+
+- `docs/release/screenshots/frames.html` reproduces Store01–06: headline (display 64),
+  wordmark or HUD eyebrow, the frame's background and single motif, the 324 × 678
+  bezel with Dynamic Island, and the phone bleeding toward the bottom. It also has an
+  iPad landscape layout with the same headline system and a 4:3 landscape bezel. It
+  uses the bundled fonts from `docs/design/redline-v1/static/fonts/`.
+- `render.cjs` (Playwright) composites `captures/iphone/01–06.png` and
+  `captures/ipad/01–06.png` at exact App Store Connect sizes. It re-encodes each PNG
+  as 8-bit RGB without alpha, and fails on a missing capture, a transparent pixel, a
+  wrong size, or "Hot Wheels"/"Mattel" text in a frame.
+- **Sizes checked against App Store Connect (October 2026):** the iPhone requirement
+  is now the Dynamic Island *medium* display, 1206 × 2622 (1179 × 2556 also
+  accepted); 6.9" 1320 × 2868 is optional; iPad 13" is required while iPad is
+  supported (2752 × 2064 landscape). The mockups' 6.7" 1290 × 2796 is no longer
+  the required size.
+- `sample-captures.cjs` makes stand-in captures from the Expo web build at those
+  device pixel sizes, so the pipeline can be verified without a simulator.
+- `docs/release/app-store-submission.md`: a new screenshot section (sizes, the final
+  six-frame order and captions, reconciliation with the old lineup/tournament/TV
+  set, capture and no-Mattel-marks rules, CC BY-SA guidance). The review notes now
+  point at the RL-14 Settings layout (Start in demo mode, portal card), and
+  "Achievements" reads "Trophy case".
+
+### Checks and visual evidence
+
+- One run over stand-in captures rendered all 18 frames (6 × three sizes), each the
+  exact pixel size and RGB without alpha.
+- [iPhone frames vs the reference PNGs](review/rl-17/iphone-vs-reference.jpg),
+  [iPad landscape set](review/rl-17/ipad-landscape.jpg), and a
+  [full-size 1206 × 2622 frame](review/rl-17/04-beat-your-best-1206x2622.jpg).
+
+### Decisions and deviations
+
+- The iPhone stage keeps the artboard's 430 pt width and grows in height to the
+  output aspect, so every element keeps its artboard position.
+- iPad uses one landscape set: App Store Connect accepts either orientation, and
+  landscape shows the two-pane layout.
+- Lineup, tournament and TV-preview shots leave the set. They are covered by the
+  description copy and the iPad Race frames; TV keeps its legacy look in V1.
+- Stand-in captures come from review fixtures without safe-area insets, so some
+  clip under the island. Real simulator captures include the status bar.
+- Follow-up: capture the real set on the iPhone 17 Pro and iPad Pro 13" simulators
+  against the release build, then render.
 
