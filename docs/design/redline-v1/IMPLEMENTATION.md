@@ -17,8 +17,9 @@ is the source of truth for merge status. Each issue has its own branch and PR.
 | RL-09 / #76 | [PR #96](https://github.com/burkben/HotWheelsID/pull/96) |
 | RL-10 / #77 | [PR #97](https://github.com/burkben/HotWheelsID/pull/97) |
 | RL-11 / #78 | [PR #98](https://github.com/burkben/HotWheelsID/pull/98) |
-| RL-12 / #79 | Implemented; review evidence below |
-| RL-13–RL-18 / #80–#85 | Pending, in order |
+| RL-12 / #79 | [PR #99](https://github.com/burkben/HotWheelsID/pull/99) |
+| RL-13 / #80 | Implemented; review evidence below |
+| RL-14–RL-18 / #81–#85 | Pending, in order |
 | RL-19 / #86 | Out of scope; not started |
 
 ## RL-01 — tokens and bundled fonts
@@ -565,4 +566,47 @@ Branch: `redline/rl-12-history`, stacked on RL-11.
 - Heat cells and totals come from real sessions. The mockup's sample counts don't
   match its own list, so the fixture's cells differ from the PNG.
 - When two days tie for busiest, the label names the most recent.
+
+## RL-13 — More, Trophy case and unlock banner
+
+Branch: `redline/rl-13-trophies`, stacked on RL-12.
+
+- More: `ScreenHeader` "MORE", Racing tools / App `SectionHeader`s, square `pitLane`
+  groups with flame icons, Barlow titles, secondary subtitles and chevrons. The row
+  formerly titled Achievements is now "Trophy case" and carries the caution/chalk
+  kerb progress and an "8/13" count with a spoken "8 of 13 trophies unlocked".
+- Trophy case: back link "‹ More", "TROPHY CASE" (display 46) with the caution count,
+  an 8 pt caution/chalk `Kerb` progress bar (one progressbar label), the LATEST
+  UNLOCK panel (featured flame `Medallion`, faint flames; hidden when nothing is
+  unlocked), and SPEED / RACING / GARAGE groups with counts and a 4-column
+  medallion grid. Locked tiles show HUD progress ("BEST 247/290", "64/100").
+- `achievements/icons.ts` maps every catalog id to the SPEC §4.10
+  MaterialCommunityIcons glyph. A test asserts every id has an icon and every icon
+  exists in the bundled glyph map. The catalog's emoji `icon` field is unchanged.
+- `TrophyUnlockBanner` (root layout, hidden on `/tv`) subscribes to the achievements
+  store and shows each id the store stamps from `newlyUnlockedIds()`. It ignores the
+  startup hydrate and resets. Banners queue, drop in with a spring, hold 2.5 s and
+  rise out, and are static under reduce motion. Each one fires a gated success
+  haptic and an announcement, and tapping opens the trophy case.
+- Pure, tested `achievements/trophyPresentation.ts`: groups, progress lines, latest
+  unlock, unlock diffing and the count label. Engine and store APIs unchanged.
+
+### Checks and visual evidence
+
+- Typecheck, zero-warning lint, web export and all tests pass.
+- [Captures and browser checks](review/rl-13/README.md): reference comparison,
+  nothing-unlocked state, a real banner, More, and the demo trophy case. On the
+  live demo, every real unlock (2–4 per run; demo speeds are random) showed exactly
+  one banner, in order, at least 3 s apart, matching the More count. No console
+  errors.
+
+### Decisions and deviations
+
+- Medallions follow catalog order and the SPEC icon table, so a few positions and
+  glyphs differ from the mockup (e.g. Sub-3 Lap is last in RACING).
+- When one stats refresh unlocks several trophies at the same time, the later
+  catalog entry is the "latest", matching the last banner shown.
+- Web always runs the demo portal, so fixture captures hide the live banner.
+- The More row title changed from "Achievements" to "Trophy case" to match the
+  screen it opens. RL-17 updates the release doc's wording.
 

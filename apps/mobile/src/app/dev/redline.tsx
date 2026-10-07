@@ -51,8 +51,14 @@ const History: ComponentType | null = __DEV__
   ? require('@/components/redline/dev/HistoryGallery').HistoryGallery
   : null;
 
+const Trophies: ComponentType | null = __DEV__
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  ? require('@/components/redline/dev/TrophyGallery').TrophyGallery
+  : null;
+
 export default function RedlineGalleryRoute() {
   const { section } = useLocalSearchParams<{ section?: string }>();
+  if (section === 'trophies' && Trophies) return <Trophies />;
   if (section === 'history' && History) return <History />;
   if (section === 'garage' && Garage) return <Garage />;
   if (section === 'results' && Results) return <Results />;

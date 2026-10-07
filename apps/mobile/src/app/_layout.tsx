@@ -9,6 +9,7 @@ import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 
 import { PortalControllerProvider } from '@/portal/PortalControllerProvider';
+import { TrophyUnlockBanner } from '@/achievements/components/TrophyUnlockBanner';
 import { initPersistence } from '@/store/persistence/initPersistence';
 import { redlineFonts } from '@/theme/redlineFonts';
 import { RedlineFontContext } from '@/theme/RedlineFontContext';
@@ -68,6 +69,7 @@ export default function RootLayout() {
               <Stack.Screen name="settings" />
               <Stack.Screen name="credits" />
             </Stack>
+            <TrophyUnlockBanner />
             <StatusBar style="light" />
           </PortalControllerProvider>
         </SafeAreaProvider>
