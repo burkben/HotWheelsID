@@ -12,3 +12,4 @@ export { Kerb, Checker, RakeLines, TrackLane } from './Patterns';
 export { RacePlate, Roundel, Wordmark } from './Marks';
 export { CarSilhouette, Chevrons, FlameTongues, SpeedStreaks, Medallion } from './Illustrations';
 export { StartLights } from './StartLights';
+export { Notice } from './Notice';

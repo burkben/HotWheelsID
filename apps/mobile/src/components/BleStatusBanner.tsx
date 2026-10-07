@@ -8,12 +8,16 @@
  * shortcut give them a way out. The phase→copy mapping lives in the pure
  * {@link bleStatusBanner} so it can be unit-tested without a renderer.
  */
-import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
+import { Linking, StyleSheet, View } from "react-native";
 
 import { bleStatusBanner } from "@/ble/bleStatus";
 import type { BlePhase } from "@/ble/types";
-import { colors, fontSize, fontWeight, radiusT, spacing } from "@/theme/tokens";
+import { colorsR } from "@/theme/tokens";
+import { RaceButton } from "./redline/RaceButton";
+import { RText } from "./redline/RText";
+import { decorative } from "./redline/decorative";
 
+/** Redline banner (SPEC §4.12): pitLane, a 3 pt tone bar, HUD eyebrow and body. */
 export function BleStatusBanner({
   phase,
   onRetry,
@@ -24,45 +28,34 @@ export function BleStatusBanner({
   const banner = bleStatusBanner(phase);
   if (!banner) return null;
 
-  const accent = banner.tone === "danger" ? colors.fault : colors.caution;
+  const accent = banner.tone === "danger" ? colorsR.redFlag : colorsR.caution;
 
   return (
-    <View
-      style={[styles.banner, { borderColor: accent }]}
-      accessibilityRole="alert"
-      accessibilityLiveRegion="polite"
-    >
-      <Text style={styles.title}>{banner.title}</Text>
-      <Text style={styles.body}>{banner.body}</Text>
+    <View style={styles.banner} accessibilityRole="alert" accessibilityLiveRegion="polite">
+      <View {...decorative} style={[styles.bar, { backgroundColor: accent }]} />
+      <RText variant="chip" style={[styles.eyebrow, { color: accent }]}>{banner.title}</RText>
+      <RText variant="bodySmall" style={styles.body}>{banner.body}</RText>
       {banner.openSettings && (
-        <Pressable
+        <RaceButton
+          variant="ghost"
+          compact
+          label="Open Settings"
+          accessibilityLabel="Open device settings"
           onPress={() => {
             Linking.openSettings().catch(() => {});
           }}
-          accessibilityRole="button"
-          accessibilityLabel="Open device settings"
-          style={({ pressed }) => [
-            styles.button,
-            { borderColor: accent },
-            pressed && styles.buttonPressed,
-          ]}
-        >
-          <Text style={[styles.buttonText, { color: accent }]}>Open Settings</Text>
-        </Pressable>
+          style={styles.button}
+        />
       )}
       {!banner.openSettings && phase !== "unsupported" && onRetry && (
-        <Pressable
-          onPress={onRetry}
-          accessibilityRole="button"
+        <RaceButton
+          variant="ghost"
+          compact
+          label="Try again"
           accessibilityLabel="Retry portal connection"
-          style={({ pressed }) => [
-            styles.button,
-            { borderColor: accent },
-            pressed && styles.buttonPressed,
-          ]}
-        >
-          <Text style={[styles.buttonText, { color: accent }]}>Try again</Text>
-        </Pressable>
+          onPress={onRetry}
+          style={styles.button}
+        />
       )}
     </View>
   );
@@ -72,38 +65,15 @@ const styles = StyleSheet.create({
   banner: {
     width: "100%",
     maxWidth: 420,
-    backgroundColor: colors.panelSolid,
-    borderWidth: 1,
-    borderRadius: radiusT.card,
-    padding: spacing(4),
-    gap: spacing(2),
+    backgroundColor: colorsR.pitLane,
+    paddingTop: 15,
+    paddingHorizontal: 14,
+    paddingBottom: 14,
+    gap: 6,
+    overflow: "hidden",
   },
-  title: {
-    color: colors.ink,
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.bold,
-  },
-  body: {
-    color: colors.inkSecondary,
-    fontSize: fontSize.sm,
-    lineHeight: 19,
-  },
-  button: {
-    minHeight: 44,
-    justifyContent: "center",
-    marginTop: spacing(1),
-    alignSelf: "flex-start",
-    backgroundColor: colors.panelInset,
-    borderWidth: 1,
-    borderRadius: radiusT.card,
-    paddingVertical: spacing(2.5),
-    paddingHorizontal: spacing(4),
-  },
-  buttonText: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.bold,
-  },
-  buttonPressed: {
-    opacity: 0.7,
-  },
+  bar: { position: "absolute", top: 0, left: 0, right: 0, height: 3 },
+  eyebrow: { fontSize: 11, lineHeight: 14 },
+  body: { color: colorsR.inkSecondary },
+  button: { marginTop: 4, marginLeft: 4 },
 });

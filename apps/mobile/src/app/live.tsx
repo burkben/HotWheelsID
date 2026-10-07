@@ -6,25 +6,21 @@
  * decoded by the shared `@redlineid/protocol` pipeline. This screen never creates
  * a second BLE client, so opening diagnostics cannot interrupt Speed or Race.
  *
- * Web/Simulator: there is no BLE radio, so this screen renders a clear notice and
- * a clear notice. The root controller never requires the native BLE module there.
+ * Web/Simulator: there is no BLE radio, so this screen renders a clear notice.
+ * The root controller never requires the native BLE module there.
+ * Redline layout (SPEC §4.12): ScreenHeader, notices, stat cells and a log of
+ * timing-style rows with a tone tag per event type.
  */
 import { useMemo } from "react";
-import {
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 
 import { PORTAL_NAME } from "@redlineid/protocol";
 
-import type { BleLogEntry, BlePhase } from "@/ble/types";
-import { StatusPill } from "@/components/StatusPill";
+import type { BlePhase } from "@/ble/types";
+import { LiveLogRow } from "@/components/LiveLogRow";
+import { Notice, RaceButton, RText, ScreenHeader, SectionHeader, StatCell, StatRow, StatusChip } from "@/components/redline";
 import {
   usePortalController,
   usePortalControllerActions,
@@ -32,7 +28,7 @@ import {
 import { usePortalStore } from "@/store/portalStore";
 import { useSettingsStore } from "@/store/settingsStore";
 import { formatBestSpeed, formatSpeedValue, speedUnitLabel } from "@/speed/format";
-import { colors, fontSize, fontWeight, radiusT, spacing } from "@/theme/tokens";
+import { colorsR, fontR } from "@/theme/tokens";
 
 const PHASE_LABEL: Record<BlePhase, string> = {
   idle: "Idle",
@@ -50,11 +46,6 @@ const PHASE_LABEL: Record<BlePhase, string> = {
   error: "Error",
 };
 
-function logColor(level: BleLogEntry["level"]): string {
-  if (level === "error") return colors.fault;
-  if (level === "event") return colors.electric;
-  return colors.inkSecondary;
-}
 
 export default function LiveScreen() {
   const insets = useSafeAreaInsets();
@@ -95,127 +86,106 @@ export default function LiveScreen() {
   }, [car, lastSpeed, isLive, speedUnit, speedCalibration]);
 
   return (
-    <View style={styles.screen}>
-      <View style={[styles.header, { paddingTop: insets.top + spacing(2) }]}>
-        <Pressable
-          onPress={() => router.back()}
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-          style={({ pressed }) => [styles.backBtn, pressed && styles.pressed]}
-        >
-          <Text style={styles.backText}>‹ Back</Text>
-        </Pressable>
-        <StatusPill
-          connection={connection}
-          controlStatus={controlStatus}
-          phase={controllerPhase}
-          mode={mode}
-          manuallyDisconnected={manuallyDisconnected}
-          onConnect={() => void controller.connect()}
-          onRetry={() => void controller.retry()}
-          onDisconnect={() => void controller.disconnect()}
-        />
-      </View>
-
+    <View style={[styles.screen, { paddingTop: insets.top + 4 }]}>
       <ScrollView
         style={styles.body}
-        contentContainerStyle={[styles.bodyContent, { paddingBottom: insets.bottom + spacing(6) }]}
+        contentContainerStyle={[styles.bodyContent, { paddingBottom: insets.bottom + 32 }]}
       >
-        <Text style={styles.title}>Live portal</Text>
-        <Text style={styles.subtitle}>
+        <ScreenHeader
+          title="Live portal"
+          backLabel="More"
+          onBack={() => (router.canGoBack() ? router.back() : router.navigate("/more"))}
+          right={
+            <StatusChip
+              connection={connection}
+              controlStatus={controlStatus}
+              phase={controllerPhase}
+              mode={mode}
+              manuallyDisconnected={manuallyDisconnected}
+              onConnect={() => void controller.connect()}
+              onRetry={() => void controller.retry()}
+              onDisconnect={() => void controller.disconnect()}
+            />
+          }
+        />
+        <RText variant="bodySmall" style={styles.subtitle}>
           Real Bluetooth · scans for “{PORTAL_NAME}”, connects, and streams every decoded event.
           Modern firmware is unlocked automatically via the MPID handshake (P-256 ECDH).
-        </Text>
+        </RText>
 
         {!bleReady && (
-          <View style={styles.notice} accessibilityRole="alert">
-            <Text style={styles.noticeTitle}>
-              {isWeb ? "Bluetooth isn’t available on the web" : "No Bluetooth radio here"}
-            </Text>
-            <Text style={styles.noticeBody}>
-              {isWeb
-                ? "Open this screen in a custom dev build on a physical iPhone to connect to the portal."
-                : "The iOS Simulator has no BLE radio. Run a dev build on a physical iPhone (npx expo run:ios --device) to connect."}
-            </Text>
-          </View>
+          <Notice
+            alert
+            title={isWeb ? "Bluetooth isn’t available on the web" : "No Bluetooth radio here"}
+            body={isWeb
+              ? "Open this screen in a custom dev build on a physical iPhone to connect to the portal."
+              : "The iOS Simulator has no BLE radio. Run a dev build on a physical iPhone (npx expo run:ios --device) to connect."}
+          />
         )}
 
         {bleReady && mode === "demo" && (
-          <View style={styles.notice}>
-            <Text style={styles.noticeTitle}>Demo mode is active</Text>
-            <Text style={styles.noticeBody}>
-              Switch to Live BLE to collect real portal diagnostics. This also updates your startup
-              preference.
-            </Text>
-            <Pressable
-              onPress={() => void controller.setMode("live")}
-              accessibilityRole="button"
+          <Notice
+            tone="info"
+            title="Demo mode is active"
+            body="Switch to Live BLE to collect real portal diagnostics. This also updates your startup preference."
+          >
+            <RaceButton
+              variant="ghost"
+              compact
+              label="USE LIVE BLE"
               accessibilityLabel="Switch to live Bluetooth"
-              style={({ pressed }) => [styles.modeButton, pressed && styles.pressed]}
-            >
-              <Text style={styles.modeButtonText}>Use Live BLE</Text>
-            </Pressable>
-          </View>
+              onPress={() => void controller.setMode("live")}
+              style={styles.noticeButton}
+            />
+          </Notice>
         )}
 
         {phase === "locked" && (
-          <View style={styles.noticeError} accessibilityRole="alert">
-            <Text style={styles.noticeTitle}>Portal firmware unsupported</Text>
-            <Text style={styles.noticeBody}>
-              This portal connected, but it exposes neither the legacy control service nor a usable
-              MPID auth handshake, so no live events are available from this unit. The log below
-              lists the services it did expose. Verified independently with python/diag_portal.py on
-              desktop.
-            </Text>
-          </View>
+          <Notice
+            alert
+            tone="danger"
+            title="Portal firmware unsupported"
+            body="This portal connected, but it exposes neither the legacy control service nor a usable MPID auth handshake, so no live events are available from this unit. The log below lists the services it did expose. Verified independently with python/diag_portal.py on desktop."
+          />
         )}
 
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryLabel}>Status</Text>
-          <Text style={styles.summaryValue}>{summary}</Text>
-          <View style={styles.statRow}>
-            <MiniStat
-              label="Best"
-              value={
-                bestMph > 0
-                  ? `${formatBestSpeed(bestMph, { unit: speedUnit, calibration: speedCalibration })} ${speedUnitLabel(speedUnit)}`
-                  : "—"
-              }
+        <View style={styles.summary}>
+          <RText variant="bodySmall" style={styles.summaryText} accessibilityLabel={`Status: ${summary}`}>{summary}</RText>
+          <StatRow>
+            <StatCell
+              label="BEST"
+              value={bestMph > 0 ? formatBestSpeed(bestMph, { unit: speedUnit, calibration: speedCalibration }) : "—"}
+              unit={bestMph > 0 ? speedUnitLabel(speedUnit).toUpperCase() : undefined}
+              color={colorsR.caution}
+              size="md"
             />
-            <MiniStat label="Passes" value={passes.length.toString()} />
-            <MiniStat label="Adapter" value={PHASE_LABEL[phase]} />
-          </View>
+            <StatCell label="PASSES" value={passes.length.toString()} size="md" />
+            <StatCell label="ADAPTER" value={PHASE_LABEL[phase]} size="md" />
+          </StatRow>
         </View>
 
-        <View style={styles.logHeaderRow}>
-          <Text style={styles.logHeader}>Event log</Text>
-          {logs.length > 0 && (
+        <SectionHeader
+          title="Event log"
+          count={logs.length > 0 ? logs.length : undefined}
+          right={logs.length > 0 ? (
             <Pressable
               onPress={controller.clearLogs}
-              hitSlop={8}
               accessibilityRole="button"
               accessibilityLabel="Clear portal event log"
+              style={({ pressed }) => [styles.clear, pressed && styles.pressed]}
             >
-              <Text style={styles.clearText}>Clear</Text>
+              <RText style={styles.clearText}>Clear</RText>
             </Pressable>
-          )}
-        </View>
+          ) : undefined}
+        />
 
-        <View style={styles.logCard}>
+        <View style={styles.log}>
           {logs.length === 0 ? (
-            <Text style={styles.logEmpty}>
+            <RText variant="bodySmall" style={styles.logEmpty}>
               No events yet. Connect, then place a car on the portal and roll it through the gate.
-            </Text>
+            </RText>
           ) : (
-            logs.map((entry) => (
-              <View key={entry.id} style={styles.logRow}>
-                <Text style={styles.logTime}>{formatTime(entry.at)}</Text>
-                <Text style={[styles.logMessage, { color: logColor(entry.level) }]}>
-                  {entry.message}
-                </Text>
-              </View>
-            ))
+            logs.map((entry) => <LiveLogRow key={entry.id} entry={entry} />)
           )}
         </View>
       </ScrollView>
@@ -223,190 +193,18 @@ export default function LiveScreen() {
   );
 }
 
-function MiniStat({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.miniStat}>
-      <Text style={styles.miniLabel}>{label}</Text>
-      <Text style={styles.miniValue} numberOfLines={1}>
-        {value}
-      </Text>
-    </View>
-  );
-}
-
-function formatTime(ms: number): string {
-  const d = new Date(ms);
-  const pad = (n: number) => n.toString().padStart(2, "0");
-  return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-}
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.void,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: spacing(5),
-    paddingBottom: spacing(2),
-  },
-  backBtn: {
-    paddingVertical: spacing(1),
-    paddingRight: spacing(2),
-  },
-  backText: {
-    color: colors.electric,
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.medium,
-  },
-  body: {
-    flex: 1,
-  },
-  bodyContent: {
-    paddingHorizontal: spacing(5),
-    gap: spacing(4),
-  },
-  title: {
-    color: colors.ink,
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.heavy,
-  },
-  subtitle: {
-    color: colors.inkSecondary,
-    fontSize: fontSize.sm,
-    lineHeight: 19,
-    marginTop: -spacing(2),
-  },
-  notice: {
-    backgroundColor: colors.panelSolid,
-    borderColor: colors.caution,
-    borderWidth: 1,
-    borderRadius: radiusT.card,
-    padding: spacing(4),
-    gap: spacing(2),
-  },
-  noticeError: {
-    backgroundColor: colors.panelSolid,
-    borderColor: colors.fault,
-    borderWidth: 1,
-    borderRadius: radiusT.card,
-    padding: spacing(4),
-    gap: spacing(2),
-  },
-  noticeTitle: {
-    color: colors.ink,
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.bold,
-  },
-  noticeBody: {
-    color: colors.inkSecondary,
-    fontSize: fontSize.sm,
-    lineHeight: 19,
-  },
-  summaryCard: {
-    backgroundColor: colors.panelSolid,
-    borderColor: colors.hairline,
-    borderWidth: 1,
-    borderRadius: radiusT.card,
-    padding: spacing(4),
-    gap: spacing(3),
-  },
-  summaryLabel: {
-    color: colors.inkMuted,
-    fontSize: fontSize.xs,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-  summaryValue: {
-    color: colors.ink,
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.medium,
-  },
-  statRow: {
-    flexDirection: "row",
-    gap: spacing(3),
-  },
-  miniStat: {
-    flex: 1,
-    backgroundColor: colors.panelInset,
-    borderColor: colors.hairline,
-    borderWidth: 1,
-    borderRadius: radiusT.field,
-    paddingVertical: spacing(2.5),
-    paddingHorizontal: spacing(2),
-    alignItems: "center",
-    gap: 2,
-  },
-  miniLabel: {
-    color: colors.inkMuted,
-    fontSize: fontSize.xs,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-  miniValue: {
-    color: colors.ink,
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.bold,
-  },
-  modeButton: {
-    alignSelf: "flex-start",
-    marginTop: spacing(2),
-    borderRadius: radiusT.card,
-    paddingVertical: spacing(2.5),
-    paddingHorizontal: spacing(4),
-    backgroundColor: colors.flame,
-  },
-  modeButtonText: {
-    color: colors.void,
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.bold,
-  },
-  pressed: {
-    opacity: 0.7,
-  },
-  logHeaderRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  logHeader: {
-    color: colors.ink,
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.bold,
-  },
-  clearText: {
-    color: colors.electric,
-    fontSize: fontSize.sm,
-  },
-  logCard: {
-    backgroundColor: colors.panelSolid,
-    borderColor: colors.hairline,
-    borderWidth: 1,
-    borderRadius: radiusT.card,
-    padding: spacing(3),
-    gap: spacing(2),
-    minHeight: 120,
-  },
-  logEmpty: {
-    color: colors.inkMuted,
-    fontSize: fontSize.sm,
-    lineHeight: 19,
-  },
-  logRow: {
-    flexDirection: "row",
-    gap: spacing(3),
-  },
-  logTime: {
-    color: colors.inkMuted,
-    fontSize: fontSize.xs,
-    fontVariant: ["tabular-nums"],
-    paddingTop: 1,
-    minWidth: 64,
-  },
-  logMessage: {
-    flex: 1,
-    fontSize: fontSize.sm,
-  },
+  screen: { flex: 1, backgroundColor: colorsR.asphalt },
+  body: { flex: 1 },
+  bodyContent: { paddingHorizontal: 16, gap: 14 },
+  subtitle: { color: colorsR.inkSecondary, marginTop: -4 },
+  noticeButton: { marginTop: 4, marginLeft: 4 },
+  summary: { gap: 8 },
+  summaryText: { color: colorsR.chalk },
+  clear: { minHeight: 44, minWidth: 44, alignItems: "flex-end", justifyContent: "center" },
+  clearText: { fontFamily: fontR.bodySemi, color: colorsR.electric },
+  pressed: { opacity: 0.7 },
+  log: { gap: 2, minHeight: 120 },
+  logEmpty: { color: colorsR.inkMuted, backgroundColor: colorsR.pitLane, padding: 14 },
 });
