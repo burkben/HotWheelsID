@@ -4,7 +4,7 @@
  * Demo) in Settings, then portal passes flow through the shared portal store.
  */
 import { useCallback, useEffect, useState } from "react";
-import { Modal, Pressable, ScrollView, Text, View } from "react-native";
+import { Modal, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useReducedMotion } from "react-native-reanimated";
 
@@ -17,8 +17,8 @@ import {
   PortalRecovery,
   PortalStatusPill,
 } from "@/race/components/PortalReadiness";
-import { LapList, LiveLapList, RaceProgress } from "@/race/components/RaceProgress";
-import { RaceResults } from "@/race/components/RaceResults";
+import { LiveLapList, RaceProgress } from "@/race/components/RaceProgress";
+import { RaceResults, ResultsLapChart } from "@/race/components/RaceResults";
 import { RaceSetup } from "@/race/components/RaceSetup";
 import {
   BracketCard,
@@ -26,7 +26,7 @@ import {
   TournamentToggle,
 } from "@/race/components/RaceTournament";
 import { raceStyles as styles } from "@/race/components/styles";
-import { LAP_OPTIONS, type LapOption } from "@/race/raceEngine";
+import { LAP_OPTIONS, type LapOption, type RaceResult } from "@/race/raceEngine";
 import {
   addRacer,
   advanceLineup,
@@ -58,8 +58,11 @@ import { catalogIdForUid, useIdentityStore } from "@/store/identityStore";
 import { usePortalStore } from "@/store/portalStore";
 import { useRaceStore } from "@/store/raceStore";
 import { useSettingsStore } from "@/store/settingsStore";
-import { spacing } from "@/theme/tokens";
-import { ScreenHeader } from "@/components/redline";
+import { colorsR, spacing } from "@/theme/tokens";
+import { RaceButton, ScreenHeader } from "@/components/redline";
+
+import { useGarageStore } from '@/store/garageStore';
+import { raceTopSpeed, type RaceStartSnapshot } from '@/race/resultsPresentation';
 
 /** Heat times accumulated per match until both racers are in and it can be decided. */
 type MatchTimes = Record<string, { a?: number; b?: number }>;
@@ -123,8 +126,15 @@ export default function RaceScreen() {
     [identifications, links, seed],
   );
 
+  const [startSnapshot, setStartSnapshot] = useState<RaceStartSnapshot | null>(null);
+  const [resultSpeed, setResultSpeed] = useState<{ result: RaceResult; speed: number | null } | null>(null);
+  useEffect(() => {
+    if (race.result) setResultSpeed({ result: race.result, speed: raceTopSpeed(usePortalStore.getState().passes, startSnapshot, race.result.finishedAt) });
+  }, [race.result, startSnapshot]);
   const [showGo, setShowGo] = useState(false);
   const startRacingWithGo = useCallback(() => {
+    const carUid = useRaceStore.getState().race.carUid;
+    setStartSnapshot({ carUid, previousBest: carUid ? useGarageStore.getState().cars.find(car => car.uid === carUid)?.bestLap ?? null : undefined, at: Date.now(), lastPassId: usePortalStore.getState().passes[0]?.id ?? null });
     startRacing();
     setShowGo(true);
   }, [startRacing]);
@@ -293,40 +303,15 @@ export default function RaceScreen() {
         tournament={tournament}
         nameFor={nameForRacer}
         activeMatch={activeMatch}
+        matchTimes={matchTimes}
       />
     ) : null;
 
   const tournamentControls =
     race.phase === "idle" && inTournament ? (
-      <View style={styles.actionRow}>
-        <Pressable
-          onPress={onResetTournament}
-          accessibilityRole="button"
-          accessibilityLabel="End tournament"
-          style={({ pressed }) => [
-            styles.ghostBtn,
-            styles.flex1,
-            pressed && styles.pressed,
-          ]}
-        >
-          <Text style={styles.ghostBtnText}>End tournament</Text>
-        </Pressable>
-        <Pressable
-          onPress={onResumeTournament}
-          accessibilityRole="button"
-          accessibilityLabel="Race the next heat"
-          style={({ pressed }) => [
-            styles.primaryBtn,
-            styles.flex1,
-            pressed && styles.pressed,
-          ]}
-        >
-          <Text style={styles.primaryBtnText}>
-            {activeMatch
-              ? `Race ${nameForRacer(runnerId(activeMatch, matchTimes))}`
-              : "Resume"}
-          </Text>
-        </Pressable>
+      <View style={{ gap: 14, width: '100%' }}>
+        <RaceButton label="End tournament" variant="ghost" fullWidth onPress={onResetTournament} />
+        <RaceButton label={activeMatch ? `Race ${nameForRacer(runnerId(activeMatch, matchTimes))}` : 'Resume'} accessibilityLabel="Race the next heat" fullWidth onPress={onResumeTournament} />
       </View>
     ) : null;
 
@@ -341,6 +326,7 @@ export default function RaceScreen() {
         liveCarUid={liveCarUid}
         resolveCar={resolveCar}
         canStart={canStart}
+        hideStartAction
         startLabel={tournamentArmed ? "Start tournament" : undefined}
         tournamentSlot={tournamentSlot}
         onModeChange={setMode}
@@ -403,6 +389,9 @@ export default function RaceScreen() {
         nextRacerName={tournament ? null : (nextRacer?.name ?? null)}
         primaryActionLabel={tournament ? "Continue" : primaryActionLabel}
         showLaps={!layout.isSplit}
+        previousBest={startSnapshot?.carUid === race.result.carUid ? startSnapshot.previousBest : undefined}
+        topSpeed={resultSpeed?.result === race.result ? resultSpeed.speed : null}
+        modeLabel={tournament ? 'TOURNAMENT' : mode === 'raceNight' ? 'RACE NIGHT' : 'SPRINT'}
         onPrimaryAction={
           tournament
             ? onTournamentContinue
@@ -418,7 +407,7 @@ export default function RaceScreen() {
   const paneLaps = !layout.isSplit ? null : race.phase === "racing" ? (
     <LiveLapList race={race} />
   ) : race.phase === "finished" && race.result ? (
-    <LapList lapTimes={race.result.lapTimes} bestLap={race.result.bestLap} />
+    <ResultsLapChart lapTimes={race.result.lapTimes} bestLap={race.result.bestLap} />
   ) : null;
 
   const leaderboardBlock =
@@ -429,6 +418,10 @@ export default function RaceScreen() {
         onClear={clearLeaderboard}
       />
     ) : null;
+
+  const startFooter = race.phase === 'idle' && !inTournament ? <View style={{ width: '100%', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: colorsR.asphalt, borderTopWidth: 1, borderColor: colorsR.hairline, alignItems: 'center' }}>
+    <View style={{ width: '100%', maxWidth: 620 }}><RaceButton label={tournamentArmed ? 'START TOURNAMENT' : 'START RACE'} accessibilityLabel={tournamentArmed ? 'Start tournament' : mode === 'solo' ? 'Start solo race' : `Start race for ${currentRacerName(lineup, 'next racer')}`} accessibilityHint={canStart ? 'Begins the race countdown' : 'Connect the portal and add a racer before starting'} onPress={tournamentArmed ? onStartTournament : onStart} disabled={!canStart} fullWidth chevron /></View>
+  </View> : null;
 
   // Two panes on a big landscape screen: whatever you're doing *now* on the
   // left, the record of what happened on the right.
@@ -469,18 +462,20 @@ export default function RaceScreen() {
             {leaderboardBlock}
           </ScrollView>
         </View>
+        {startFooter}
       </View>
     );
   }
 
   return (
+    <View style={styles.screen}>
     <ScrollView
       style={styles.screen}
       contentContainerStyle={[
         styles.content,
         {
           paddingTop: spacing(3),
-          paddingHorizontal: race.phase === "racing" ? 16 : spacing(5),
+          paddingHorizontal: 16,
           paddingBottom: insets.bottom + spacing(8),
         },
       ]}
@@ -498,5 +493,7 @@ export default function RaceScreen() {
       {race.phase === "finished" ? bracket : null}
       {leaderboardBlock}
     </ScrollView>
+    {startFooter}
+    </View>
   );
 }

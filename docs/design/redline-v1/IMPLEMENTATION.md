@@ -383,3 +383,47 @@ Branch: `redline/rl-08-race-live`, stacked on RL-07 for an isolated issue diff.
   Native review images use compact JPEG exports for the connector upload limit.
 
 Next: RL-09 results, setup, lineup and tournament. RL-19 remains excluded.
+
+## RL-09 — Race results, setup, lineup and tournament
+
+Branch: `redline/rl-09-race-results`, stacked on RL-08 for an isolated issue diff.
+
+- Reworked `RaceResults` with source checker/FINISH/stamp, three stats, real-ratio
+  lap chart, derived car plate, improvement text, existing share summary and actions.
+  The split layout reuses the same chart. Long numeric cells fit measured space.
+- Added pure `records.ts` and `resultsPresentation.ts`: start-snapshot record
+  comparisons, reliable pass-window speed/fallback, lap ratios, heat ranking and
+  numeric sizing. 28 new tests; existing tests unchanged.
+- The route snapshots the car's old best at GO and captures top speed at finish.
+  No race engine, store shape, settings key or persistence change. Missing snapshots
+  omit records; incomplete pass coverage uses AVG LAP.
+- Restyled setup mode panels, lap chips, inset field and race car; pinned START RACE
+  above the tab dock with existing callbacks. Readiness uses StatusChip; recovery
+  text and Settings action remain available.
+- Lineup panels retain add, assign, reorder, remove and rotate actions. Tournament
+  uses SkewSwitch, actual ranked heat times and caution winner/champion treatments.
+  `TimingRow` adds an optional ranking presentation while retaining its lap defaults.
+
+### Checks and visual evidence
+
+- `npm ci`, typecheck, zero-warning lint, web export, and all 467 mobile plus 69
+  protocol tests pass. Protected areas, TV, dependencies and existing tests untouched.
+- [Eleven captures, reference comparison and reproduction](review/rl-09/README.md).
+  Browser checks cover record variants, AVG LAP, share content, motion/app/OS gates,
+  long times, pinned action geometry, a full solo race, queue reorder/remove/rotation,
+  two tournament heats/champion/reset, and iPad split results with no console errors.
+- Native Simulator results and setup inspected. Physical BLE/car swapping,
+  VoiceOver, share sheet, keyboard avoidance, haptics and sound remain follow-ups.
+
+### Decisions and deviations
+
+- Source checker repeat means 16-point cells, while SPEC says 32-point squares.
+  The exact source visual wins. Chart widths use computed ratios, not sample bars.
+- Record detection uses the start snapshot, never the updated garage record.
+  Speed requires contiguous retained race-window coverage, otherwise AVG LAP.
+- Kept the existing shell, navigation and Done action; only countdown is immersive.
+  Content scrolls and wraps, unknown plates use `?`, and skewed actions are inset.
+- Fixed an OS-reduce-motion hydration snap by initializing motifs at their final
+  positions. Also fixed web truncation of long result and lap values during review.
+
+Next: RL-10 garage trading cards and series filters. RL-19 remains excluded.
