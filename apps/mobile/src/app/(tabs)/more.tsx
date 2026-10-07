@@ -2,13 +2,12 @@
  * More — the overflow tab (issue #29, advances #30). Holds the secondary
  * destinations that don't earn a permanent spot in the bottom tab bar.
  *
- * Restyled to Trackside Telemetry (proposal B): two grouped cards — "Racing
- * tools" (Achievements, Live portal, TV mode) and "App" (Settings, Credits) —
- * each row a 56pt telemetry row: outline icon · title · optional status value ·
- * chevron aligned to the label line. See docs/design/ui-overhaul/02.
+ * Redline (SPEC §4.10, no mockup): two square `pitLane` groups — "Racing tools"
+ * (Trophy case, Live portal, TV mode) and "App" (Settings, Credits) — each row a
+ * flame icon · title · subtitle · optional trophy progress · chevron.
  */
 import type { ComponentProps } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Link } from 'expo-router';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -16,9 +15,11 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { summarize } from '@/achievements/engine';
 import { LinkPressable } from '@/components/LinkPressable';
 import { useAchievementsStore } from '@/store/achievementsStore';
-import { colors, fontSize, fontSizeT, fontWeight, radiusT, spacing } from '@/theme/tokens';
+import { trophyCountLabel } from '@/achievements/trophyPresentation';
+import { colorsR, fontR } from '@/theme/tokens';
 import { useLayout } from '@/layout/useLayout';
-import { ScreenHeader } from '@/components/redline';
+import { Kerb, RText, ScreenHeader, SectionHeader } from '@/components/redline';
+import { decorative } from '@/components/redline/decorative';
 
 type IconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
 type Href = '/achievements' | '/live' | '/tv' | '/settings' | '/credits';
@@ -28,27 +29,28 @@ export default function MoreScreen() {
   const layout = useLayout();
   const unlocked = useAchievementsStore((s) => s.unlocked);
   const { unlockedCount, total } = summarize(unlocked);
+  const gutter = layout.isTablet ? layout.gutter : 16;
 
   return (
-    <View style={[styles.screen, { paddingTop: spacing(2) }]}>
-      <View style={[styles.header, { maxWidth: layout.contentMaxWidth }]}>
+    <View style={[styles.screen, { paddingTop: 8 }]}>
+      <View style={[styles.header, { maxWidth: layout.contentMaxWidth, paddingHorizontal: gutter }]}>
         <ScreenHeader title="More" />
       </View>
 
       <ScrollView
         contentContainerStyle={[
           styles.list,
-          { paddingBottom: insets.bottom + spacing(6), maxWidth: layout.contentMaxWidth },
+          { paddingBottom: insets.bottom + 24, maxWidth: layout.contentMaxWidth, paddingHorizontal: gutter },
         ]}
       >
-        <Text style={styles.groupLabel}>Racing tools</Text>
+        <SectionHeader title="Racing tools" />
         <View style={styles.group}>
           <MoreRow
             href="/achievements"
             icon="trophy-outline"
-            title="Achievements"
-            value={`${unlockedCount}/${total}`}
-            subtitle="Milestones and records"
+            title="Trophy case"
+            subtitle="Achievements, milestones and records"
+            progress={{ unlocked: unlockedCount, total }}
           />
           <Divider />
           <MoreRow
@@ -66,7 +68,7 @@ export default function MoreScreen() {
           />
         </View>
 
-        <Text style={styles.groupLabel}>App</Text>
+        <SectionHeader title="App" />
         <View style={styles.group}>
           <MoreRow
             href="/settings"
@@ -88,7 +90,7 @@ export default function MoreScreen() {
 }
 
 function Divider() {
-  return <View style={styles.divider} />;
+  return <View {...decorative} style={styles.divider} />;
 }
 
 function MoreRow({
@@ -96,89 +98,56 @@ function MoreRow({
   icon,
   title,
   subtitle,
-  value,
+  progress,
 }: {
   href: Href;
   icon: IconName;
   title: string;
   subtitle: string;
-  value?: string;
+  progress?: { unlocked: number; total: number };
 }) {
   return (
     <Link href={href} asChild>
       <LinkPressable
         accessibilityRole="button"
-        accessibilityLabel={value ? `${title}, ${value}` : title}
+        accessibilityLabel={progress ? `${title}, ${trophyCountLabel(progress.unlocked, progress.total)}` : title}
+        accessibilityHint={subtitle}
         contentStyle={({ pressed }) => [styles.row, pressed && styles.pressed]}
       >
-        <MaterialCommunityIcons name={icon} size={21} color={colors.electric} />
+        <MaterialCommunityIcons name={icon} size={22} color={colorsR.flame} />
         <View style={styles.rowMain}>
-          <View style={styles.rowLine}>
-            <Text style={styles.rowTitle} numberOfLines={1}>
-              {title}
-            </Text>
-            {value ? <Text style={styles.rowValue}>{value}</Text> : null}
-            <Text style={styles.chevron}>›</Text>
-          </View>
-          <Text style={styles.rowSubtitle} numberOfLines={1}>
-            {subtitle}
-          </Text>
+          <RText style={styles.rowTitle} numberOfLines={1}>{title}</RText>
+          <RText variant="bodySmall" style={styles.rowSubtitle} numberOfLines={1}>{subtitle}</RText>
+          {progress && progress.total > 0 && (
+            <View {...decorative} style={styles.progressTrack}>
+              <View style={{ width: `${(progress.unlocked / progress.total) * 100}%` }}>
+                <Kerb height={4} stripe={6} colors={[colorsR.caution, colorsR.chalk]} />
+              </View>
+            </View>
+          )}
         </View>
+        {progress && (
+          <RText variant="statValue" style={styles.rowValue}>
+            <RText variant="statValue" style={[styles.rowValue, { color: colorsR.caution }]}>{progress.unlocked}</RText>/{progress.total}
+          </RText>
+        )}
+        <MaterialCommunityIcons name="chevron-right" size={22} color={colorsR.inkMuted} />
       </LinkPressable>
     </Link>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.void },
-  header: {
-    paddingHorizontal: spacing(5),
-    paddingBottom: spacing(3),
-    width: '100%',
-    alignSelf: 'center',
-  },
-  title: { color: colors.ink, fontSize: fontSize.xl, fontWeight: fontWeight.heavy },
-  list: { paddingHorizontal: spacing(5), width: '100%', alignSelf: 'center' },
-  groupLabel: {
-    color: colors.inkMuted,
-    fontSize: fontSize.xs,
-    fontWeight: fontWeight.bold,
-    textTransform: 'uppercase',
-    letterSpacing: 1.2,
-    marginTop: spacing(5),
-    marginBottom: spacing(2),
-    marginLeft: spacing(3),
-  },
-  group: {
-    backgroundColor: colors.panelSolid,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.hairline,
-    borderRadius: radiusT.group,
-    overflow: 'hidden',
-  },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.hairline,
-    marginLeft: spacing(4) + 21 + spacing(4), // label column inset (icon + gap)
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing(4),
-    paddingVertical: spacing(3.5),
-    paddingHorizontal: spacing(4),
-    minHeight: 56,
-  },
-  rowMain: { flex: 1, minWidth: 0 },
-  rowLine: { flexDirection: 'row', alignItems: 'center', gap: spacing(2) },
-  rowTitle: { flex: 1, color: colors.ink, fontSize: fontSize.md, fontWeight: fontWeight.bold },
-  rowValue: {
-    color: colors.inkSecondary,
-    fontSize: fontSizeT.sm,
-    fontWeight: fontWeight.bold,
-    fontVariant: ['tabular-nums'],
-  },
-  rowSubtitle: { color: colors.inkSecondary, fontSize: fontSize.sm, marginTop: 2 },
-  chevron: { color: colors.inkMuted, fontSize: fontSize.xl, fontWeight: fontWeight.medium },
+  screen: { flex: 1, backgroundColor: colorsR.asphalt },
+  header: { paddingBottom: 18, width: '100%', alignSelf: 'center' },
+  list: { width: '100%', alignSelf: 'center', gap: 12 },
+  group: { backgroundColor: colorsR.pitLane, marginBottom: 10 },
+  divider: { height: 1, backgroundColor: colorsR.divider, marginLeft: 16 + 22 + 14 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 12, paddingHorizontal: 16, minHeight: 64 },
+  rowMain: { flex: 1, minWidth: 0, gap: 2 },
+  rowTitle: { fontFamily: fontR.bodySemi, color: colorsR.chalk },
+  rowSubtitle: { color: colorsR.inkSecondary, fontSize: 13, lineHeight: 17 },
+  progressTrack: { height: 4, marginTop: 6, backgroundColor: colorsR.trackGrey, overflow: 'hidden', maxWidth: 160 },
+  rowValue: { fontSize: 16, lineHeight: 20, color: colorsR.inkMuted },
   pressed: { opacity: 0.7 },
 });
