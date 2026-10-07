@@ -1,290 +1,285 @@
 # Redline ID — Design Language
 
-The canonical reference for **how Redline ID looks and feels** — the visual and interaction
-system every screen should follow. It complements [`ui-and-design.md`](ui-and-design.md)
-(screen intent + component plan) and is grounded in the live tokens in
-[`apps/mobile/src/theme/tokens.ts`](../../apps/mobile/src/theme/tokens.ts).
+The canonical reference for **how Redline ID looks and feels**: the visual and interaction
+system every screen follows. Since V1 that system is **Redline**, the motorsport identity
+specified in [`docs/design/redline-v1/SPEC.md`](../design/redline-v1/SPEC.md) and recorded in
+[ADR-0016](../adr/0016-redline-v1-visual-identity.md). This page summarises it and is grounded
+in the live tokens in [`apps/mobile/src/theme/tokens.ts`](../../apps/mobile/src/theme/tokens.ts)
+(the `colorsR` / `fontR` / `radiusR` / `skewR` / `typeR` block).
 
-> **Living document.** When a token or pattern changes in code, update it here too. Where a
-> choice is architectural (e.g. the navigation model), it should also be backed by an
-> [ADR](../adr/). The current navigation/home/connection direction is tracked in the
-> redesign epic (**#28**).
+> **Living document.** When a token or pattern changes in code, update it here and in SPEC.md.
+> Architectural choices are backed by an [ADR](../adr/). Exact visual values (hex, sizes, SVG
+> paths) live in `docs/design/redline-v1/source/*.dc.html`; SPEC.md wins for behaviour, data
+> and accessibility.
 
 ---
 
 ## 1. Personality & principles
 
-Redline ID should feel like an **arcade racing toy brought to life** — bold, fast, and
-legible from across a play mat, friendly to kids but not childish.
+Redline ID is a **race-day instrument** for a toy track: loud, fast, legible from across a
+play mat, and honest about what the portal can measure.
 
-- **The speedometer is the hero.** When a car passes, the gauge feels *alive* (needle snap,
-  glow, flames at high speed). Everything else is in service of that moment.
-- **Glanceable state.** Connection, current car, and last speed are always obvious.
-- **Big, bold, high-contrast.** Large numbers, chunky cards, confident accent color.
-- **Offline-first, no accounts.** Everything works on-device; the only setup is the portal.
-- **It should just work.** Prefer automatic behavior (auto-connect) over buttons the user
-  must hunt for.
-
-> **Trademark note:** Redline ID is an unofficial, **Mattel-unaffiliated** project (see the
-> README disclaimer). Evoke a racing aesthetic — do **not** copy Hot Wheels logos or brand
-> assets.
+1. **Slant means speed.** Display type is italic. Buttons, tags, chips and plates lean
+   (`skewX`). **Numbers never lean**: speeds, times and counts are upright tabular figures.
+2. **One loud colour.** Asphalt underneath, Track Orange (`flame`) on top. Electric blue means
+   fastest lap / link. Caution yellow means record / trophy. Green means connected / go. Red
+   means fault / redline / start lights.
+3. **Trackside kit, used sparingly.** Kerbs, checkers, race plates, start lights, speed
+   streaks, chevrons and flames: one or two per screen, never wallpaper.
+4. **Crisp, not bubbly.** Panels have square corners. Roundness is reserved for pills, plates,
+   light pods and the phone itself.
+5. **Don't invent data.** The portal sees gate crossings only. Projections are labelled
+   ("PACE ESTIMATE"), and missing data falls back (AVG LAP) or is omitted.
+6. **Not a Hot Wheels re-skin.** The product is **Redline ID**. No Mattel logos, wordmarks,
+   flame logos or packaging in UI chrome or store art. The not-affiliated disclaimer stays in
+   Settings and Credits.
 
 ---
 
 ## 2. Color
 
-Dark "night-track" foundation, a flame-orange primary accent, an electric-blue secondary,
-and a semantic green→yellow→red speed scale. All values are the source-of-truth tokens from
-`theme/tokens.ts`.
-
-### Surfaces & structure
+All values are `colorsR` tokens. Text on a `flame`, `caution`, `electric` or `chalk` fill is
+always `asphalt`; never white on orange.
 
 | Token | Hex | Use |
-|-------|-----|-----|
-| `bg` | `#0b0f1a` | App background — deep night track |
-| `surface` | `#111827` | Raised card / panel |
-| `surfaceAlt` | `#0f1626` | Nested rows, ghost buttons, segmented controls |
-| `border` | `#1e2a44` | Hairline borders on cards |
-| `track` | `#1b2540` | Unfilled gauge arc |
+|---|---|---|
+| `asphalt` | `#07090F` | Screen background; dark ink on bright fills |
+| `pitWall` | `#0B0E15` | Tab bar, photo bays, page backgrounds behind boards |
+| `pitLane` | `#111620` | Panels, cards, list groups (default surface) |
+| `inset` | `#0D1119` | Inputs, steppers, locked medallions |
+| `gridBox` | `#1A2230` | Lap-number cells, date tabs, tags |
+| `trackGrey` / `steel` / `barMuted` | `#161C27` / `#232C3B` / `#2E3A4D` | Troughs, OFF switches, muted chart bars |
+| `chalk` | `#F5F7FA` | Primary ink, kerb white, race-plate fill |
+| `inkSecondary` / `inkMuted` | `#A3B1C2` / `#8494A6` | Supporting copy / eyebrows and units (≥ 4.5 : 1 on pitLane) |
+| `inkDisabled` | `#6E7D8E` | Decorative only (dashed unidentified-car outline) |
+| `flame` | `#FF6A13` | **Primary accent**: CTAs, active tab, live state, gauge arc |
+| `electric` | `#2BD1FF` | Fastest lap, links, best-lap ghost |
+| `caution` | `#FFD23F` | Records, NEW BEST, trophies |
+| `greenFlag` / `redFlag` | `#39D98A` / `#FF4D5E` | Connected, GO / faults, redline, start lights |
 
-### Text
-
-| Token | Hex | Use |
-|-------|-----|-----|
-| `textPrimary` | `#ffffff` | Headlines, values, primary labels |
-| `textSecondary` | `#8aa0c6` | Subtitles, supporting copy |
-| `textMuted` | `#6b7a99` | Captions, units, disabled/idle |
-
-### Accents
-
-| Token | Hex | Use |
-|-------|-----|-----|
-| `accent` | `#ff7a1a` | **Primary** — flame orange. Needle, primary buttons, active tab, key emphasis |
-| `accentBlue` | `#26c6ff` | **Secondary** — electric blue. Links/secondary actions, info accents |
-
-### Semantic & speed zones
-
-| Token | Hex | Use |
-|-------|-----|-----|
-| `zoneGreen` / `ok` | `#22c55e` | Slow band · success/connected |
-| `zoneYellow` / `warn` | `#eab308` | Mid band · caution |
-| `zoneRed` / `danger` | `#ef4444` | Fast band · error/destructive |
-| `idle` | `#6b7a99` | Disconnected / neutral |
-
-**Usage rules**
-
-- One **accent** per view as the primary call-to-action; reserve **accentBlue** for
-  secondary/navigational emphasis so the hierarchy stays clear.
-- Never rely on color alone — pair speed zones with **position and labels** (see
-  [§11 Accessibility](#11-accessibility)).
-- Keep large fills on `surface`/`surfaceAlt`; accents are for edges, text, and small fills.
+**Status fills** (chips, badges) are a 0.08–0.15 fill plus a 1 pt border in the same hue
+(`colorsR.status`). The **History heat ramp** `#161C27 → #5A2A0E → #A8460C → #FF6A13` also
+steps in lightness, so it reads without colour. Speed zones keep `speedGauge.zones`
+(0–120 / 120–220 / 220–300) in green, caution and red.
 
 ---
 
 ## 3. Typography
 
-System font stack (San Francisco on iOS). Numbers are the stars — they go big and heavy.
+Three bundled Google Fonts families (SIL OFL 1.1, credited in `THIRD_PARTY_NOTICES.md` and on
+Credits), loaded at start-up with a system-font fallback. Use the `RText` helper with a
+`typeR` variant; on iOS set **only `fontFamily`** (never `fontWeight`/`fontStyle`, which cause
+faux bold/italic).
 
-| Token | Size | Typical use |
-|-------|------|-------------|
-| `display` | 64 | Speedometer readout, race countdown |
-| `xl` | 28 | Screen titles |
-| `lg` | 20 | Stat values, section headers |
-| `md` | 16 | Body, button labels |
-| `sm` | 13 | Subtitles, secondary copy |
-| `xs` | 11 | Captions, units, uppercase eyebrows |
+| Role | Face (`fontR`) | Where |
+|---|---|---|
+| Display | Barlow Condensed Black Italic (`display`) | Wordmark, screen titles, race digits, FINISH, primary buttons |
+| Display-2 | Barlow Condensed ExtraBold Italic (`display800`) | Section titles, car names, ghost buttons, tab labels |
+| HUD | Chakra Petch SemiBold / Bold / Medium | Every number, eyebrows, chips, lap times, units |
+| Body | Barlow Regular / Medium / SemiBold | Reading copy, row labels, hints |
 
-| Weight | Value | Use |
-|--------|-------|-----|
-| `heavy` | 800 | Titles, the speed readout |
-| `bold` | 700 | Buttons, stat values, emphasis |
-| `medium` | 600 | Subtle emphasis |
-| `regular` | 400 | Body |
-
-**Conventions:** uppercase + `letterSpacing: 1` for small eyebrow labels (e.g. stat
-captions "BEST", "PASSES"); `numberOfLines` clamp on values so cards never reflow.
+Key `typeR` sizes: `screenTitle` 52, `gaugeReadout` 84, `heroNumber` 64, `statValue` 30,
+`lapTime` 20, `sectionTitle` 17, `eyebrow` 11, `body` 16, `bodySmall` 14. Display and HUD
+styles are upper-case and carry `tabular-nums`; body copy is sentence case. Body text scales
+with Dynamic Type; display and HUD cap at 1.3×.
 
 ---
 
-## 4. Spacing, radius, elevation
+## 4. Shape, skew, spacing and depth
 
-- **Spacing** — 4-pt base scale via `spacing(n) = n * 4`. Common rhythm: `spacing(3)` (12)
-  inside cards, `spacing(5)` (20) between major blocks. Content max width **420**, centered.
-- **Radius** — `sm` 8 · `md` 12 (cards, buttons) · `lg` 16 · `xl` 24 · `pill` 999
-  (toggles, status pill, FAB).
-- **Elevation & glow** — depth comes from `surface` + 1px `border`, not heavy shadows. Use a
-  soft **accent glow** to signal "active/alive" (e.g. a new best, the connected pill, a
-  hero CTA) rather than drop shadows everywhere. Reusable presets live in `theme/tokens.ts`
-  as `elevation`: `card` (a subtle ambient lift so a card reads as its own object above the
-  night-track bg), `accentGlow` (flame-orange "alive" halo — the on-portal car, a best-speed
-  hero, a selected casting), and `blueGlow` (electric-blue, for secondary emphasis). For a
-  raised/showcase surface, pair a glow with `colors.surfaceRaised`; for a soft selected fill
-  use the translucent `colors.accentSoft` / `accentBlueSoft` washes.
+- **Radius** (`radiusR`): panels **0**; plates 6–10; light pods 14; pills 999.
+- **Skew** (`skewR`): −12° buttons, tags, chips, switches; −10° plates, chart bars and heat
+  cells; −14° corner ribbons; −20° lap segments; −24° the active-tab indicator. A skewed
+  container counter-skews its content (`SkewBox`) so text stays upright. Full-width skewed
+  buttons are inset by `height × tan(12°)` per side.
+- **Spacing:** screen gutter 16 (iPad uses `useLayout().gutter`), panel padding 12–14, list
+  rows 54 tall, stat cells 2 apart on asphalt (reads as a hairline grid).
+- **Depth:** no drop shadows on panels. Glow marks a live state only: the gauge arc, the
+  on-portal garage card, lit start lights and connected dots. Accent "top bars" are real 3–5 pt
+  `View`s, not inset shadows.
 
 ---
 
-## 5. Iconography
+## 5. Trackside kit and iconography
 
-Navigation icons use **MaterialCommunityIcons** (`@expo/vector-icons`), tinted with the
-theme so they pick up the active/inactive tab color. Keep a consistent vocabulary so an
-icon always means the same thing:
+Motif primitives live in `apps/mobile/src/components/redline/` and are always decorative
+(hidden from VoiceOver): `Kerb`, `Checker`, `RakeLines`, `TrackLane` (SVG `<Pattern>` fills,
+because React Native has no repeating gradients), `RacePlate` and `Roundel` (number from the
+pure `plateNumber`, position by `firstSeen`), `StartLights`, `SpeedStreaks`, `Chevrons`,
+`FlameTongues`, `CarSilhouette` (**fallback only**: use `CarPhoto` when catalog artwork exists;
+dashed outline for unidentified cars), `Medallion` and `Wordmark`.
 
-| Icon (MaterialCommunityIcons) | Meaning |
-|-------|---------|
-| `speedometer` | Speed / Home |
-| `flag-checkered` | Race |
-| `garage` | Garage |
-| `history` | History |
-| `trophy` | Achievements |
-| `access-point` | Live portal (raw BLE) |
-| `cog` | Settings |
-| `dots-horizontal` | More |
+Chrome icons are **MaterialCommunityIcons**, never emoji:
 
-Tab-bar icons inherit their color from `tabBarActiveTintColor` (flame `accent`) /
-`tabBarInactiveTintColor` (`textMuted`); the **More** list rows render in `accent`.
+| Icon | Meaning |
+|---|---|
+| `speedometer` · `flag-checkered` · `garage` · `history` · `dots-horizontal` | The five tabs |
+| `trophy-outline` · `access-point` · `television-play` · `cog-outline` · `information-outline` | More rows |
 
-Emoji are still used as oversized **empty-state illustrations** (e.g. the empty Garage and
-History screens) and as **achievement badges** (`src/achievements/catalog.ts`), where their
-color and personality are a feature rather than a chrome icon.
+**Achievement icons** (`apps/mobile/src/achievements/icons.ts`; a test asserts every catalog
+id has one and that each glyph exists):
+
+| id | icon | id | icon |
+|---|---|---|---|
+| speed-100 | `speedometer-slow` | race-marathon | `road-variant` |
+| speed-200 | `lightning-bolt` | lap-sub3 | `timer-outline` |
+| speed-240 | `fire` | collect-1 | `key-variant` |
+| speed-290 | `star-four-points` | collect-5 | `car-side` |
+| race-first | `flag-checkered` | collect-10 | `view-grid-outline` |
+| race-10 | `repeat` | collect-25 | `layers-triple-outline` |
+| laps-100 | `timer-sand` | | |
+
+The catalog keeps its emoji `icon` field for share text and tests only. Empty states use motif
+illustrations (a `TrackLane` with an outline car), and missing photos use the dashed "?"
+roundel.
 
 ---
 
 ## 6. Navigation model
 
-**Direction (Prop A, epic #28):** a persistent **bottom tab bar** for the primary modes,
-with a **More** sheet for the rest. This replaces the v1.0 home "hub" (a vertical stack of
-six full-width buttons) and matches the screen map already in
-[`ui-and-design.md`](ui-and-design.md) §2.
+A persistent **bottom tab bar** (Speed · Race · Garage · History · More) with detail screens
+pushed over their owning tab ([ui-and-design.md](ui-and-design.md) §2).
 
 ```mermaid
 flowchart TD
-    subgraph Tabs["Bottom tab bar — persistent"]
-        Speed["🏠 Speed<br/>speedometer + car hero"]
-        Race["🏁 Race"]
-        Garage["🏎️ Garage"]
-        History["🕘 History"]
-        More["☰ More"]
+    subgraph Tabs["Bottom tab bar"]
+        Speed["Speed: gauge, car card, recent passes"]
+        Race["Race: setup, countdown, live, results"]
+        Garage["Garage: trading cards"]
+        History["History: heat strip, sessions"]
+        More["More"]
     end
-    More --> Ach["🏆 Achievements"]
-    More --> Live["📡 Live portal"]
-    More --> Settings["⚙️ Settings"]
-    Garage --> CarDetail["Car detail<br/>/garage/[uid]"]
-    History --> RaceDetail["Race detail<br/>/history/[id]"]
+    More --> Trophy["Trophy case"]
+    More --> Live["Live portal"]
+    More --> TV["TV mode"]
+    More --> Settings["Settings"]
+    More --> Credits["Credits"]
+    Garage --> CarDetail["Car detail /garage/[uid]"]
+    Garage --> Identify["Identify (modal)"]
+    History --> SessionDetail["Session detail /history/[id]"]
 ```
 
-**Rules**
-
-- **≤ 5 tabs.** Primary, frequently-used destinations only; everything else lives behind
-  **More**. Adding a mode should not require touching the tab bar.
-- **Active tab** uses `accent` (#ff7a1a); inactive uses `textMuted`. Tab bar sits on a
-  `surface` background with a hairline top `border`, respecting the home-indicator safe area.
-- **Primary modes are reachable from anywhere** — no "Back to Home" round-trips.
-- **Detail screens push** over their owning tab and keep a standard back affordance.
+- **≤ 5 tabs.** Everything else lives behind More.
+- The tab bar is `pitWall` with a hairline top border and `tabLabel` text. The active tab is
+  `flame` with a skewed 3 pt indicator that springs between tabs (instant under reduce motion).
+- Detail screens use `ScreenHeader` with an electric back link that falls back to the owning
+  tab when there is no history.
+- `PortalStatusRibbon` shows on every tab except Speed, where the header `StatusChip` replaces
+  it. Both read the same selectors and actions.
 
 ---
 
-## 7. Core components & patterns
+## 7. Core components
 
-Hand-rolled components (no UI library yet, per [ADR-0005](../adr/0005-ui-stack-reanimated-skia-expo-router.md)).
-Reuse these patterns rather than inventing new ones.
+Built in `components/redline/` or restyled in place with stable props. Reuse these rather than
+inventing new ones.
 
 | Component | Pattern |
-|-----------|---------|
-| **Speedometer** (hero) | SVG arc gauge: `track` arc, green/yellow/red zone bands, ticks, flame-orange needle that springs to each pass then eases to rest; `display`-size digital readout below. |
-| **Car hero** *(new, #31)* | Identity + art slot for the last-scanned car on the Speed screen (name when known, else short UID + serial; placeholder when none). |
-| **Status pill** | Pill on `surfaceAlt`/tinted bg with a state dot + label. **Becomes the connect/disconnect control** (#33) — see [§10](#10-connection-ux). |
-| **Stat card** | `surface` + `border`, `radius.md`; uppercase `xs` caption, `lg`/`bold` value, `xs` unit. Used in the Speed 3-up row (Best · Passes · Last); car identity lives in the dedicated hero. |
-| **Buttons** | `radius.md`, `spacing(3.5)` vertical. **Primary** = `accent` fill on `bg` text; **Secondary** = `surface` + `border`; **Ghost** = `surfaceAlt` + `border`. Pressed → `opacity 0.7`; disabled → `opacity 0.4`. |
-| **Segmented toggle** | Pill container on `surfaceAlt`; active segment filled `accent` (e.g. the Live BLE / Demo switch). |
-| **Mode list rows (More)** *(new, #30)* | Icon column · title · optional stat subtitle · chevron, on `surface` with hairline dividers. |
-| **Banner** | Inset card with a semantic border (e.g. `danger` for "firmware unsupported") + a clear recovery action. |
+|---|---|
+| `RaceButton` | Primary (flame fill, asphalt display text, 56 tall), ghost (chalk border), destructive (red); skewed −12°; optional chevron; `compact` (44 pt) for inline actions |
+| `StatusChip` / `PortalStatusRibbon` | Status pill in the soft status fills; tap connects / retries / confirms disconnect via `usePortalStatusAction` |
+| `ScreenHeader` / `SectionHeader` | Screen title with optional subtitle, right slot and back link / section title, rule, count, optional right slot or numbered index (Settings) |
+| `StatCell` / `StatRow` | pitLane cell: eyebrow, `statValue`, unit, optional accent top bar |
+| `TimingRow` | 50 pt row: lap-number cell, time, delta, gate speed; fastest in electric, running at 75 % |
+| `FilterChip` / `SkewSwitch` | Skewed chips with an optional series swatch / skewed switch with `role="switch"` and a spring knob |
+| `SettingRow` / `SettingGroup` / `SettingsSection` / `CompactStepper` / `TelemetrySegmentedControl` | Square pitLane groups, 54 pt rows, control on the label line, hint below |
+| `Notice` / banners | pitLane with a 3 pt tone bar, HUD eyebrow and body (`BleStatusBanner`, `PersistenceStatusBanner`, Live notices) |
+| `Speedometer` | `variant="redline"`: 240° arc, zone ring, comet tip and flames, driven by the existing UI-thread choreography. **`'needle'` stays the default for TV** |
+| `TrophyUnlockBanner` | Root-level toast from newly stamped unlocks: medallion, caution bar, 2.5 s hold, gated haptic |
+
+Screen layouts that render fixtures share store-free boards (`GarageBoard`, `HistoryBoard`,
+`TrophyCase`), so `/dev/redline?section=…` reproduces each mockup without touching stores.
 
 ---
 
 ## 8. Motion
 
-- **Springy and snappy** via `react-native-reanimated`; target 60–120 fps
-  ([ADR-0005](../adr/0005-ui-stack-reanimated-skia-expo-router.md)).
-- The **needle** is the signature motion: snap to a pass, hold briefly (~1.3 s), then ease
-  back toward zero.
-- Use motion to celebrate **records and detections** (glow/pulse), not for chrome.
-- Always provide a **reduce-motion** path (see §11).
+All decorative motion goes through `useTelemetryMotion` (OS reduce-motion **or** the
+`reduceMotion` setting). Under reduce motion everything is static; the tab indicator switches
+instantly.
+
+| Moment | Motion |
+|---|---|
+| Pass on Speed | Arc and comet follow the existing sweep (620 ms up, 900 ms hold, spring back); flames fade with the value; NEW BEST pops; the newest bar grows (240 ms) |
+| Countdown tick | Digit springs 1.15 → 1, echoes slide in, lights bloom; GO turns everything green |
+| Lap complete | Kerb segment fills (300 ms); a new `TimingRow` slides in (220 ms) |
+| Finish | Checker band slides in (350 ms); NEW RECORD stamp drops (scale 1.4 → 1) |
+| Trophy unlock | Banner springs down, holds 2.5 s, rises out |
+| Connect | Radar rings pulse on a 2.4 s loop; dashed ring rotates 20 s per revolution |
 
 ---
 
-## 9. Haptics
+## 9. Haptics and sound
 
-Tactile feedback reinforces real events (`expo-haptics`, gated by the **Haptics** setting):
+Gated by the **Haptics** and **Sound** settings, off on web:
 
-- **Pass** → medium impact; **new record** → success notification.
-- **Car detected** → light selection tick.
-- **Connect/disconnect** (#33) → a clear confirming tap.
-
-Haptics are off on web and respect the user setting.
+- **Pass** → medium impact; **new record** → success notification; **car detected** → light
+  selection tick.
+- **Trophy unlock** → success notification.
+- Race countdown, lap, best-lap and finish cues are unchanged in `useRaceSession`.
 
 ---
 
 ## 10. Connection UX
 
-**Principle: the app connects itself.** Bluetooth should not require hunting for a button.
+**The app connects itself.** One root controller owns the BLE or demo transport for the whole
+session, so Race and Live never depend on Speed mounting.
 
-- **Application-level lifecycle:** one root controller owns the active BLE/mock transport for the
-  full app session. Tabs consume the same stream, so Race and Live do not depend on Speed mounting
-  and opening diagnostics cannot steal the connection.
-- **Auto-connect on launch** (#32): on a BLE-capable device (not demo mode), the app scans
-  for `HWiD` and connects automatically. Each scan has a finite window and retries use capped,
-  finite exponential backoff. Web and the Simulator stay in simulated mode and never load BLE.
-- **Durable Demo choice:** selecting Demo writes the existing startup preference. A device forced
-  into Demo because BLE is unavailable does not overwrite that preference.
-- **The status pill is the control** (#33): tap to (re)connect/retry; disconnect via
-  tap-when-connected (confirm) or long-press. This **removes** the dedicated "Connect
-  portal" button.
-- **Always communicate state** through the pill: `idle · scanning · connecting · authenticating ·
-  connected · portal not found · error`, using semantic colors plus text.
-- **Fail gracefully:** Bluetooth-off, permission-denied, and portal-not-found each get a
-  clear state and a recovery path — never a crash, infinite spinner, or battery-draining scan loop.
-- **Manual disconnect is sticky:** disconnect requires confirmation and pauses automatic reconnect
-  until the user explicitly connects/retries or changes mode.
-
-When SQLite is unavailable or cannot initialize, the tab shell shows a concise session-storage
-banner. Web presents this as the expected **Browser session** behavior; a native build presents
-**Saving unavailable** when every domain falls back or **Saving limited** with the affected domain
-when a strict subset falls back. The app remains usable through fully wired in-memory
-repositories, but it never implies that Garage, History, or Settings will survive restart. Native
-initialization is isolated by repository: if one domain fails, only that domain uses memory and
-already-hydrated data from the others remains available for the session.
+- **Auto-connect** on BLE-capable devices outside demo mode, with finite scan windows and
+  capped backoff. Web and the Simulator stay in demo mode and never load BLE.
+- **First run:** with no portal, car, pass or demo mode, Speed shows the "Find your portal"
+  state (a pure, tested selector; no persisted onboarding flag) with a Try demo mode action.
+- **The status chip is the control:** tap to connect or retry; disconnect asks for
+  confirmation and pauses automatic reconnect. The Settings portal card uses the same action.
+- **Fail gracefully:** Bluetooth off, permission denied and portal not found each get copy and
+  a recovery action, never a spinner loop.
+- **Storage honesty:** when SQLite is unavailable the tab shell shows the session-storage
+  banner (Browser session on web; Saving unavailable / limited on native).
 
 ---
 
 ## 11. Accessibility
 
-- **Reduce motion:** OR the app setting with the OS flag; damp gauge animation and flame FX
-  when set.
-- **Color-blind-safe zones:** pair speed-zone color with **position and numeric labels**,
-  never color alone.
-- **Tap targets ≥ 44 pt** and high contrast for young users; interactive elements (incl. the
-  status pill) expose a button role and a descriptive label.
-- **Dynamic state:** announce meaningful connection changes and car detections, but not internal
-  discovery steps or every speed sample.
-- **Legible defaults:** large type for primary values; clamp lines so layouts don't reflow.
+- Touch targets ≥ 44 pt (tabs, back links, steppers, chips, switches).
+- Every number is spoken with its unit ("247 scale miles per hour"); deltas carry a sign and
+  "faster" / "slower".
+- Motifs are hidden from assistive technology. Strips, lap segments and progress bars carry
+  one summarising label.
+- Colour is never the only signal: zones have labelled ticks, series print their names, tags
+  print their type, the heat ramp steps in lightness.
+- Existing `announceForAccessibility` calls (status changes, car changes, countdown) are kept;
+  trophy unlocks are announced.
 
 ---
 
 ## 12. Voice & microcopy
 
-- **Short, energetic, plain.** "Connect portal", "Trigger pass", "🏁 Race mode".
-- Speeds are reported in **scale mph** ("scale" acknowledges the 1:64 toy scale); keep the
-  unit visible and respect the user's unit/calibration settings.
-- Empty and error states are friendly and actionable ("No cars yet", "Switch to demo mode").
+- **Short, energetic, plain.** "START RACE", "RACE AGAIN", "Tap to identify".
+- Speeds are **scale mph** (or km/h) with the unit always visible; units and calibration
+  respect Settings.
+- Empty and error states are friendly and actionable: "No cars yet", "Your collection lives
+  here. Send a car through the portal."
 
 ---
 
-## 13. References
+## 13. Legacy: Trackside Telemetry (TV only)
 
-- Tokens (source of truth): [`apps/mobile/src/theme/tokens.ts`](../../apps/mobile/src/theme/tokens.ts)
-- Screen intent & component plan: [`ui-and-design.md`](ui-and-design.md)
-- UI stack rationale: [ADR-0005](../adr/0005-ui-stack-reanimated-skia-expo-router.md) ·
-  gauge: [ADR-0009](../adr/0009-phase-2a-gauge-svg-first.md) /
-  [ADR-0010](../adr/0010-phase-2b-flame-fx-svg.md)
-- State/persistence: [ADR-0006](../adr/0006-state-management-and-persistence.md)
-- Redesign initiative (navigation, car hero, connection UX): **epic #28** and its stories.
+The pre-V1 **Trackside Telemetry** tokens (`colors`, `fontSize`, `fontWeight`, `radius`,
+`radiusT`, `spacing`, `elevation`, `speedGauge` colours…) remain in `tokens.ts` unchanged.
+They are **legacy**: only TV mode (`tv.tsx`, `TvStage`, the needle `Speedometer`) and any
+not-yet-migrated code read them. New and migrated surfaces read only the Redline tokens. Do not
+delete or rename the legacy tokens while TV depends on them. See
+[`docs/design/ui-overhaul/`](../design/ui-overhaul/) for that system's history.
+
+---
+
+## 14. References
+
+- Spec, issues, mockups and implementation log: [`docs/design/redline-v1/`](../design/redline-v1/)
+- Decision record: [ADR-0016](../adr/0016-redline-v1-visual-identity.md)
+- Tokens: [`apps/mobile/src/theme/tokens.ts`](../../apps/mobile/src/theme/tokens.ts)
+- Screen intent: [`ui-and-design.md`](ui-and-design.md)
+- UI stack: [ADR-0005](../adr/0005-ui-stack-reanimated-skia-expo-router.md) · gauge:
+  [ADR-0009](../adr/0009-phase-2a-gauge-svg-first.md) / [ADR-0010](../adr/0010-phase-2b-flame-fx-svg.md)
+  · TV: [ADR-0015](../adr/0015-external-display-tv-mode.md)
+- Store art and screenshots: [`docs/release/screenshots/`](../release/screenshots/)

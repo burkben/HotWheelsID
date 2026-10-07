@@ -1,6 +1,11 @@
 # UI Overhaul — Proposals for Review
 
-> **Status: direction chosen.** The owner selected **Proposal B — Trackside
+> **Superseded for V1.** The current visual direction is **Redline V1**:
+> [`docs/design/redline-v1/`](../redline-v1/) (spec, mockups, implementation log) and
+> [ADR-0016](../../adr/0016-redline-v1-visual-identity.md). Trackside Telemetry below is
+> now the **legacy** system, still used by TV mode only. This folder is kept as history.
+
+> **Status (historical): direction chosen.** The owner selected **Proposal B — Trackside
 > Telemetry**. Implementation is tracked in **[IMPLEMENTATION.md](IMPLEMENTATION.md)**;
 > the Settings alignment overhaul and the global telemetry shell are already in.
 

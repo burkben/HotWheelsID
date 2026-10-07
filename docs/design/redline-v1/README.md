@@ -11,7 +11,7 @@ structure, components and behaviour.
 
 | | |
 |---|---|
-| **Status** | Designed. Not yet implemented. Track progress in `IMPLEMENTATION.md` (created by RL-01). |
+| **Status** | Implemented as RL-01 … RL-18 (stacked PRs #88–#105); RL-19 is out of scope. Details and follow-ups in [`IMPLEMENTATION.md`](IMPLEMENTATION.md). The system is summarised in [`docs/architecture/design-language.md`](../../architecture/design-language.md) and [ADR-0016](../../adr/0016-redline-v1-visual-identity.md). |
 | **Spec** | [`SPEC.md`](SPEC.md): tokens, type, motifs, components, screens, motion, icon, screenshots |
 | **Work** | [`ISSUES.md`](ISSUES.md): epic RL-00 and issues RL-01 … RL-19, with the Definition of Done |
 | **Agent hand-off** | [`CODEX_PROMPT.md`](CODEX_PROMPT.md): self-contained prompt for Codex or another coding agent |
