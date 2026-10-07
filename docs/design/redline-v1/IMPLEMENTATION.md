@@ -13,8 +13,10 @@ is the source of truth for merge status. Each issue has its own branch and PR.
 | RL-05 / #72 | [PR #92](https://github.com/burkben/HotWheelsID/pull/92), CI and Seed passed |
 | RL-06 / #73 | [PR #93](https://github.com/burkben/HotWheelsID/pull/93), CI and Seed passed |
 | RL-07 / #74 | [PR #94](https://github.com/burkben/HotWheelsID/pull/94), CI and Seed passed |
-| RL-08 / #75 | Implemented; review evidence below |
-| RL-09–RL-18 / #76–#85 | Pending, in order |
+| RL-08 / #75 | [PR #95](https://github.com/burkben/HotWheelsID/pull/95) |
+| RL-09 / #76 | [PR #96](https://github.com/burkben/HotWheelsID/pull/96) |
+| RL-10 / #77 | Implemented; review evidence below |
+| RL-11–RL-18 / #78–#85 | Pending, in order |
 | RL-19 / #86 | Out of scope; not started |
 
 ## RL-01 — tokens and bundled fonts
@@ -427,3 +429,51 @@ Branch: `redline/rl-09-race-results`, stacked on RL-08 for an isolated issue dif
   positions. Also fixed web truncation of long result and lap values during review.
 
 Next: RL-10 garage trading cards and series filters. RL-19 remains excluded.
+
+## RL-10 — Garage trading cards and series filters
+
+Branch: `redline/rl-10-garage`, stacked on RL-09.
+
+- The Garage tab is now a two-up trading-card grid on phones; iPad keeps
+  `useLayout().columns`. Each card has a photo bay (bundled `CarPhoto`, or a
+  series-tinted `CarSilhouette` over rake lines and a road strip), a `Roundel` plate
+  from `plateNumber`, name, series swatch and line, and best speed with
+  "MPH BEST · N RACES". The on-portal card gets the 2 pt flame ring, 22 pt glow,
+  speed streaks and a −14° ON PORTAL ribbon.
+- Unidentified cars render as MYSTERY CAR cards: a dashed silhouette, a dashed "?"
+  roundel and an electric "Tap to identify" line. They route to `/identify?uid=…`.
+  Identified cards route to car detail.
+- Series filters: an ALL chip plus one `FilterChip` per series present, sorted by count
+  and then name. Pure `garage/series.ts` and `garage/cardModel.ts` (17 tests) cover
+  derivation, the fixed colour order (flame, electric, caution, green, red), filtering,
+  fallback when a selected series disappears, the record holder, and grid padding.
+- `ScreenHeader` gains an optional `subtitle`; the right slot then aligns to the
+  title block's bottom, as in the source. The empty state replaces the emoji with a
+  `TrackLane` and an outline car, plus the spec copy.
+- Store-free `GarageBoard` renders the tab and the `/dev/redline?section=garage`
+  fixture (`photos=1`, `odd=1`, `empty=1`). No store, schema or settings change.
+
+### Checks and visual evidence
+
+- `npm ci`, typecheck, zero-warning lint, web export and all mobile/protocol tests pass.
+- [Captures and browser checks](review/rl-10/README.md): reference comparison,
+  bundled photos with an odd count, the empty state, iPad at 1024×768 and the real
+  demo garage. The browser check covers filtering, aria-pressed state, card labels
+  with spoken units, identified and mystery routing, and zero console errors.
+
+### Decisions and deviations
+
+- Equal-count series sort by name, so colours are stable between launches. The
+  mockup's sample order differs, so the fixture's colours differ from the PNG.
+- The garage's top best speed is shown in caution, as on the mockup's
+  record-holding card. Ties all show caution; no recorded speed shows none.
+- The mystery "?" sits in the plate slot instead of the centre so it never
+  collides with the ON PORTAL ribbon. The on-portal car shifts 10 pt right
+  (source offset) to clear the speed streaks.
+- Photos fill the bay (`cover`). The bay grows with card width on iPad (≥ 118 pt,
+  0.62 × width) so photos are not cropped to a thin strip.
+- Mystery cards route to Identify as specified, so their detail page is no longer
+  one tap from the Garage. After identifying, the card routes to detail.
+
+Next: RL-11 car detail. RL-19 remains excluded.
+
