@@ -18,8 +18,9 @@ is the source of truth for merge status. Each issue has its own branch and PR.
 | RL-10 / #77 | [PR #97](https://github.com/burkben/HotWheelsID/pull/97) |
 | RL-11 / #78 | [PR #98](https://github.com/burkben/HotWheelsID/pull/98) |
 | RL-12 / #79 | [PR #99](https://github.com/burkben/HotWheelsID/pull/99) |
-| RL-13 / #80 | Implemented; review evidence below |
-| RL-14–RL-18 / #81–#85 | Pending, in order |
+| RL-13 / #80 | [PR #100](https://github.com/burkben/HotWheelsID/pull/100) |
+| RL-14 / #81 | Implemented; review evidence below |
+| RL-15–RL-18 / #82–#85 | Pending, in order |
 | RL-19 / #86 | Out of scope; not started |
 
 ## RL-01 — tokens and bundled fonts
@@ -609,4 +610,49 @@ Branch: `redline/rl-13-trophies`, stacked on RL-12.
 - Web always runs the demo portal, so fixture captures hide the live banner.
 - The More row title changed from "Achievements" to "Trophy case" to match the
   screen it opens. RL-17 updates the release doc's wording.
+
+## RL-14 — Settings restyle and portal card
+
+Branch: `redline/rl-14-settings`, stacked on RL-13.
+
+- Back link "‹ More" and `screenTitle` SETTINGS via `ScreenHeader`.
+- Portal card: a 5 pt green/asphalt `Kerb` when connected, caution/asphalt while
+  searching, `steel` when idle; the source's portal-arch glyph; the tone eyebrow;
+  "RACE PORTAL" (or "DEMO MODE") with its hint; and a compact skewed ghost button.
+  The button uses `usePortalStatusAction`, so connect / retry / confirm-disconnect
+  behave exactly like the status chip. A pure, tested `settings/presentation.ts`
+  maps the shared `portalStatusPresentation` to the card. Trigger-a-sample-pass
+  (demo) and Connection details stay as rows under the card.
+- Numbered sections 01 PROFILE … 07 SYSTEM. The player name is now an always-visible
+  150 pt inset field on the row (same blur/submit commit and hydration guard).
+  Default laps uses `CompactStepper` over the existing `LAP_OPTIONS`. Units use the
+  skewed segments, calibration the stepper with its hint. Haptics, sound, reduce
+  motion and start in demo mode use `SkewSwitch`, with their explanations kept as
+  accessibility hints. Community rows and Reset (own group, same confirm) follow.
+- Footer: 60 % `Wordmark`, "VERSION x.y.z (build) · CREDITS" from `expo-constants`
+  (the build is omitted when the config has none), and the Mattel disclaimer.
+- `RaceButton` gains an additive `compact` size (44 pt target, 15 pt label, 1 pt
+  ghost border) for inline actions.
+- No settings key, store API or persistence change.
+
+### Checks and visual evidence
+
+- Typecheck, zero-warning lint, web export and all tests pass, including the
+  existing settings store tests.
+- [Captures and browser checks](review/rl-14/README.md): full-length comparison
+  and the paused portal card. The browser check covers section order; switch,
+  unit and laps changes reflected in state; the name commit; disconnect through
+  the shared confirm, then reconnect; and Speed showing SCALE KM/H afterwards. No
+  console errors.
+
+### Decisions and deviations
+
+- Default laps moves from a segmented control to the spec's stepper over the same
+  options.
+- Toggle hints are spoken rather than printed, matching the mockup's single-line
+  rows. The demo-mode hint prints only when Bluetooth is unavailable, because it
+  explains why the switch is locked.
+- Demo trigger and Connection details rows are kept (the mockup omits them) so no
+  existing action is lost.
+- The calibration value keeps the existing `formatCalibration` output ("×1.00").
 
