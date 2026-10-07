@@ -20,8 +20,9 @@ is the source of truth for merge status. Each issue has its own branch and PR.
 | RL-12 / #79 | [PR #99](https://github.com/burkben/HotWheelsID/pull/99) |
 | RL-13 / #80 | [PR #100](https://github.com/burkben/HotWheelsID/pull/100) |
 | RL-14 / #81 | [PR #101](https://github.com/burkben/HotWheelsID/pull/101) |
-| RL-15 / #82 | Implemented; review evidence below |
-| RL-16–RL-18 / #83–#85 | Pending, in order |
+| RL-15 / #82 | [PR #102](https://github.com/burkben/HotWheelsID/pull/102) |
+| RL-16 / #83 | Implemented; review evidence below |
+| RL-17–RL-18 / #84–#85 | Pending, in order |
 | RL-19 / #86 | Out of scope; not started |
 
 ## RL-01 — tokens and bundled fonts
@@ -704,4 +705,42 @@ Branch: `redline/rl-15-surfaces`, stacked on RL-14.
   `splash-preview.png` composites the exported PNG at 160 pt on #07090F.
 - `@resvg/resvg-js` is a Node build tool (devDependency only). It is never bundled
   into the app and adds no native module.
+
+## RL-16 — App icon (iOS and Android)
+
+Branch: `redline/rl-16-app-icon`, stacked on RL-15.
+
+- `apps/mobile/assets/images/icon.svg` is the Track master from `source/Icon.dc.html`:
+  full-bleed, square, filled `#07090F`, with no `rx` mask. `icon.png` is exported at
+  1024 × 1024 as **8-bit RGB with no alpha channel**. resvg always writes RGBA, so
+  the export script re-encodes opaque targets with Node's zlib. The re-encode
+  throws if any pixel is not fully opaque.
+- Android adaptive icon: the foreground is the artwork on transparent, scaled into
+  the central 66 % (72 of 108 dp) and clipped there. The background is solid
+  `#07090F`. The monochrome version is the track silhouette only. `app.json`
+  `adaptiveIcon.backgroundColor` is now `#07090F`.
+- Favicon (48 px) from the same master on its rounded board tile.
+- One reproducible pipeline: `npm run assets:images --workspace mobile` writes all six
+  PNGs (icon, three Android layers, favicon, splash) from their committed SVGs, and
+  `-- --check` confirms each PNG matches a fresh export byte for byte (all six pass).
+- `src/brand/appIcon.test.ts` probes the shipped PNGs: icon 1024², bit depth 8,
+  colour type 2 (RGB, no alpha), asphalt at the corners (no rounded mask). It also
+  checks transparency on the Android foreground/monochrome, the opaque background,
+  and the favicon size.
+
+### Checks and visual evidence
+
+- Typecheck, zero-warning lint, web export, all tests and `assets:images -- --check`
+  pass.
+- [Icon set](review/rl-16/icon-set.png): the full-bleed 1024 master; Android adaptive
+  under a circle mask; the themed monochrome; iOS-masked previews at 180/120/87/58/40.
+
+### Decisions and deviations
+
+- A single 1024 master ships for iOS, as SPEC §5 allows. The board's small-size
+  detail drops are intent only.
+- Byte-exact regeneration is a local script check, not a CI unit test: rasteriser
+  SIMD paths can differ across CPU architectures, so CI only probes the committed
+  PNGs.
+- Alternate icons (RL-19) remain out of scope.
 

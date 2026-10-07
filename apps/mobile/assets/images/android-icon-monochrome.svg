@@ -1,0 +1,10 @@
+<!-- Android themed (monochrome) icon: the track silhouette only, in the same 66% safe zone. The launcher
+     tints it, so only the alpha matters. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs><clipPath id="square"><rect width="1024" height="1024"/></clipPath></defs>
+  <g transform="translate(512 512) scale(0.6667) translate(-512 -512)">
+    <g clip-path="url(#square)">
+      <path d="M-60 820 C 240 820 330 340 620 340 C 800 340 880 430 1100 430" fill="none" stroke="#FFFFFF" stroke-width="210"/>
+    </g>
+  </g>
+</svg>
