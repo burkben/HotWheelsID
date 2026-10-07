@@ -1,0 +1,24 @@
+<!-- Android adaptive foreground: the icon artwork on transparent, scaled into the central 66% (72 of
+     108 dp) safe zone and clipped there so nothing draws into the parallax margin. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs><clipPath id="square"><rect width="1024" height="1024"/></clipPath></defs>
+  <g transform="translate(512 512) scale(0.6667) translate(-512 -512)">
+    <g clip-path="url(#square)">
+    <rect x="120" y="236" width="230" height="24" rx="12" fill="#F5F7FA" fill-opacity="0.9"/>
+    <rect x="200" y="288" width="160" height="24" rx="12" fill="#FF6A13"/>
+    <rect x="80" y="340" width="200" height="24" rx="12" fill="#F5F7FA" fill-opacity="0.35"/>
+    <path d="M-60 820 C 240 820 330 340 620 340 C 800 340 880 430 1100 430" fill="none" stroke="#B84A0B" stroke-width="210"/>
+    <path d="M-60 820 C 240 820 330 340 620 340 C 800 340 880 430 1100 430" fill="none" stroke="#FF6A13" stroke-width="176"/>
+    <path d="M-60 820 C 240 820 330 340 620 340 C 800 340 880 430 1100 430" fill="none" stroke="#F5F7FA" stroke-width="12" stroke-dasharray="56 44" stroke-opacity="0.85"/>
+    <g transform="translate(845 385) rotate(17.8)">
+      <rect x="-29" y="-87" width="58" height="174" fill="#F5F7FA"/>
+      <rect x="-29" y="-87" width="29" height="29" fill="#07090F"/>
+      <rect x="0" y="-58" width="29" height="29" fill="#07090F"/>
+      <rect x="-29" y="-29" width="29" height="29" fill="#07090F"/>
+      <rect x="0" y="0" width="29" height="29" fill="#07090F"/>
+      <rect x="-29" y="29" width="29" height="29" fill="#07090F"/>
+      <rect x="0" y="58" width="29" height="29" fill="#07090F"/>
+    </g>
+    </g>
+  </g>
+</svg>
