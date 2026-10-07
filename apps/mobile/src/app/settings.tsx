@@ -1,7 +1,8 @@
 /**
  * Settings — durable app preferences (ADR-0006, Phase 3).
  *
- * Rebuilt on the Trackside Telemetry row system (proposal B). Every preference
+ * Redline layout (SPEC §4.11 / `png/Settings.png`): portal card, numbered
+ * sections 01–07, skew switches and a footer. Every preference
  * uses the shared `SettingRow` geometry: the control is a sibling of the label
  * on a ≥44pt "label line", and the hint is a sibling of that line — never of
  * the control. That single rule fixes the alignment bugs audited in
@@ -20,13 +21,12 @@ import {
   ScrollView,
   Share,
   StyleSheet,
-  Switch,
-  Text,
   TextInput,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import Constants from 'expo-constants';
 import * as Haptics from 'expo-haptics';
 import * as WebBrowser from 'expo-web-browser';
 
@@ -36,7 +36,6 @@ import { LAP_OPTIONS } from '@/race/raceEngine';
 import { DEFAULT_SETTINGS, useSettingsStore } from '@/store/settingsStore';
 import { useIdentityStore } from '@/store/identityStore';
 import { usePortalStore } from '@/store/portalStore';
-import { StatusPill } from '@/components/StatusPill';
 import { usePortalController, usePortalControllerActions } from '@/portal/PortalControllerProvider';
 import {
   CALIBRATION_STEP,
@@ -53,7 +52,10 @@ import {
   SettingsSection,
   TelemetrySegmentedControl,
 } from '@/components/telemetry';
-import { colors, fontSize, fontWeight, radiusT, spacing } from '@/theme/tokens';
+import { RText, ScreenHeader, SkewSwitch, Wordmark } from '@/components/redline';
+import { PortalCard } from '@/settings/PortalCard';
+import { stepLapOption, versionLabel } from '@/settings/presentation';
+import { colorsR, fontR } from '@/theme/tokens';
 
 /**
  * Sharing emits a JSON payload through the OS share sheet, which on its own
@@ -98,7 +100,6 @@ export default function SettingsScreen() {
   // in progress — and stops a stale default draft overwriting the persisted name if
   // Settings is opened before persistence finishes loading.
   const [draftName, setDraftName] = useState(playerName);
-  const [editingName, setEditingName] = useState(false);
   const nameDirty = useRef(false);
   useEffect(() => {
     if (!nameDirty.current) setDraftName(playerName);
@@ -120,7 +121,6 @@ export default function SettingsScreen() {
     if (next !== draftName) setDraftName(next);
     if (next !== playerName) setPlayerName(next);
     nameDirty.current = false; // draft now matches the store; allow future re-sync
-    setEditingName(false);
   };
 
   const nudgeCalibration = (delta: number) => {
@@ -147,6 +147,15 @@ export default function SettingsScreen() {
     tick();
   };
 
+  const stepLaps = (direction: -1 | 1) => {
+    const next = stepLapOption(LAP_OPTIONS, defaultLaps, direction);
+    if (next === defaultLaps) return;
+    setDefaultLaps(next as (typeof LAP_OPTIONS)[number]);
+    tick();
+  };
+
+  const build = Platform.OS === 'ios' ? Constants.expoConfig?.ios?.buildNumber : Constants.expoConfig?.android?.versionCode;
+
   const confirmReset = () => {
     Alert.alert('Reset settings?', 'Restore every preference to its default value.', [
       { text: 'Cancel', style: 'cancel' },
@@ -158,70 +167,39 @@ export default function SettingsScreen() {
           void controller.setMode(DEFAULT_SETTINGS.mockModeDefault ? 'demo' : 'live');
           nameDirty.current = false;
           setDraftName(DEFAULT_SETTINGS.playerName);
-          setEditingName(false);
         },
       },
     ]);
   };
 
   return (
-    <View style={[styles.screen, { paddingTop: insets.top + spacing(2) }]}>
-      {/* Balanced 3-slot header: fixed-width sides so the title is optically
-          centered regardless of the back button's width (fixes §5.1). */}
-      <View style={[styles.header, column]}>
-        <View style={styles.headerSide}>
-          <Pressable
-            onPress={() => router.back()}
-            hitSlop={12}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-            style={({ pressed }) => [styles.backChip, pressed && styles.pressed]}
-          >
-            <Text style={styles.backChipText}>‹</Text>
-          </Pressable>
-        </View>
-        <Text style={styles.title}>Settings</Text>
-        <View style={styles.headerSide} />
-      </View>
-
+    <View style={[styles.screen, { paddingTop: insets.top + 4 }]}>
       <ScrollView
         contentContainerStyle={[
           styles.content,
           column,
-          { paddingBottom: insets.bottom + spacing(8) },
+          { paddingBottom: insets.bottom + 32 },
         ]}
         keyboardShouldPersistTaps="handled"
       >
-        <SettingsSection title="Portal" style={styles.firstSection}>
+        <ScreenHeader
+          title="Settings"
+          backLabel="More"
+          onBack={() => (router.canGoBack() ? router.back() : router.navigate('/more'))}
+        />
+
+        <View style={styles.portal}>
+          <PortalCard
+            connection={connection}
+            controlStatus={controlStatus}
+            phase={portalPhase}
+            mode={portalMode}
+            manuallyDisconnected={manuallyDisconnected}
+            onConnect={() => void controller.connect()}
+            onRetry={() => void controller.retry()}
+            onDisconnect={() => void controller.disconnect()}
+          />
           <SettingGroup>
-            <SettingRow
-              label="Connection"
-              hint="Tap the status to connect, retry, or pause the portal."
-              control={
-                <StatusPill
-                  connection={connection}
-                  controlStatus={controlStatus}
-                  phase={portalPhase}
-                  mode={portalMode}
-                  manuallyDisconnected={manuallyDisconnected}
-                  onConnect={() => void controller.connect()}
-                  onRetry={() => void controller.retry()}
-                  onDisconnect={() => void controller.disconnect()}
-                />
-              }
-            />
-            <ToggleRow
-              label="Demo mode"
-              hint={canBle
-                ? 'Try simulated cars and speeds without a portal. Your choice is remembered.'
-                : 'Simulated cars and speeds are used because portal Bluetooth is unavailable on this device.'}
-              value={portalMode === 'demo'}
-              disabled={!canBle || !portalReady}
-              onValueChange={(enabled) => {
-                tick();
-                void controller.setMode(enabled ? 'demo' : 'live');
-              }}
-            />
             {portalMode === 'demo' && (
               <SettingRow
                 label="Trigger a sample pass"
@@ -236,60 +214,51 @@ export default function SettingsScreen() {
               chevron
             />
           </SettingGroup>
-        </SettingsSection>
+        </View>
 
-        <SettingsSection title="Profile">
+        <SettingsSection title="Profile" index={1}>
           <SettingGroup>
-            {editingName ? (
-              <View style={styles.editRow}>
+            <SettingRow
+              label="Player name"
+              control={
                 <TextInput
                   value={draftName}
                   onChangeText={editName}
                   onBlur={commitName}
                   onSubmitEditing={commitName}
                   placeholder={DEFAULT_SETTINGS.playerName}
-                  placeholderTextColor={colors.inkMuted}
+                  placeholderTextColor={colorsR.inkMuted}
                   style={styles.input}
                   maxLength={24}
                   returnKeyType="done"
                   autoCorrect={false}
-                  autoFocus
                   accessibilityLabel="Player name"
-                />
-              </View>
-            ) : (
-              <SettingRow
-                label="Player name"
-                hint="Pre-fills the racer name when you start a race."
-                onPress={() => setEditingName(true)}
-                control={<Text style={styles.valueText}>{playerName}</Text>}
-                accessibilityLabel={`Player name, ${playerName}. Double tap to edit.`}
-              />
-            )}
-          </SettingGroup>
-        </SettingsSection>
-
-        <SettingsSection title="Racing">
-          <SettingGroup>
-            <SettingRow
-              label="Default laps"
-              hint="The lap target selected by default on the race setup screen."
-              control={
-                <TelemetrySegmentedControl
-                  accent="flame"
-                  segments={LAP_OPTIONS.map((n) => ({ value: n, label: String(n) }))}
-                  value={defaultLaps}
-                  onChange={(n) => {
-                    setDefaultLaps(n);
-                    tick();
-                  }}
+                  accessibilityHint="Pre-fills the racer name when you start a race."
                 />
               }
             />
           </SettingGroup>
         </SettingsSection>
 
-        <SettingsSection title="Speed">
+        <SettingsSection title="Racing" index={2}>
+          <SettingGroup>
+            <SettingRow
+              label="Default laps"
+              control={
+                <CompactStepper
+                  value={String(defaultLaps)}
+                  onDecrement={() => stepLaps(-1)}
+                  onIncrement={() => stepLaps(1)}
+                  canDecrement={defaultLaps > LAP_OPTIONS[0]}
+                  canIncrement={defaultLaps < LAP_OPTIONS[LAP_OPTIONS.length - 1]}
+                  accessibilityLabel="Default laps"
+                />
+              }
+            />
+          </SettingGroup>
+        </SettingsSection>
+
+        <SettingsSection title="Speed" index={3}>
           <SettingGroup>
             <SettingRow
               label="Units"
@@ -297,7 +266,7 @@ export default function SettingsScreen() {
                 <TelemetrySegmentedControl
                   segments={(['mph', 'kmh'] as SpeedUnit[]).map((u) => ({
                     value: u,
-                    label: speedUnitLabel(u),
+                    label: speedUnitLabel(u).toUpperCase(),
                   }))}
                   value={speedUnit}
                   onChange={(u) => {
@@ -324,7 +293,7 @@ export default function SettingsScreen() {
           </SettingGroup>
         </SettingsSection>
 
-        <SettingsSection title="Feedback">
+        <SettingsSection title="Feedback" index={4}>
           <SettingGroup>
             <ToggleRow
               label="Haptics"
@@ -334,30 +303,49 @@ export default function SettingsScreen() {
             />
             <ToggleRow
               label="Sound"
-              hint="Play race cues on the countdown, each lap, new-best laps, and finish."
+              hint="Race cues on the countdown, each lap, new-best laps, and finish."
               value={sound}
               onValueChange={setSound}
             />
             <ToggleRow
               label="Reduce motion"
-              hint="Skip the countdown pulse and other animations (also honors the system setting)."
+              hint="Skips the countdown pulse and other animations. The system setting is honored too."
               value={reduceMotion}
               onValueChange={setReduceMotion}
             />
           </SettingGroup>
         </SettingsSection>
 
-        <SettingsSection title="Community">
+        <SettingsSection title="Startup" index={5}>
+          <SettingGroup>
+            <ToggleRow
+              label="Start in demo mode"
+              hint={canBle
+                ? 'Simulated cars and speeds without a portal. Applies now and at every launch.'
+                : 'Simulated cars and speeds are used because portal Bluetooth is unavailable on this device.'}
+              showHint={!canBle}
+              value={portalMode === 'demo'}
+              disabled={!canBle || !portalReady}
+              onValueChange={(enabled) => {
+                tick();
+                void controller.setMode(enabled ? 'demo' : 'live');
+              }}
+            />
+          </SettingGroup>
+        </SettingsSection>
+
+        <SettingsSection title="Community" index={6}>
           <SettingGroup>
             <SettingRow
               label="Share car identities"
-              hint="Contribute the castings you've identified to the community seed — only casting → catalog facts are shared, never your tags or collection."
+              hint="Only casting → catalog facts are shared, never your tags or collection."
               onPress={shareIdentifications}
               disabled={shareableCount === 0}
+              chevron
               control={
-                <Text style={[styles.valueText, shareableCount === 0 && styles.dimText]}>
+                <RText variant="lapTime" style={[styles.value, shareableCount === 0 && styles.dim]}>
                   {shareableCount === 0 ? '—' : `${shareableCount}`}
-                </Text>
+                </RText>
               }
               accessibilityLabel={
                 shareableCount === 0
@@ -367,16 +355,16 @@ export default function SettingsScreen() {
             />
             <SettingRow
               label="How to contribute"
-              hint="Sharing hands you a JSON file. Add it to the community folder on GitHub and open a pull request — the guide has the steps."
               chevron
               onPress={() => {
                 void WebBrowser.openBrowserAsync(CONTRIBUTING_URL);
               }}
+              accessibilityHint="Opens the guide: add the shared file to the community folder on GitHub and open a pull request."
             />
           </SettingGroup>
         </SettingsSection>
 
-        <SettingsSection title="System">
+        <SettingsSection title="System" index={7}>
           <SettingGroup>
             <SettingRow
               label="Reset to defaults"
@@ -387,103 +375,72 @@ export default function SettingsScreen() {
             />
           </SettingGroup>
         </SettingsSection>
+
+        <View style={styles.footer}>
+          <View style={styles.wordmark}><Wordmark size={22} /></View>
+          <View style={styles.versionLine}>
+            <RText variant="eyebrow" style={styles.version}>{versionLabel(Constants.expoConfig?.version, build)} · </RText>
+            <Pressable onPress={() => router.push('/credits')} accessibilityRole="link" accessibilityLabel="Credits and licenses" hitSlop={12}>
+              <RText variant="eyebrow" style={[styles.version, { color: colorsR.electric }]}>CREDITS</RText>
+            </Pressable>
+          </View>
+          <RText variant="bodySmall" style={styles.disclaimer}>
+            Independent community project. Not affiliated with, endorsed by, or sponsored by Mattel, Inc.
+          </RText>
+        </View>
       </ScrollView>
     </View>
   );
 }
 
-/** A switch row on the shared label-line geometry. */
+/** A skew switch on the shared label-line geometry. Hints stay spoken; `showHint` prints them. */
 function ToggleRow({
   label,
   hint,
   value,
   onValueChange,
   disabled = false,
+  showHint = false,
 }: {
   label: string;
   hint: string;
   value: boolean;
   onValueChange: (v: boolean) => void;
   disabled?: boolean;
+  showHint?: boolean;
 }) {
   return (
     <SettingRow
       label={label}
-      hint={hint}
-      control={
-        <Switch
-          value={value}
-          onValueChange={onValueChange}
-          disabled={disabled}
-          accessibilityLabel={label}
-          accessibilityHint={hint}
-          trackColor={{ false: colors.panelInset, true: colors.electric }}
-          thumbColor={colors.ink}
-          ios_backgroundColor={colors.panelInset}
-        />
-      }
+      hint={showHint ? hint : undefined}
+      disabled={disabled}
+      accessibilityHint={hint}
+      control={<SkewSwitch value={value} onValueChange={onValueChange} disabled={disabled} accessibilityLabel={label} />}
     />
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.void },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing(5),
-    paddingBottom: spacing(3),
-    width: '100%',
-    alignSelf: 'center',
-  },
-  headerSide: { width: 64, alignItems: 'flex-start' },
-  backChip: {
-    width: 34,
-    height: 34,
-    borderRadius: radiusT.pill,
-    backgroundColor: colors.panelSolid,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.hairline,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  backChipText: { color: colors.electric, fontSize: 20, fontWeight: fontWeight.bold, marginTop: -2 },
-  title: {
-    flex: 1,
-    textAlign: 'center',
-    color: colors.ink,
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.heavy,
-  },
-  content: {
-    paddingHorizontal: spacing(5),
-    paddingTop: spacing(1),
-    width: '100%',
-    alignSelf: 'center',
-  },
-  firstSection: { marginTop: spacing(2) },
-  editRow: {
-    paddingVertical: spacing(2.5),
-    paddingHorizontal: spacing(4),
-    minHeight: 44,
-    justifyContent: 'center',
-  },
+  screen: { flex: 1, backgroundColor: colorsR.asphalt },
+  content: { paddingHorizontal: 16, width: '100%', alignSelf: 'center' },
+  portal: { marginTop: 22, gap: 2 },
   input: {
-    backgroundColor: colors.panelInset,
-    borderColor: colors.hairline,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: radiusT.field,
-    paddingHorizontal: spacing(3.5),
-    paddingVertical: spacing(3),
-    color: colors.ink,
-    fontSize: fontSize.md,
+    width: 150,
+    height: 40,
+    paddingHorizontal: 12,
+    textAlign: 'right',
+    backgroundColor: colorsR.inset,
+    borderColor: colorsR.fieldBorder,
+    borderWidth: 1,
+    color: colorsR.chalk,
+    fontFamily: fontR.body,
+    fontSize: 16,
   },
-  valueText: {
-    color: colors.inkSecondary,
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.bold,
-    fontVariant: ['tabular-nums'],
-  },
-  dimText: { color: colors.inkMuted },
-  pressed: { opacity: 0.7 },
+  value: { fontSize: 16, lineHeight: 20, color: colorsR.inkSecondary },
+  dim: { color: colorsR.inkMuted },
+  footer: { alignItems: 'center', gap: 8, marginTop: 34 },
+  wordmark: { opacity: 0.6 },
+  versionLine: { flexDirection: 'row', alignItems: 'center', minHeight: 24 },
+  version: { fontFamily: fontR.hud, fontSize: 11, letterSpacing: 1.5, color: colorsR.inkMuted },
+  disclaimer: { fontSize: 12, lineHeight: 17, color: colorsR.inkMuted, textAlign: 'center', maxWidth: 300 },
 });

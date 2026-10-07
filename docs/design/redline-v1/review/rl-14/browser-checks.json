@@ -1,0 +1,47 @@
+{
+  "sections": [
+    "PROFILE",
+    "RACING",
+    "SPEED",
+    "FEEDBACK",
+    "STARTUP",
+    "COMMUNITY",
+    "SYSTEM"
+  ],
+  "switchesBefore": [
+    [
+      "Haptics",
+      "true"
+    ],
+    [
+      "Sound",
+      "true"
+    ],
+    [
+      "Reduce motion",
+      "false"
+    ],
+    [
+      "Start in demo mode",
+      "true"
+    ]
+  ],
+  "switchesAfter": [
+    [
+      "Sound",
+      "false"
+    ],
+    [
+      "Reduce motion",
+      "true"
+    ]
+  ],
+  "unitSelected": "true",
+  "laps": "−\n10\n+",
+  "version": "VERSION 1.0.0 · ",
+  "dialog": "Disconnect portal? Automatic reconnect will stay paused.",
+  "afterDisconnect": "Portal status: Demo paused",
+  "afterConnect": "Portal status: Demo ready",
+  "speedUnit": "SCALE KM/H",
+  "errors": []
+}
