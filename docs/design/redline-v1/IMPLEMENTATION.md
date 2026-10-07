@@ -16,8 +16,9 @@ is the source of truth for merge status. Each issue has its own branch and PR.
 | RL-08 / #75 | [PR #95](https://github.com/burkben/HotWheelsID/pull/95) |
 | RL-09 / #76 | [PR #96](https://github.com/burkben/HotWheelsID/pull/96) |
 | RL-10 / #77 | [PR #97](https://github.com/burkben/HotWheelsID/pull/97) |
-| RL-11 / #78 | Implemented; review evidence below |
-| RL-12–RL-18 / #79–#85 | Pending, in order |
+| RL-11 / #78 | [PR #98](https://github.com/burkben/HotWheelsID/pull/98) |
+| RL-12 / #79 | Implemented; review evidence below |
+| RL-13–RL-18 / #80–#85 | Pending, in order |
 | RL-19 / #86 | Out of scope; not started |
 
 ## RL-01 — tokens and bundled fonts
@@ -520,4 +521,48 @@ Branch: `redline/rl-11-car-detail`, stacked on RL-10.
 - The old "Save name" button became a Save link that appears only while the field is
   edited. Saving on blur and submit is unchanged.
 - The road uses `trackGrey` (#161C27) instead of the source's one-off #141A25.
+
+## RL-12 — History list, 14-day strip and history detail
+
+Branch: `redline/rl-12-history`, stacked on RL-11.
+
+- `ScreenHeader` "HISTORY" with the electric Clear button (same confirm; it also
+  drops cached sparklines).
+- LAST 14 DAYS panel: 14 cells skewed −10°, coloured by the heat ramp, with weekday
+  initials, a chalk ring on today, a "SESSIONS · PASSES" caption and the
+  Fewer/More legend. It has one summarising accessibility label.
+- Sessions grouped TODAY / THIS WEEK / EARLIER as 76 pt tickets: date tab, dashed
+  perforation, start time with a green LIVE tag and top bar, "{n} passes ·
+  {length}" ("so far" while live), sparkline and best speed. The all-time-best
+  session's sparkline and value are caution.
+- Sparklines are lazy and memoised per visible row from the existing
+  `passesForSession`, keyed by id + pass count so live sessions refresh. Cache
+  capped at 200. No repository or schema change.
+- Pure, tested `history/heat.ts` (13 tests): local-day buckets built from date
+  components, heat levels, totals, strip label, grouping, record sessions, date
+  tabs, lengths and sparkline sampling. Tests pass under the local zone,
+  Pacific/Auckland and UTC, plus explicit New York DST and Tokyo cases.
+- History detail (no mockup): back/Share row, date title with time, PASSES /
+  DURATION / BEST stats, the Speed screen's bar chart for the whole session (up to
+  60 bars, summarised label), and TimingRow-style pass rows (number cell, time, car,
+  mph; fastest in electric) linking to car detail.
+- `SpeedTrace` gains an optional `limit` (default 14, Speed unchanged). A
+  store-free `HistoryBoard` renders the tab and `/dev/redline?section=history`.
+
+### Checks and visual evidence
+
+- Typecheck, zero-warning lint, web export and all tests pass.
+- [Captures and browser checks](review/rl-12/README.md): reference comparison,
+  empty, iPad, the real demo session (live ticket with a loaded sparkline), session
+  detail, and a pass linking to car detail. No console errors.
+
+### Decisions and deviations
+
+- THIS WEEK is the six days before today (a rolling week), so it does not depend on
+  the locale's first weekday. This matches the mockup's grouping.
+- The repository returns passes newest first. The detail list keeps that order but
+  numbers passes from the first one; the chart and sparklines plot oldest → newest.
+- Heat cells and totals come from real sessions. The mockup's sample counts don't
+  match its own list, so the fixture's cells differ from the PNG.
+- When two days tie for busiest, the label names the most recent.
 

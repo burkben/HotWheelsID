@@ -1,0 +1,16 @@
+{
+  "stripLabel": "Last 14 days: 9 sessions, 126 passes. Busiest: today, 2 sessions.",
+  "groups": [
+    "HISTORY",
+    "TODAY",
+    "THIS WEEK",
+    "EARLIER"
+  ],
+  "liveTicket": "Oct 4, 7:42 PM, live, 14 passes · 12 min so far, best 247 scale miles per hour, all-time best",
+  "demoTicket": "Oct 7, 2:01 PM, live, 52 passes · 3 min so far, best 285 scale miles per hour, all-time best",
+  "demoSparkline": 1,
+  "chartLabel": "53 passes, fastest 285, slowest 55 miles per hour. Threshold 220 miles per hour.",
+  "fastestRow": "Pass 28, 14:03:19, 64:81, 285 scale miles per hour, fastest",
+  "passRoute": "/garage/6C:C4:5A:2B:64:81",
+  "errors": []
+}

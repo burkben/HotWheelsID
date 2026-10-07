@@ -18,18 +18,25 @@ export interface SpeedTraceProps {
   sampleKeys?: number[];
   newBest?: boolean;
   display?: SpeedDisplay;
+  /** Bars shown (newest kept). Speed uses 14; History detail charts a whole session. */
+  limit?: number;
 }
 
-export function SpeedTrace({ values, height = 84, sampleKeys, newBest = false, display = DEFAULT_SPEED_DISPLAY }: SpeedTraceProps) {
-  const recent = values.slice(-14);
-  const keys = sampleKeys?.slice(-14);
+export function SpeedTrace({ values, height = 84, sampleKeys, newBest = false, display = DEFAULT_SPEED_DISPLAY, limit = 14 }: SpeedTraceProps) {
+  const recent = values.slice(-limit);
+  const keys = sampleKeys?.slice(-limit);
+  const unit = spokenUnit(speedUnitLabel(display.unit));
+  // Long charts summarise instead of reading every bar.
+  const label = !recent.length ? 'No passes recorded this session.'
+    : limit > 14 ? `${recent.length} passes, fastest ${formatSpeedValue(Math.max(...recent), display)}, slowest ${formatSpeedValue(Math.min(...recent), display)} ${unit}. Threshold ${formatSpeedValue(220, display)} ${unit}.`
+    : `Recent passes, oldest to newest: ${recent.map(value => formatSpeedValue(value, display)).join(', ')} ${unit}. Threshold ${formatSpeedValue(220, display)} ${unit}.`;
   return (
-    <View testID="recent-pass-bars" accessible accessibilityRole="image" accessibilityLabel={recent.length ? `Recent passes, oldest to newest: ${recent.map(value => formatSpeedValue(value, display)).join(', ')} ${spokenUnit(speedUnitLabel(display.unit))}. Threshold ${formatSpeedValue(220, display)} ${spokenUnit(speedUnitLabel(display.unit))}.` : 'No passes recorded this session.'} style={[styles.box, { height }]}>
+    <View testID="recent-pass-bars" accessible accessibilityRole="image" accessibilityLabel={label} style={[styles.box, { height, gap: limit > 14 ? 2 : 6 }]}>
       <View {...decorative} style={StyleSheet.absoluteFill}>
         <Svg width="100%" height="100%"><Line x1={0} x2="100%" y1={height * (1 - 220 / speedGauge.maxMph)} y2={height * (1 - 220 / speedGauge.maxMph)} stroke={colorsR.redFlag} strokeOpacity={0.5} strokeWidth={1} strokeDasharray="3 3" /></Svg>
       </View>
       {recent.map((mph, index) => <Bar key={keys?.[index] ?? index} mph={mph} height={height} color={recentPassBarColor(mph, index === recent.length - 1, newBest)} />)}
-      {recent.length > 0 && Array.from({ length: 14 - recent.length }, (_, i) => <View key={`empty-${i}`} {...decorative} style={{ flex: 1 }} />)}
+      {recent.length > 0 && Array.from({ length: limit - recent.length }, (_, i) => <View key={`empty-${i}`} {...decorative} style={{ flex: 1 }} />)}
       {recent.length === 0 && <RText variant="bodySmall" style={styles.empty}>Send a car through the portal</RText>}
     </View>
   );
