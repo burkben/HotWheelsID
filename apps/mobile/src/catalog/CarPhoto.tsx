@@ -4,7 +4,8 @@
  * Artwork ships inside the binary rather than being fetched, so these render
  * instantly, work offline, and keep the app's "no network requests" promise
  * intact. Roughly a tenth of the catalog has no usable wiki photo, so an absent
- * image collapses to a neutral placeholder tile instead of a broken-image glyph.
+ * image collapses to a neutral placeholder tile (the Garage's dashed "?" roundel,
+ * no emoji) instead of a broken-image glyph.
  *
  * The box accepts either a square `size` shorthand or explicit dimensions, plus
  * an optional accent `ring`.
@@ -13,7 +14,7 @@ import type { DimensionValue } from "react-native";
 import { Image, StyleSheet, Text, View } from "react-native";
 
 import { carArtwork } from "@/catalog/artwork";
-import { colors, radius } from "@/theme/tokens";
+import { colors, colorsR, fontR, radius } from "@/theme/tokens";
 
 /**
  * The box must end up with a definite height, so the three ways to express one
@@ -57,10 +58,12 @@ export function CarPhoto({
   };
 
   if (!source) {
-    const glyph = size != null ? size * 0.4 : 40;
+    const glyph = Math.round(size != null ? Math.max(20, size * 0.5) : 40);
     return (
       <View style={[styles.placeholder, box]} accessible accessibilityLabel={accessibilityLabel}>
-        <Text style={{ fontSize: glyph, opacity: 0.5 }}>🏎️</Text>
+        <View style={[styles.roundel, { width: glyph, height: glyph, borderRadius: glyph / 2 }]}>
+          <Text style={[styles.mark, { fontSize: glyph * 0.6, lineHeight: glyph * 0.7 }]}>?</Text>
+        </View>
       </View>
     );
   }
@@ -86,12 +89,20 @@ export function CarPhoto({
 
 const styles = StyleSheet.create({
   placeholder: {
-    backgroundColor: colors.panelInset,
-    borderColor: colors.hairline,
+    backgroundColor: colorsR.pitWall,
+    borderColor: colorsR.hairline,
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
   },
+  roundel: {
+    borderWidth: 2,
+    borderStyle: "dashed",
+    borderColor: colorsR.inkMuted,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  mark: { fontFamily: fontR.display, color: colorsR.inkSecondary },
   frame: {
     backgroundColor: colors.panelInset,
     // Keeps the photo inside the rounded corners and the accent ring.

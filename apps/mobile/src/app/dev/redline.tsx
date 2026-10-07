@@ -56,8 +56,14 @@ const Trophies: ComponentType | null = __DEV__
   ? require('@/components/redline/dev/TrophyGallery').TrophyGallery
   : null;
 
+const LiveLog: ComponentType | null = __DEV__
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  ? require('@/components/redline/dev/LiveLogGallery').LiveLogGallery
+  : null;
+
 export default function RedlineGalleryRoute() {
   const { section } = useLocalSearchParams<{ section?: string }>();
+  if (section === 'live-log' && LiveLog) return <LiveLog />;
   if (section === 'trophies' && Trophies) return <Trophies />;
   if (section === 'history' && History) return <History />;
   if (section === 'garage' && Garage) return <Garage />;

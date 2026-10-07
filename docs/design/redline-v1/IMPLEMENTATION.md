@@ -19,8 +19,9 @@ is the source of truth for merge status. Each issue has its own branch and PR.
 | RL-11 / #78 | [PR #98](https://github.com/burkben/HotWheelsID/pull/98) |
 | RL-12 / #79 | [PR #99](https://github.com/burkben/HotWheelsID/pull/99) |
 | RL-13 / #80 | [PR #100](https://github.com/burkben/HotWheelsID/pull/100) |
-| RL-14 / #81 | Implemented; review evidence below |
-| RL-15–RL-18 / #82–#85 | Pending, in order |
+| RL-14 / #81 | [PR #101](https://github.com/burkben/HotWheelsID/pull/101) |
+| RL-15 / #82 | Implemented; review evidence below |
+| RL-16–RL-18 / #83–#85 | Pending, in order |
 | RL-19 / #86 | Out of scope; not started |
 
 ## RL-01 — tokens and bundled fonts
@@ -655,4 +656,52 @@ Branch: `redline/rl-14-settings`, stacked on RL-13.
 - Demo trigger and Connection details rows are kept (the mockup omits them) so no
   existing action is lost.
 - The calibration value keeps the existing `formatCalibration` output ("×1.00").
+
+## RL-15 — Remaining surfaces, banners, empty states and splash
+
+Branch: `redline/rl-15-surfaces`, stacked on RL-14.
+
+- Live portal: `ScreenHeader` "LIVE PORTAL" (back to More) with the `StatusChip`.
+  Notices use a new shared `Notice` panel (pitLane, 3 pt tone bar, HUD eyebrow,
+  body). Stats are `StatCell`s. Log rows are a new `LiveLogRow`: HUD timestamp, a
+  skewed EVENT/INFO/ERROR tag in chip colours, and the payload in HUD medium.
+- Credits: `ScreenHeader`, `SectionHeader`s and square pitLane panels. All provenance,
+  license, font-license and privacy content and links are unchanged; links now meet
+  44 pt.
+- Identify: `ScreenHeader` with Done. Mode, year and wave use the Redline
+  `FilterChip` in horizontal rows, with an inset search field. Catalog cards use the
+  Garage card info layout (photo bay with a toy-number ribbon, display-800 name,
+  meta lines, wiki link). Confirm and Undo use Redline panels and compact buttons.
+  Every action and the confirm/undo flow are unchanged.
+- `BleStatusBanner` and `PersistenceStatusBanner`: pitLane with a 3 pt tone bar, HUD
+  eyebrow and body. Same copy, actions and live-region roles.
+- Emoji: the last UI emoji (the `CarPhoto` no-artwork placeholder) is now the dashed
+  "?" roundel. A code-point grep finds emoji only in the achievements catalog data
+  (kept by design) and a BLE debug log string.
+- Splash: `expo-splash-screen` background `#07090F` with the icon's track glyph
+  (`assets/images/splash-icon.svg`, clipped to the icon tile, transparent), 160 pt
+  wide on iOS and Android. `npm run assets:images --workspace mobile` exports it
+  with the new devDependency `@resvg/resvg-js`; `-- --check` verifies the PNG is
+  byte-identical to a fresh export. TV mode is untouched.
+
+### Checks and visual evidence
+
+- Typecheck, zero-warning lint, web export and all tests pass.
+- [Captures and browser checks](review/rl-15/README.md): Live (real web state and a
+  log fixture), Credits with the font license expanded, Identify (catalog, a
+  no-artwork placeholder, confirm → saved → undo, the year filter), the web
+  persistence banner, and the splash glyph composited at its configured size. No
+  console errors.
+
+### Decisions and deviations
+
+- Demo mode does not write to the BLE event log (unchanged), so log styling is
+  reviewed with `/dev/redline?section=live-log` sample rows.
+- `BleStatusBanner` appears on Speed only for native Bluetooth faults, which web
+  cannot produce, so the fixture renders it in its powered-off and error states.
+- The splash glyph keeps the icon tile's rounded clip. On the asphalt background
+  only the track and finish line read. A native splash can't be captured on web;
+  `splash-preview.png` composites the exported PNG at 160 pt on #07090F.
+- `@resvg/resvg-js` is a Node build tool (devDependency only). It is never bundled
+  into the app and adds no native module.
 

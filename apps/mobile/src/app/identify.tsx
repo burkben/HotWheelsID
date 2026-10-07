@@ -3,14 +3,16 @@
  * bundled catalog (ADR-0013). Manual by design: a decoded car only carries an
  * opaque casting key, so the user matches it to a name/photo here once and every
  * copy of that casting is named thereafter.
+ * Redline layout (SPEC §4.12): ScreenHeader, skewed filter chips in scroll rows,
+ * an inset search field and catalog cards in the Garage card info layout.
  */
 import { useMemo, useState } from "react";
 import {
   FlatList,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from "react-native";
@@ -36,7 +38,10 @@ import {
   useIdentifyCar,
   type IdentificationChange,
 } from "@/catalog/useCarIdentity";
-import { colors, fontSize, fontWeight, radiusT, spacing } from "@/theme/tokens";
+import { FilterChip, RaceButton, RText, ScreenHeader, SkewBox } from "@/components/redline";
+import { padGrid } from "@/garage/cardModel";
+import { decorative } from "@/components/redline/decorative";
+import { colorsR, fontR } from "@/theme/tokens";
 
 type IdentifyMode = "catalog" | "toyNumber";
 
@@ -100,36 +105,39 @@ export default function IdentifyScreen() {
   };
 
   return (
-    <View style={[styles.screen, { paddingTop: insets.top + spacing(2) }]}>
+    <View style={[styles.screen, { paddingTop: insets.top + 8 }]}>
       <View style={styles.header}>
-        <View style={styles.headerText}>
-          <Text style={styles.title}>Identify car</Text>
-          <Text style={styles.subtitle} numberOfLines={1}>
-            {current
+        <ScreenHeader
+          title="Identify"
+          subtitle={
+            current
               ? `Currently: ${current.name}`
               : coverage && coverage.otherCars > 0
                 ? `Match once to label this car + ${coverage.otherCars} other ${coverage.otherCars === 1 ? "copy" : "copies"}`
-                : "Match this tag to a real casting"}
-          </Text>
-        </View>
-        <Pressable
-          hitSlop={12}
-          onPress={() => router.back()}
-          style={({ pressed }) => [styles.close, pressed && styles.pressed]}
-        >
-          <Text style={styles.closeText}>Done</Text>
-        </Pressable>
+                : "Match this tag to a real casting"
+          }
+          right={
+            <Pressable
+              onPress={() => router.back()}
+              accessibilityRole="button"
+              accessibilityLabel="Done"
+              style={({ pressed }) => [styles.close, pressed && styles.pressed]}
+            >
+              <RText style={styles.closeText}>Done</RText>
+            </Pressable>
+          }
+        />
       </View>
 
-      <View style={styles.modeRow}>
+      <View style={styles.modeRow} accessibilityRole="tablist">
         <FilterChip
           label="Browse catalog"
-          active={mode === "catalog"}
+          selected={mode === "catalog"}
           onPress={() => chooseMode("catalog")}
         />
         <FilterChip
           label="Package toy #"
-          active={mode === "toyNumber"}
+          selected={mode === "toyNumber"}
           onPress={() => chooseMode("toyNumber")}
         />
       </View>
@@ -138,7 +146,7 @@ export default function IdentifyScreen() {
         <MaterialCommunityIcons
           name="magnify"
           size={20}
-          color={colors.inkMuted}
+          color={colorsR.inkMuted}
           style={styles.searchIcon}
         />
         <TextInput
@@ -152,8 +160,9 @@ export default function IdentifyScreen() {
               ? "Enter package toy number, e.g. FXB03"
               : "Search name, series, toy #, wave, or year"
           }
-          placeholderTextColor={colors.inkMuted}
+          placeholderTextColor={colorsR.inkMuted}
           style={styles.search}
+          accessibilityLabel={mode === "toyNumber" ? "Package toy number" : "Search the catalog"}
           autoCorrect={false}
           autoCapitalize="none"
           returnKeyType="search"
@@ -163,11 +172,11 @@ export default function IdentifyScreen() {
 
       <View style={styles.filters}>
         <View style={styles.filterGroup}>
-          <Text style={styles.filterLabel}>Year</Text>
-          <View style={styles.filterChips}>
+          <RText variant="eyebrow" style={styles.filterLabel}>YEAR</RText>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterChips}>
             <FilterChip
               label="All"
-              active={year === null}
+              selected={year === null}
               onPress={() => {
                 setYear(null);
                 setWave(null);
@@ -178,7 +187,7 @@ export default function IdentifyScreen() {
               <FilterChip
                 key={option}
                 label={String(option)}
-                active={year === option}
+                selected={year === option}
                 onPress={() => {
                   setYear(option);
                   setWave(null);
@@ -186,14 +195,14 @@ export default function IdentifyScreen() {
                 }}
               />
             ))}
-          </View>
+          </ScrollView>
         </View>
         <View style={styles.filterGroup}>
-          <Text style={styles.filterLabel}>Wave</Text>
-          <View style={styles.filterChips}>
+          <RText variant="eyebrow" style={styles.filterLabel}>WAVE</RText>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterChips}>
             <FilterChip
               label="All"
-              active={wave === null}
+              selected={wave === null}
               onPress={() => {
                 setWave(null);
                 setCandidate(undefined);
@@ -203,67 +212,60 @@ export default function IdentifyScreen() {
               <FilterChip
                 key={option}
                 label={option.replace(" Series ", " S")}
-                active={wave === option}
+                selected={wave === option}
                 onPress={() => {
                   setWave(option);
                   setCandidate(undefined);
                 }}
               />
             ))}
-          </View>
+          </ScrollView>
         </View>
       </View>
 
       {candidate ? (
         <View style={styles.confirmPanel}>
+          <View {...decorative} style={[styles.panelBar, { backgroundColor: colorsR.electric }]} />
           <View style={styles.confirmText}>
-            <Text style={styles.confirmTitle}>Confirm {candidate.name}?</Text>
-            <Text style={styles.confirmBody}>
+            <RText variant="carName" style={styles.confirmTitle}>Confirm {candidate.name}?</RText>
+            <RText variant="bodySmall" style={styles.confirmBody}>
               This labels this casting
               {coverage && coverage.otherCars > 0
                 ? ` and ${coverage.otherCars} matching ${coverage.otherCars === 1 ? "copy" : "copies"}`
                 : ""}
               . You can undo after saving.
-            </Text>
+            </RText>
           </View>
           <View style={styles.confirmActions}>
-            <Pressable
-              onPress={() => setCandidate(undefined)}
-              style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]}
-            >
-              <Text style={styles.secondaryButtonText}>Cancel</Text>
-            </Pressable>
-            <Pressable
-              onPress={confirmPick}
-              style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}
-            >
-              <Text style={styles.primaryButtonText}>Confirm</Text>
-            </Pressable>
+            <RaceButton variant="ghost" compact label="Cancel" onPress={() => setCandidate(undefined)} />
+            <RaceButton compact label="Confirm" onPress={confirmPick} />
           </View>
         </View>
       ) : undo ? (
         <View style={styles.savedPanel}>
-          <Text style={styles.savedText} numberOfLines={2}>
+          <View {...decorative} style={[styles.panelBar, { backgroundColor: colorsR.greenFlag }]} />
+          <RText variant="bodySmall" style={styles.savedText} numberOfLines={2}>
             Saved {undo.car.name}
-          </Text>
-          <Pressable onPress={undoPick} hitSlop={8}>
-            <Text style={styles.undoText}>Undo</Text>
+          </RText>
+          <Pressable onPress={undoPick} accessibilityRole="button" accessibilityLabel={`Undo identifying as ${undo.car.name}`} style={({ pressed }) => [styles.undo, pressed && styles.pressed]}>
+            <RText style={styles.undoText}>Undo</RText>
           </Pressable>
         </View>
       ) : null}
 
       <FlatList
-        data={results}
-        keyExtractor={(c) => c.id}
+        // Spacers keep a lone last card at its column width.
+        data={padGrid(results, 2)}
+        keyExtractor={(c, i) => c?.id ?? `spacer-${i}`}
         numColumns={2}
         columnWrapperStyle={styles.gridRow}
         contentContainerStyle={[
           styles.grid,
-          { paddingBottom: insets.bottom + spacing(6) },
+          { paddingBottom: insets.bottom + 24 },
           results.length === 0 && styles.gridEmpty,
         ]}
         keyboardShouldPersistTaps="handled"
-        renderItem={({ item }) => (
+        renderItem={({ item }) => !item ? <View style={styles.spacer} /> : (
           <CarCard
             car={item}
             selected={item.id === current?.id}
@@ -272,7 +274,7 @@ export default function IdentifyScreen() {
           />
         )}
         ListEmptyComponent={
-          <Text style={styles.noResults}>No cars match “{query.trim()}”.</Text>
+          <RText variant="bodySmall" style={styles.noResults}>No cars match “{query.trim()}”.</RText>
         }
       />
     </View>
@@ -295,6 +297,9 @@ function CarCard({
   return (
     <Pressable
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={[car.name, primaryMeta, secondaryMeta, selected ? "current identity" : null].filter(Boolean).join(", ")}
+      accessibilityState={{ selected: selected || candidate }}
       style={({ pressed }) => [
         styles.card,
         selected && styles.cardSelected,
@@ -303,201 +308,129 @@ function CarCard({
       ]}
     >
       <View style={styles.cardPhotoWrap}>
-        <CarPhoto carId={car.id} width="100%" aspectRatio={1} rounded={radiusT.field} ring={selected} />
+        <CarPhoto carId={car.id} width="100%" aspectRatio={4 / 3} rounded={0} />
+        {car.toyNumber ? (
+          <SkewBox angle={-14} style={styles.toyRibbon}>
+            <RText variant="chip" style={styles.toyText}>{car.toyNumber}</RText>
+          </SkewBox>
+        ) : null}
         {selected ? (
           <View style={styles.checkBadge}>
-            <MaterialCommunityIcons name="check" size={15} color={colors.void} />
+            <MaterialCommunityIcons name="check" size={15} color={colorsR.asphalt} />
           </View>
         ) : null}
       </View>
-      <Text style={styles.cardName} numberOfLines={2}>
-        {car.name}
-      </Text>
-      {primaryMeta ? (
-        <Text style={styles.cardMeta} numberOfLines={1}>
-          {primaryMeta}
-        </Text>
-      ) : null}
-      {secondaryMeta ? (
-        <Text style={styles.cardMetaSecondary} numberOfLines={1}>
-          {secondaryMeta}
-        </Text>
-      ) : null}
-      {car.wikiPage ? (
-        <Pressable
-          onPress={(event) => {
-            event.stopPropagation();
-            void WebBrowser.openBrowserAsync(car.wikiPage!);
-          }}
-          hitSlop={8}
-          style={({ pressed }) => [styles.wikiLink, pressed && styles.pressed]}
-        >
-          <Text style={styles.wikiLinkText}>View wiki</Text>
-        </Pressable>
-      ) : null}
-    </Pressable>
-  );
-}
-
-function FilterChip({
-  label,
-  active,
-  onPress,
-}: {
-  label: string;
-  active: boolean;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.filterChip,
-        active && styles.filterChipActive,
-        pressed && styles.pressed,
-      ]}
-    >
-      <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>{label}</Text>
+      <View style={styles.cardInfo}>
+        <RText variant="carName" style={styles.cardName} numberOfLines={2}>
+          {car.name}
+        </RText>
+        {primaryMeta ? (
+          <RText variant="bodySmall" style={styles.cardMeta} numberOfLines={1}>
+            {primaryMeta}
+          </RText>
+        ) : null}
+        {secondaryMeta ? (
+          <RText variant="eyebrow" style={styles.cardMetaSecondary} numberOfLines={1}>
+            {secondaryMeta}
+          </RText>
+        ) : null}
+        {car.wikiPage ? (
+          <Pressable
+            onPress={(event) => {
+              event.stopPropagation();
+              void WebBrowser.openBrowserAsync(car.wikiPage!);
+            }}
+            accessibilityRole="link"
+            accessibilityLabel={`View ${car.name} on the wiki`}
+            style={({ pressed }) => [styles.wikiLink, pressed && styles.pressed]}
+          >
+            <RText style={styles.wikiLinkText}>View wiki ↗</RText>
+          </Pressable>
+        ) : null}
+      </View>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.void },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing(3),
-    paddingHorizontal: spacing(5),
-    paddingBottom: spacing(3),
-  },
-  headerText: { flex: 1, gap: 2 },
-  title: { color: colors.ink, fontSize: fontSize.xl, fontWeight: fontWeight.heavy },
-  subtitle: { color: colors.inkSecondary, fontSize: fontSize.sm },
-  close: { paddingVertical: spacing(1), paddingHorizontal: spacing(2) },
-  closeText: { color: colors.electric, fontSize: fontSize.md, fontWeight: fontWeight.bold },
-  modeRow: {
-    flexDirection: "row",
-    gap: spacing(2),
-    paddingHorizontal: spacing(5),
-    marginBottom: spacing(2),
-  },
+  screen: { flex: 1, backgroundColor: colorsR.asphalt },
+  header: { paddingHorizontal: 16, paddingBottom: 12 },
+  close: { minHeight: 44, minWidth: 44, alignItems: "flex-end", justifyContent: "center" },
+  closeText: { fontFamily: fontR.bodySemi, color: colorsR.electric },
+  modeRow: { flexDirection: "row", paddingHorizontal: 12, marginBottom: 6 },
   searchRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginHorizontal: spacing(5),
-    marginBottom: spacing(3),
-    backgroundColor: colors.panelInset,
-    borderColor: colors.hairline,
+    marginHorizontal: 16,
+    marginBottom: 10,
+    backgroundColor: colorsR.inset,
+    borderColor: colorsR.fieldBorder,
     borderWidth: 1,
-    borderRadius: radiusT.card,
-    paddingHorizontal: spacing(3.5),
+    paddingHorizontal: 12,
+    minHeight: 46,
   },
-  searchIcon: { marginRight: spacing(2) },
-  search: {
-    flex: 1,
-    paddingVertical: spacing(3),
-    color: colors.ink,
-    fontSize: fontSize.md,
-  },
-  filters: {
-    paddingHorizontal: spacing(5),
-    paddingBottom: spacing(3),
-    gap: spacing(2),
-  },
-  filterGroup: { gap: spacing(1) },
-  filterLabel: {
-    color: colors.inkMuted,
-    fontSize: fontSize.xs,
-    fontWeight: fontWeight.bold,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-  filterChips: { flexDirection: "row", flexWrap: "wrap", gap: spacing(1.5) },
-  filterChip: {
-    borderWidth: 1,
-    borderColor: colors.hairline,
-    borderRadius: radiusT.pill,
-    backgroundColor: colors.panelInset,
-    paddingHorizontal: spacing(2.5),
-    paddingVertical: spacing(1.5),
-  },
-  filterChipActive: { borderColor: colors.electric, backgroundColor: colors.accentBlueSoft },
-  filterChipText: { color: colors.inkSecondary, fontSize: fontSize.xs, fontWeight: fontWeight.bold },
-  filterChipTextActive: { color: colors.electric },
+  searchIcon: { marginRight: 8 },
+  search: { flex: 1, paddingVertical: 10, color: colorsR.chalk, fontFamily: fontR.body, fontSize: 16 },
+  filters: { paddingBottom: 10, gap: 4 },
+  filterGroup: { gap: 0 },
+  filterLabel: { fontFamily: fontR.hud, color: colorsR.inkMuted, paddingHorizontal: 16 },
+  filterChips: { paddingHorizontal: 12 },
   confirmPanel: {
-    marginHorizontal: spacing(5),
-    marginBottom: spacing(3),
-    padding: spacing(3),
-    borderWidth: 1,
-    borderColor: colors.electric,
-    borderRadius: radiusT.card,
-    backgroundColor: colors.panelRaised,
-    gap: spacing(3),
+    marginHorizontal: 16,
+    marginBottom: 12,
+    paddingTop: 15,
+    paddingHorizontal: 14,
+    paddingBottom: 12,
+    backgroundColor: colorsR.pitLane,
+    gap: 10,
+    overflow: "hidden",
   },
-  confirmText: { gap: spacing(1) },
-  confirmTitle: { color: colors.ink, fontSize: fontSize.md, fontWeight: fontWeight.bold },
-  confirmBody: { color: colors.inkSecondary, fontSize: fontSize.sm },
-  confirmActions: { flexDirection: "row", justifyContent: "flex-end", gap: spacing(2) },
-  secondaryButton: {
-    borderWidth: 1,
-    borderColor: colors.hairline,
-    borderRadius: radiusT.card,
-    paddingHorizontal: spacing(3),
-    paddingVertical: spacing(2),
-  },
-  secondaryButtonText: { color: colors.inkSecondary, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
-  primaryButton: {
-    backgroundColor: colors.flame,
-    borderRadius: radiusT.card,
-    paddingHorizontal: spacing(3),
-    paddingVertical: spacing(2),
-  },
-  primaryButtonText: { color: colors.void, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
+  panelBar: { position: "absolute", top: 0, left: 0, right: 0, height: 3 },
+  confirmText: { gap: 4 },
+  confirmTitle: { fontSize: 20, lineHeight: 22 },
+  confirmBody: { color: colorsR.inkSecondary },
+  confirmActions: { flexDirection: "row", justifyContent: "flex-end", gap: 4 },
   savedPanel: {
-    marginHorizontal: spacing(5),
-    marginBottom: spacing(3),
-    paddingHorizontal: spacing(3),
-    paddingVertical: spacing(2.5),
-    borderRadius: radiusT.card,
-    backgroundColor: colors.accentSoft,
+    marginHorizontal: 16,
+    marginBottom: 12,
+    paddingTop: 8,
+    paddingLeft: 14,
+    backgroundColor: colorsR.pitLane,
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing(3),
+    gap: 12,
+    overflow: "hidden",
   },
-  savedText: { flex: 1, color: colors.ink, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
-  undoText: { color: colors.electric, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
-  grid: { paddingHorizontal: spacing(5), gap: spacing(3) },
-  gridRow: { gap: spacing(3) },
+  savedText: { flex: 1, fontFamily: fontR.bodySemi, color: colorsR.chalk },
+  undo: { minHeight: 44, minWidth: 64, alignItems: "center", justifyContent: "center" },
+  undoText: { fontFamily: fontR.bodySemi, color: colorsR.electric },
+  grid: { paddingHorizontal: 16, gap: 12 },
+  gridRow: { gap: 12 },
   gridEmpty: { flexGrow: 1, justifyContent: "center" },
-  card: {
-    flex: 1,
-    backgroundColor: colors.panelSolid,
-    borderColor: colors.hairline,
-    borderWidth: 1,
-    borderRadius: radiusT.card,
-    padding: spacing(3),
-    gap: spacing(2),
-  },
-  cardSelected: { borderColor: colors.flame, backgroundColor: colors.panelRaised },
-  cardCandidate: { borderColor: colors.electric, backgroundColor: colors.panelRaised },
+  spacer: { flex: 1 },
+  card: { flex: 1, backgroundColor: colorsR.pitLane, overflow: "hidden" },
+  cardSelected: { borderWidth: 2, borderColor: colorsR.flame },
+  cardCandidate: { borderWidth: 2, borderColor: colorsR.electric },
   cardPhotoWrap: { width: "100%" },
+  toyRibbon: { position: "absolute", right: -6, top: 10, backgroundColor: colorsR.gridBox, paddingVertical: 3, paddingLeft: 8, paddingRight: 12 },
+  toyText: { fontSize: 10, lineHeight: 12, color: colorsR.inkSecondary },
   checkBadge: {
     position: "absolute",
-    top: spacing(2),
-    right: spacing(2),
+    left: 10,
+    top: 10,
     width: 24,
     height: 24,
-    borderRadius: radiusT.pill,
-    backgroundColor: colors.flame,
+    borderRadius: 12,
+    backgroundColor: colorsR.flame,
     alignItems: "center",
     justifyContent: "center",
   },
-  cardName: { color: colors.ink, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
-  cardMeta: { color: colors.inkSecondary, fontSize: fontSize.xs },
-  cardMetaSecondary: { color: colors.inkMuted, fontSize: fontSize.xs },
-  wikiLink: { marginTop: "auto", alignSelf: "flex-start", paddingTop: spacing(1) },
-  wikiLinkText: { color: colors.electric, fontSize: fontSize.xs, fontWeight: fontWeight.bold },
-  noResults: { color: colors.inkSecondary, fontSize: fontSize.sm, textAlign: "center" },
+  cardInfo: { flex: 1, paddingTop: 10, paddingHorizontal: 12, paddingBottom: 4, gap: 4 },
+  cardName: { fontSize: 18, lineHeight: 19 },
+  cardMeta: { fontSize: 12, lineHeight: 16, color: colorsR.inkSecondary },
+  cardMetaSecondary: { fontFamily: fontR.hud, fontSize: 10, lineHeight: 12, letterSpacing: 0.5, color: colorsR.inkMuted },
+  wikiLink: { marginTop: "auto", alignSelf: "flex-start", minHeight: 44, justifyContent: "center" },
+  wikiLinkText: { fontFamily: fontR.bodySemi, fontSize: 13, color: colorsR.electric },
+  noResults: { color: colorsR.inkSecondary, textAlign: "center" },
   pressed: { opacity: 0.7 },
 });
