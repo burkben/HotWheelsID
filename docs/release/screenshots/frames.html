@@ -1,0 +1,110 @@
+<!doctype html>
+<!--
+  Redline V1 App Store frames (SPEC §6), reproducing docs/design/redline-v1/source/Store01–06.
+  render.cjs opens this file once per frame with a URL hash:
+    #frame=1&device=iphone&width=1206&height=2622&capture=<file URL>
+  The page is drawn on a fixed design stage (430 wide for iPhone, 1376 × 1032 for iPad
+  landscape) and scaled to the exact output pixels. The capture is a real simulator
+  screenshot of the matching screen; nothing in this file draws app UI.
+  No Mattel or Hot Wheels marks: the product is Redline ID.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Redline ID store frame</title>
+<link rel="stylesheet" href="../../design/redline-v1/static/fonts/fonts.css">
+<style>
+  html, body { margin: 0; background: #07090F; overflow: hidden; }
+  #stage { position: absolute; left: 0; top: 0; transform-origin: 0 0; overflow: hidden; font-family: 'Barlow', system-ui, sans-serif; }
+  .bg, .decor { position: absolute; inset: 0; }
+  .copy { position: absolute; left: 32px; right: 32px; top: 60px; display: flex; flex-direction: column; gap: 10px; }
+  .eyebrow { font-family: 'Chakra Petch', monospace; font-weight: 700; font-size: 14px; letter-spacing: 2px; }
+  h1 { margin: 0; font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 64px; line-height: 0.86; letter-spacing: -1px; }
+  .wordmark { display: flex; align-items: center; gap: 6px; }
+  .wordmark b { font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 24px; line-height: 1; }
+  .wordmark i { transform: skewX(-12deg); background: #07090F; padding: 1px 6px; font-style: normal; }
+  .wordmark i span { display: block; transform: skewX(12deg); font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 18px; line-height: 1; color: #FF6A13; }
+  /* Phone bezel: 324 × 678, radius 54, 10 pt bezel; screen 304 × 658 (Store0*.dc.html). */
+  .phone { position: absolute; left: 53px; top: 244px; width: 324px; height: 678px; box-sizing: border-box; padding: 10px; border-radius: 54px; }
+  .screen { position: relative; width: 100%; height: 100%; border-radius: 44px; overflow: hidden; background: #07090F; }
+  .screen img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top center; }
+  .island { position: absolute; left: 107px; top: 9px; width: 90px; height: 26px; border-radius: 13px; background: #000; }
+  /* iPad landscape: same headline system top-left, a landscape bezel bleeding off the bottom. */
+  .ipad .copy { left: 72px; right: auto; width: 520px; top: 72px; gap: 14px; }
+  .ipad h1 { font-size: 88px; }
+  .ipad .eyebrow { font-size: 18px; }
+  .ipad .wordmark b { font-size: 32px; } .ipad .wordmark i span { font-size: 24px; }
+  /* 1040 wide, centred, 4:3 screen; bleeds ~50 pt off the bottom like the phone frames. */
+  .ipad .phone { left: 168px; top: 290px; width: 1040px; height: 789px; padding: 18px; border-radius: 52px; }
+  .ipad .screen { border-radius: 36px; }
+  .ipad .island { display: none; }
+  .rake { background: repeating-linear-gradient(-60deg, rgba(7,9,15,0.06) 0 3px, transparent 3px 26px); }
+  .streak { position: absolute; height: 8px; border-radius: 4px; }
+  .hex { position: absolute; }
+</style>
+</head>
+<body>
+<div id="stage"><div class="bg"></div><div class="decor"></div><div class="copy"></div><div class="phone"><div class="screen"><img alt=""><div class="island"></div></div></div></div>
+<script>
+const CAR = 'M6 42 C6 36 10 33 18 32 L52 28 C64 18 82 12 104 12 C122 12 136 18 150 27 L182 31 C190 32 194 36 194 42 L194 46 C194 48 192 49 190 49 L166 49 A14 14 0 0 0 138 49 L64 49 A14 14 0 0 0 36 49 L10 49 C7 49 6 47 6 45 Z';
+const HEX = 'M28 2 L54 17 L54 47 L28 62 L2 47 L2 17 Z';
+const FLAME = 'M12 3c1 4 6 6 6 11a6 6 0 0 1-12 0c0-3 2-4 2-7 2 1 3 3 3 5 1-3 1-6 1-9z';
+const wordmark = '<div class="wordmark"><b>REDLINE</b><i><span>ID</span></i></div>';
+
+/** One entry per frame, in store order (SPEC §6). `decor` takes the device so iPad can reposition motifs. */
+const FRAMES = {
+  1: { slug: 'the-portal-is-back', bg: '#FF6A13', ink: '#07090F', rake: true, top: wordmark, headline: 'THE PORTAL<br>IS BACK.',
+       bezel: 'background:#141A25;box-shadow:0 30px 60px rgba(7,9,15,0.45), inset 0 0 0 1px rgba(245,247,250,0.14)',
+       decor: (d) => d === 'ipad'
+         ? '<div class="streak" style="left:-30px;top:560px;width:220px;background:#07090F;opacity:.8"></div><div class="streak" style="left:-30px;top:590px;width:150px;background:#F5F7FA"></div>'
+         : '<div class="streak" style="left:-30px;top:470px;width:140px;background:#07090F;opacity:.8"></div><div class="streak" style="left:-30px;top:494px;width:90px;background:#F5F7FA"></div><div class="streak" style="right:-30px;top:600px;width:120px;background:#07090F;opacity:.8"></div><div class="streak" style="right:-30px;top:624px;width:70px;background:#F5F7FA"></div>' },
+  2: { slug: 'lights-out', bg: '#07090F', ink: '#F5F7FA', eyebrow: ['RACE MODE', '#FF6A13'], headline: 'LIGHTS OUT.<br>LET\'S RACE.',
+       bezel: 'background:#1A2230;box-shadow:0 0 0 1px rgba(245,247,250,0.14), 0 0 60px rgba(255,77,94,0.18)',
+       decor: (d) => '<div style="position:absolute;left:0;right:0;top:0;height:12px;background:repeating-linear-gradient(-45deg,#FF6A13 0 12px,#F5F7FA 12px 24px)"></div>'
+         + `<div style="position:absolute;right:${d === 'ipad' ? 72 : 32}px;top:${d === 'ipad' ? 90 : 70}px;display:flex;gap:8px">`
+         + '<div style="width:22px;height:22px;border-radius:50%;background:#FF4D5E;box-shadow:0 0 14px rgba(255,77,94,0.8)"></div>'.repeat(2)
+         + '<div style="width:22px;height:22px;border-radius:50%;background:#2A1418"></div></div>' },
+  3: { slug: 'every-lap', bg: '#0D1119', ink: '#F5F7FA', eyebrow: ['LAP TIMING', '#2BD1FF'], headline: 'EVERY LAP<br>ON THE CLOCK.',
+       bezel: 'background:#1A2230;box-shadow:0 30px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(245,247,250,0.14)',
+       decor: (d) => '<div style="position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(163,177,194,0.05) 0 1px,transparent 1px 32px),repeating-linear-gradient(90deg,rgba(163,177,194,0.05) 0 1px,transparent 1px 32px)"></div>'
+         + `<svg style="position:absolute;left:${d === 'ipad' ? -40 : -60}px;top:${d === 'ipad' ? 420 : 380}px" width="560" height="420" viewBox="0 0 358 200"><path d="M70 30 H270 C310 30 335 55 320 92 L290 160 C278 186 240 190 222 166 L196 132 C184 116 162 116 150 132 L124 166 C106 190 66 186 52 160 L30 110 C14 70 34 30 70 30 Z" fill="none" stroke="#FF6A13" stroke-opacity="0.22" stroke-width="16" stroke-linejoin="round"/></svg>` },
+  4: { slug: 'beat-your-best', bg: '#07090F', ink: '#F5F7FA', eyebrow: ['PERSONAL RECORDS', '#FFD23F'], headline: 'BEAT<br>YOUR BEST.',
+       bezel: 'background:#1A2230;box-shadow:0 30px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(245,247,250,0.14)',
+       decor: (d) => `<div style="position:absolute;left:-60px;right:-60px;top:${d === 'ipad' ? 560 : 470}px;height:120px;transform:rotate(-8deg);background:conic-gradient(#F5F7FA 25%,#07090F 0 50%,#F5F7FA 0 75%,#07090F 0) 0 0/40px 40px;opacity:.9"></div>`
+         + `<div style="position:absolute;${d === 'ipad' ? 'left:500px;top:110px' : 'right:34px;top:120px'};transform:rotate(-8deg);border:3px solid #FFD23F;padding:3px"><div style="border:1px solid #FFD23F;padding:5px 10px;font-family:'Barlow Condensed',sans-serif;font-style:italic;font-weight:900;font-size:20px;line-height:1;color:#FFD23F;text-align:center">NEW<br>RECORD</div></div>` },
+  5: { slug: 'every-car', bg: '#2BD1FF', ink: '#07090F', rake: true, eyebrow: ['YOUR GARAGE', '#07090F'], headline: 'EVERY CAR,<br>REMEMBERED.',
+       bezel: 'background:#141A25;box-shadow:0 30px 60px rgba(7,9,15,0.4), inset 0 0 0 1px rgba(245,247,250,0.14)',
+       decor: (d) => `<svg style="position:absolute;left:-80px;top:${d === 'ipad' ? 700 : 560}px;opacity:.18" width="300" height="90" viewBox="0 0 200 60"><path d="${CAR}" fill="#07090F"/></svg>`
+         + `<svg style="position:absolute;right:-90px;top:${d === 'ipad' ? 120 : 380}px;opacity:.18" width="300" height="90" viewBox="0 0 200 60"><path d="${CAR}" fill="#07090F"/></svg>` },
+  6: { slug: 'trophies', bg: '#07090F', ink: '#F5F7FA', eyebrow: ['TROPHY CASE', '#FFD23F'], headline: '13 TROPHIES<br>TO HUNT.',
+       bezel: 'background:#1A2230;box-shadow:0 0 0 1px rgba(245,247,250,0.14), 0 0 60px rgba(255,210,63,0.15)',
+       decor: (d) => `<svg class="hex" style="left:-20px;top:${d === 'ipad' ? 560 : 430}px;opacity:.5" width="110" height="126" viewBox="0 0 56 64"><path d="${HEX}" fill="none" stroke="#FFD23F" stroke-width="3"/></svg>`
+         + `<svg class="hex" style="right:-30px;top:600px;opacity:.35" width="130" height="148" viewBox="0 0 56 64"><path d="${HEX}" fill="none" stroke="#FFD23F" stroke-width="3"/></svg>`
+         + `<svg class="hex" style="${d === 'ipad' ? 'left:560px;top:120px' : 'right:34px;top:146px'}" width="70" height="80" viewBox="0 0 56 64"><path d="${HEX}" fill="#FFD23F"/><svg x="16" y="20" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#07090F" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="${FLAME}"/></svg></svg>` },
+};
+window.FRAMES = Object.fromEntries(Object.entries(FRAMES).map(([k, f]) => [k, { slug: f.slug, headline: f.headline.replace('<br>', ' ') }]));
+
+const params = new URLSearchParams(location.hash.slice(1));
+const frame = FRAMES[params.get('frame')];
+const device = params.get('device') === 'ipad' ? 'ipad' : 'iphone';
+const width = Number(params.get('width'));
+const height = Number(params.get('height'));
+if (frame && width && height) {
+  // iPhone: a 430-wide stage whose height follows the output aspect; iPad: 1376 × 1032.
+  const stageWidth = device === 'ipad' ? 1376 : 430;
+  const scale = width / stageWidth;
+  const stage = document.getElementById('stage');
+  stage.className = device;
+  Object.assign(stage.style, { width: `${stageWidth}px`, height: `${height / scale}px`, transform: `scale(${scale})`, background: frame.bg, color: frame.ink });
+  stage.querySelector('.bg').className = `bg${frame.rake ? ' rake' : ''}`;
+  stage.querySelector('.decor').innerHTML = frame.decor(device);
+  stage.querySelector('.copy').innerHTML = (frame.top ?? `<span class="eyebrow" style="color:${frame.eyebrow[1]}">${frame.eyebrow[0]}</span>`) + `<h1>${frame.headline}</h1>`;
+  stage.querySelector('.phone').style.cssText = frame.bezel;
+  const img = stage.querySelector('img');
+  img.onload = () => { window.frameReady = true; };
+  img.onerror = () => { window.frameError = `capture failed to load: ${params.get('capture')}`; };
+  img.src = params.get('capture');
+}
+</script>
+</body>
+</html>
