@@ -3,36 +3,38 @@
  * (ADR-0006). Reads the {@link SessionRepository} on focus by the `id` route
  * param (no render store). Each pass cross-links to the car's Garage detail and
  * shows the car's nickname when the Garage knows it, else the shortened UID.
+ * Redline layout (no mockup): SPEC §4.9 "History detail".
  */
-import { useCallback, useState } from 'react';
-import { FlatList, Pressable, Share, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useMemo, useState } from 'react';
+import { FlatList, Pressable, Share, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Link, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { LinkPressable } from '@/components/LinkPressable';
+import Svg, { Path } from 'react-native-svg';
 
+import { LinkPressable } from '@/components/LinkPressable';
+import { RText, ScreenHeader, SectionHeader, StatCell, StatRow } from '@/components/redline';
+import { decorative } from '@/components/redline/decorative';
+import { spokenUnit } from '@/components/redline/readoutPresentation';
+import { SpeedTrace } from '@/components/telemetry/SpeedTrace';
 import { useGarageStore } from '@/store/garageStore';
 import { getSessionRepository } from '@/store/persistence/historyAccess';
 import type { SessionPass, SessionSummary } from '@/store/persistence/sessionRepository';
 import { useSettingsStore } from '@/store/settingsStore';
-import { speedUnitLabel } from '@/speed/format';
+import { speedUnitLabel, type SpeedDisplay } from '@/speed/format';
 import { sessionShareText } from '@/share/summary';
 import { carLabel, shortUid } from '@/garage/format';
 import { useLayout } from '@/layout/useLayout';
-import { colors, fontFamily, fontSize, fontSizeT, fontWeight, radiusT, spacing } from '@/theme/tokens';
-import {
-  formatClock,
-  formatDuration,
-  formatMphLabel,
-  formatPassMph,
-  formatSessionDate,
-  passCountLabel,
-} from '@/history/format';
+import { colorsR, fontR } from '@/theme/tokens';
+import { formatClock, formatMphLabel, formatPassMph } from '@/history/format';
+import { dateTab, formatStartTime, sessionLength } from '@/history/heat';
+
+/** Whole-session charts keep bars legible on a phone. */
+const MAX_BARS = 60;
 
 export default function SessionDetailScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const layout = useLayout();
-  const column = { maxWidth: layout.contentMaxWidth };
   const { id } = useLocalSearchParams<{ id: string }>();
   const sessionId = Number(id);
 
@@ -40,11 +42,14 @@ export default function SessionDetailScreen() {
   const speedUnit = useSettingsStore((s) => s.speedUnit);
   const speedCalibration = useSettingsStore((s) => s.speedCalibration);
   const speedDisplay = { unit: speedUnit, calibration: speedCalibration };
+  const unit = speedUnitLabel(speedUnit).toUpperCase();
   const [session, setSession] = useState<SessionSummary | null>(null);
   const [passes, setPasses] = useState<SessionPass[] | null>(null);
+  const [now, setNow] = useState(() => Date.now());
 
   const reload = useCallback(() => {
     const repo = getSessionRepository();
+    setNow(Date.now());
     if (!repo || Number.isNaN(sessionId)) {
       setPasses([]);
       return;
@@ -65,7 +70,7 @@ export default function SessionDetailScreen() {
   useFocusEffect(reload);
 
   const nameFor = (uid: string | null): string => {
-    if (!uid) return '—';
+    if (!uid) return 'Unknown car';
     const car = cars.find((c) => c.uid === uid);
     return car ? carLabel(car) : shortUid(uid);
   };
@@ -83,138 +88,136 @@ export default function SessionDetailScreen() {
     }).catch(() => {});
   };
 
-  return (
-    <View style={[styles.screen, { paddingTop: insets.top + spacing(2) }]}>
-      <View style={[styles.header, column]}>
-        <Pressable
-          hitSlop={12}
-          onPress={() => router.back()}
-          style={({ pressed }) => [styles.back, pressed && styles.pressed]}
-        >
-          <Text style={styles.backText}>‹ History</Text>
+  const list = useMemo(() => passes ?? [], [passes]);
+  const fastestId = useMemo(() => list.reduce<SessionPass | null>((best, p) => (p.scaleMph > (best?.scaleMph ?? 0) ? p : best), null)?.id, [list]);
+  const tab = session ? dateTab(session.startedAt) : null;
+  const live = session?.endedAt === null;
+  const goBack = () => (router.canGoBack() ? router.back() : router.navigate('/history'));
+
+  const header = (
+    <View style={styles.headerBlock}>
+      <View style={styles.topRow}>
+        <Pressable onPress={goBack} accessibilityRole="button" accessibilityLabel="Back to History" style={({ pressed }) => [styles.back, pressed && styles.pressed]}>
+          <Svg {...decorative} width={20} height={20} viewBox="0 0 24 24">
+            <Path d="M15 5l-7 7 7 7" stroke={colorsR.electric} strokeWidth={2.4} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+          </Svg>
+          <RText style={styles.link}>History</RText>
         </Pressable>
-        <View style={styles.headerSpacer} />
         {canShare && (
-          <Pressable
-            hitSlop={12}
-            onPress={onShare}
-            style={({ pressed }) => [styles.share, pressed && styles.pressed]}
-          >
-            <Text style={styles.shareText}>Share</Text>
+          <Pressable onPress={onShare} accessibilityRole="button" accessibilityLabel="Share session" style={({ pressed }) => [styles.share, pressed && styles.pressed]}>
+            <RText style={styles.link}>Share</RText>
           </Pressable>
         )}
       </View>
+      <ScreenHeader
+        title={tab ? `${tab.month} ${tab.day}` : 'Session'}
+        subtitle={session ? `${formatStartTime(session.startedAt)}${live ? ' · live' : ''}` : undefined}
+      />
+      {session && (
+        <StatRow>
+          <StatCell label="PASSES" value={String(session.passCount)} />
+          <StatCell label="DURATION" value={sessionLength(session.startedAt, session.endedAt, now).replace(' so far', '')} unit={live ? 'SO FAR' : undefined} />
+          <StatCell
+            label="BEST"
+            value={formatMphLabel(session.bestMph, speedDisplay)}
+            unit={unit}
+            color={colorsR.caution}
+            accent={colorsR.caution}
+            accessibilityLabel={session.bestMph > 0 ? `best ${formatMphLabel(session.bestMph, speedDisplay)} scale ${spokenUnit(unit)}` : 'no best speed'}
+          />
+        </StatRow>
+      )}
+      {list.length > 0 && (
+        <View style={styles.chart}>
+          <SectionHeader title="Speed" count={list.length > MAX_BARS ? `LAST ${MAX_BARS}` : undefined} />
+          <SpeedTrace
+            // The repository returns newest first; bars read oldest → newest.
+            values={list.map((p) => p.scaleMph).reverse()}
+            sampleKeys={list.map((p) => p.id).reverse()}
+            display={speedDisplay}
+            limit={Math.max(14, Math.min(MAX_BARS, list.length))}
+          />
+        </View>
+      )}
+      {list.length > 0 && <SectionHeader title="Passes" count={list.length} />}
+    </View>
+  );
 
-      <View style={[styles.summary, column]}>
-        <Text style={styles.summaryDate}>
-          {session ? formatSessionDate(session.startedAt) : 'Session'}
-        </Text>
-        {session && (
-          <Text style={styles.summaryMeta}>
-            {passCountLabel(session.passCount)}
-            {'  ·  '}
-            {formatDuration(session.startedAt, session.endedAt)}
-            {'  ·  '}
-            best {formatMphLabel(session.bestMph, speedDisplay)} {speedUnitLabel(speedUnit)}
-          </Text>
-        )}
-      </View>
-
+  return (
+    <View style={[styles.screen, { paddingTop: insets.top + 4 }]}>
       <FlatList
-        data={passes ?? []}
+        data={list}
         keyExtractor={(p) => String(p.id)}
         contentContainerStyle={[
           styles.list,
-          column,
-          { paddingBottom: insets.bottom + spacing(6) },
-          (passes?.length ?? 0) === 0 && styles.listEmpty,
+          { maxWidth: layout.contentMaxWidth, paddingBottom: insets.bottom + 24 },
         ]}
-        renderItem={({ item }) => <PassRow pass={item} name={nameFor(item.carUid)} />}
-        ListEmptyComponent={
-          <Text style={styles.empty}>No passes were recorded in this session.</Text>
-        }
+        ListHeaderComponent={header}
+        renderItem={({ item, index }) => (
+          // Newest first, numbered from the session's first pass.
+          <PassRow pass={item} index={list.length - index} name={nameFor(item.carUid)} fastest={item.id === fastestId} unit={unit} display={speedDisplay} />
+        )}
+        ListEmptyComponent={passes ? <RText style={styles.empty}>No passes were recorded in this session.</RText> : null}
       />
     </View>
   );
 }
 
-function PassRow({ pass, name }: { pass: SessionPass; name: string }) {
-  const speedUnit = useSettingsStore((s) => s.speedUnit);
-  const speedCalibration = useSettingsStore((s) => s.speedCalibration);
+function PassRow({ pass, index, name, fastest, unit, display }: {
+  pass: SessionPass;
+  index: number;
+  name: string;
+  fastest: boolean;
+  unit: string;
+  display: SpeedDisplay;
+}) {
+  const mph = formatPassMph(pass.scaleMph, display);
+  const label = `Pass ${index}, ${formatClock(pass.at)}, ${name}, ${mph} scale ${spokenUnit(unit)}${fastest ? ', fastest' : ''}`;
   const body = (
-    <View style={styles.row}>
-      <View style={styles.rowLeft}>
-        <Text style={styles.mph}>
-          {formatPassMph(pass.scaleMph, { unit: speedUnit, calibration: speedCalibration })}
-        </Text>
-        <Text style={styles.mphUnit}>{speedUnitLabel(speedUnit)}</Text>
+    <View style={[styles.row, fastest && styles.rowFastest]}>
+      <View {...decorative} style={[styles.num, fastest && { backgroundColor: colorsR.electric }]}>
+        <RText variant="wordmark" style={[styles.numText, fastest && { color: colorsR.asphalt }]}>{index}</RText>
       </View>
-      <View style={styles.rowRight}>
-        <Text style={styles.carName} numberOfLines={1}>
-          {name}
-        </Text>
-        <Text style={styles.time}>{formatClock(pass.at)}</Text>
+      <View style={styles.rowMain}>
+        <RText variant="lapTime" style={styles.time}>{formatClock(pass.at)}</RText>
+        <RText variant="bodySmall" numberOfLines={1} style={styles.car}>{name}</RText>
+      </View>
+      {fastest && <RText variant="chip" style={styles.fastest}>FASTEST</RText>}
+      <View style={styles.speed}>
+        <RText variant="statValue" style={[styles.mph, fastest && { color: colorsR.electric }]}>{mph}</RText>
+        <RText variant="eyebrow" style={styles.unit}>{unit}</RText>
       </View>
     </View>
   );
 
-  if (!pass.carUid) return body;
+  if (!pass.carUid) return <View accessible accessibilityLabel={label}>{body}</View>;
   return (
     <Link href={{ pathname: '/garage/[uid]', params: { uid: pass.carUid } }} asChild>
-      <LinkPressable contentStyle={({ pressed }) => [pressed && styles.pressed]}>{body}</LinkPressable>
+      <LinkPressable accessibilityRole="button" accessibilityLabel={label} accessibilityHint="Opens car details" contentStyle={({ pressed }) => [pressed && styles.pressed]}>{body}</LinkPressable>
     </Link>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.void },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing(5),
-    paddingBottom: spacing(2),
-    width: '100%',
-    alignSelf: 'center',
-  },
-  back: { paddingVertical: spacing(1), paddingRight: spacing(1) },
-  backText: { color: colors.electric, fontSize: fontSize.md, fontWeight: fontWeight.medium },
-  headerSpacer: { flex: 1 },
-  share: { paddingVertical: spacing(1), paddingLeft: spacing(1) },
-  shareText: { color: colors.flame, fontSize: fontSize.md, fontWeight: fontWeight.bold },
-  summary: {
-    paddingHorizontal: spacing(5),
-    paddingBottom: spacing(3),
-    gap: 4,
-    width: '100%',
-    alignSelf: 'center',
-  },
-  summaryDate: { color: colors.ink, fontSize: fontSize.xl, fontWeight: fontWeight.heavy },
-  summaryMeta: { color: colors.inkSecondary, fontSize: fontSize.sm },
-  list: { paddingHorizontal: spacing(5), gap: spacing(2), width: '100%', alignSelf: 'center' },
-  listEmpty: { flexGrow: 1, justifyContent: 'center' },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.panelSolid,
-    borderColor: colors.hairline,
-    borderWidth: 1,
-    borderRadius: radiusT.card,
-    paddingVertical: spacing(3),
-    paddingHorizontal: spacing(4),
-  },
-  rowLeft: { flexDirection: 'row', alignItems: 'baseline', gap: spacing(1) },
-  mph: {
-    color: colors.flame,
-    fontFamily: fontFamily.telemetry,
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.heavy,
-    fontVariant: ['tabular-nums'],
-  },
-  mphUnit: { color: colors.inkMuted, fontSize: fontSizeT.xs, textTransform: 'uppercase', letterSpacing: 1 },
-  rowRight: { alignItems: 'flex-end', gap: 2 },
-  carName: { color: colors.ink, fontSize: fontSize.sm, fontWeight: fontWeight.bold, maxWidth: 180 },
-  time: { color: colors.inkMuted, fontSize: fontSizeT.xs, fontVariant: ['tabular-nums'] },
-  empty: { color: colors.inkMuted, fontSize: fontSize.sm, textAlign: 'center', paddingHorizontal: spacing(6) },
+  screen: { flex: 1, backgroundColor: colorsR.asphalt },
+  list: { paddingHorizontal: 16, gap: 2, width: '100%', alignSelf: 'center' },
+  headerBlock: { gap: 14, marginBottom: 10 },
+  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginLeft: -4 },
+  back: { minHeight: 44, minWidth: 44, flexDirection: 'row', alignItems: 'center', gap: 2 },
+  share: { minHeight: 44, minWidth: 44, alignItems: 'flex-end', justifyContent: 'center' },
+  link: { fontFamily: fontR.bodySemi, fontSize: 16, color: colorsR.electric },
   pressed: { opacity: 0.7 },
+  chart: { backgroundColor: colorsR.pitLane, paddingTop: 12, paddingHorizontal: 14, paddingBottom: 14, gap: 12 },
+  row: { minHeight: 50, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colorsR.pitLane, paddingRight: 12 },
+  rowFastest: { borderWidth: 1, borderColor: colorsR.electric },
+  num: { width: 42, alignSelf: 'stretch', backgroundColor: colorsR.gridBox, alignItems: 'center', justifyContent: 'center' },
+  numText: { fontSize: 20, lineHeight: 22, letterSpacing: 0 },
+  rowMain: { flex: 1, minWidth: 0 },
+  time: { fontSize: 16, lineHeight: 19 },
+  car: { fontSize: 13, lineHeight: 17, color: colorsR.inkSecondary },
+  fastest: { fontSize: 10, lineHeight: 12, color: colorsR.electric },
+  speed: { alignItems: 'flex-end', minWidth: 52 },
+  mph: { fontSize: 20, lineHeight: 22 },
+  unit: { fontFamily: fontR.hud, fontSize: 10, lineHeight: 12, letterSpacing: 1, color: colorsR.inkMuted },
+  empty: { color: colorsR.inkSecondary, textAlign: 'center', marginTop: 32 },
 });

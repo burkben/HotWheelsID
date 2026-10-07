@@ -46,8 +46,14 @@ const Garage: ComponentType | null = __DEV__
   ? require('@/components/redline/dev/GarageGallery').GarageGallery
   : null;
 
+const History: ComponentType | null = __DEV__
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  ? require('@/components/redline/dev/HistoryGallery').HistoryGallery
+  : null;
+
 export default function RedlineGalleryRoute() {
   const { section } = useLocalSearchParams<{ section?: string }>();
+  if (section === 'history' && History) return <History />;
   if (section === 'garage' && Garage) return <Garage />;
   if (section === 'results' && Results) return <Results />;
   if (section === 'race-live' && RaceLive) return <RaceLive />;

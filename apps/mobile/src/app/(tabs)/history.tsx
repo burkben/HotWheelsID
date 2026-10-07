@@ -6,37 +6,39 @@
  * History has **no render store**: this screen reads the {@link SessionRepository}
  * straight from {@link getSessionRepository} on focus (a cold list read, not a hot
  * path). When SQLite isn't in the build yet the repo is `null` → empty state.
+ * Redline layout: SPEC §4.9 / `png/History.png`. The strip, grouping and
+ * sparklines are derived client-side; the repository is unchanged.
  */
 import { useCallback, useState } from 'react';
-import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Link, useFocusEffect } from 'expo-router';
-import { LinkPressable } from '@/components/LinkPressable';
+import { useFocusEffect } from 'expo-router';
 
 import { getSessionRepository } from '@/store/persistence/historyAccess';
 import type { SessionSummary } from '@/store/persistence/sessionRepository';
 import { useSettingsStore } from '@/store/settingsStore';
 import { speedUnitLabel } from '@/speed/format';
-import { colors, colorsR, fontR, fontFamily, fontSize, fontSizeT, fontWeight, radiusT, spacing } from '@/theme/tokens';
 import { useLayout } from '@/layout/useLayout';
-import { RText, ScreenHeader } from '@/components/redline';
-import {
-  formatDuration,
-  formatMphLabel,
-  formatSessionDate,
-  passCountLabel,
-} from '@/history/format';
+import { formatMphLabel } from '@/history/format';
+import { clearSparkCache } from '@/history/sparkCache';
+import { HistoryBoard } from '@/history/components/HistoryBoard';
 
 export default function HistoryScreen() {
   const insets = useSafeAreaInsets();
   const layout = useLayout();
-  // Session rows are text-dense, so they get one fewer column than the photo
+  // Session tickets are text-dense, so they get one fewer column than the photo
   // grid in the Garage — two wide on any iPad, three only on a big landscape one.
   const columns = Math.max(1, layout.columns - 1);
+  const gutter = layout.isTablet ? layout.gutter : 16;
+  const speedUnit = useSettingsStore((s) => s.speedUnit);
+  const speedCalibration = useSettingsStore((s) => s.speedCalibration);
   const [sessions, setSessions] = useState<SessionSummary[] | null>(null);
+  // Captured on each focus read, so "today" and live lengths match the data.
+  const [now, setNow] = useState(() => Date.now());
 
   const reload = useCallback(() => {
     const repo = getSessionRepository();
+    setNow(Date.now());
     if (!repo) {
       setSessions([]);
       return;
@@ -64,147 +66,26 @@ export default function HistoryScreen() {
         onPress: () => {
           repo
             .clear()
-            .then(() => setSessions([]))
+            .then(() => {
+              clearSparkCache();
+              setSessions([]);
+            })
             .catch(() => {});
         },
       },
     ]);
   };
 
-  const hasSessions = (sessions?.length ?? 0) > 0;
-
   return (
-    <View style={[styles.screen, { paddingTop: spacing(2) }]}>
-      <View style={styles.header}>
-        <ScreenHeader title="History" right={hasSessions ? (
-          <Pressable onPress={confirmClear} accessibilityRole="button" accessibilityLabel="Clear history" style={({ pressed }) => [styles.clear, pressed && styles.pressed]}>
-            <RText style={{ color: colorsR.electric, fontFamily: fontR.bodySemi }}>Clear</RText>
-          </Pressable>
-        ) : undefined} />
-      </View>
-
-      <FlatList
-        data={sessions ?? []}
-        keyExtractor={(s) => String(s.id)}
-        // FlatList refuses to change `numColumns` in place, so the key forces a
-        // remount when a rotation or Split View resize changes the grid.
-        key={`cols-${columns}`}
-        numColumns={columns}
-        columnWrapperStyle={columns > 1 ? styles.column : undefined}
-        contentContainerStyle={[
-          styles.list,
-          { paddingBottom: insets.bottom + spacing(6), paddingHorizontal: layout.gutter },
-          !hasSessions && styles.listEmpty,
-        ]}
-        renderItem={({ item }) => <SessionRow session={item} grid={columns > 1} />}
-        ListEmptyComponent={<EmptyHistory />}
-      />
-    </View>
+    <HistoryBoard
+      sessions={sessions}
+      now={now}
+      columns={columns}
+      gutter={gutter}
+      bottomInset={insets.bottom}
+      formatBest={(mph) => formatMphLabel(mph, { unit: speedUnit, calibration: speedCalibration })}
+      unit={speedUnitLabel(speedUnit).toUpperCase()}
+      onClear={confirmClear}
+    />
   );
 }
-
-function SessionRow({ session, grid }: { session: SessionSummary; grid?: boolean }) {
-  const live = session.endedAt == null;
-  const speedUnit = useSettingsStore((s) => s.speedUnit);
-  const speedCalibration = useSettingsStore((s) => s.speedCalibration);
-  const display = { unit: speedUnit, calibration: speedCalibration };
-  return (
-    <Link href={{ pathname: '/history/[id]', params: { id: String(session.id) } }} asChild>
-      <LinkPressable
-        contentStyle={({ pressed }) => [
-          styles.row,
-          grid && styles.rowGrid,
-          live && styles.rowLive,
-          pressed && styles.pressed,
-        ]}
-      >
-        <View style={styles.rowMain}>
-          <View style={styles.rowTitleLine}>
-            <Text style={styles.rowDate} numberOfLines={1}>
-              {formatSessionDate(session.startedAt)}
-            </Text>
-            {live && <Text style={styles.liveTag}>● live</Text>}
-          </View>
-          <Text style={styles.rowMeta} numberOfLines={1}>
-            {passCountLabel(session.passCount)}
-            {'  ·  '}
-            {formatDuration(session.startedAt, session.endedAt)}
-          </Text>
-        </View>
-        <View style={styles.rowStats}>
-          <Text style={styles.bestMph}>{formatMphLabel(session.bestMph, display)}</Text>
-          <Text style={styles.bestMphUnit}>best {speedUnitLabel(speedUnit)}</Text>
-        </View>
-      </LinkPressable>
-    </Link>
-  );
-}
-
-function EmptyHistory() {
-  return (
-    <View style={styles.empty}>
-      <Text style={styles.emptyEmoji}>🏁</Text>
-      <Text style={styles.emptyTitle}>No sessions yet</Text>
-      <Text style={styles.emptyBody}>
-        Connect to your race portal and every car pass is logged here, grouped by session — so
-        you can look back at a whole afternoon of racing.
-      </Text>
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.void },
-  header: {
-    paddingHorizontal: spacing(5),
-    paddingBottom: spacing(3),
-  },
-  title: { color: colors.ink, fontSize: fontSize.xl, fontWeight: fontWeight.heavy, flex: 1 },
-  clear: {
-    paddingVertical: spacing(1.5),
-    paddingHorizontal: spacing(3),
-    borderRadius: 0,
-    backgroundColor: 'transparent',
-    minHeight: 44,
-    minWidth: 44,
-    justifyContent: 'center',
-  },
-  clearText: { color: colors.fault, fontSize: fontSize.sm, fontWeight: fontWeight.bold },
-  clearPlaceholder: { width: spacing(1) },
-  list: { gap: spacing(3) },
-  column: { gap: spacing(3) },
-  rowGrid: { flex: 1, minWidth: 0 },
-  listEmpty: { flexGrow: 1, justifyContent: 'center' },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing(3),
-    backgroundColor: colors.panelSolid,
-    borderColor: colors.hairline,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: radiusT.card,
-    padding: spacing(4),
-    borderLeftWidth: 3,
-    borderLeftColor: 'transparent',
-  },
-  rowLive: { borderLeftColor: colors.electric, backgroundColor: colors.panelRaised },
-  rowMain: { flex: 1, gap: 4, minWidth: 0 },
-  rowTitleLine: { flexDirection: 'row', alignItems: 'center', gap: spacing(2) },
-  rowDate: { color: colors.ink, fontSize: fontSize.md, fontWeight: fontWeight.bold, flexShrink: 1 },
-  liveTag: { color: colors.electric, fontSize: fontSizeT.xs, fontWeight: fontWeight.bold, textTransform: 'uppercase', letterSpacing: 0.5 },
-  rowMeta: { color: colors.inkSecondary, fontSize: fontSize.sm },
-  rowStats: { alignItems: 'flex-end', gap: 1 },
-  bestMph: {
-    color: colors.flame,
-    fontFamily: fontFamily.telemetry,
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.heavy,
-    fontVariant: ['tabular-nums'],
-  },
-  bestMphUnit: { color: colors.inkMuted, fontSize: fontSizeT.xs, textTransform: 'uppercase', letterSpacing: 1 },
-  empty: { alignItems: 'center', gap: spacing(2), paddingHorizontal: spacing(6) },
-  emptyEmoji: { fontSize: 44 },
-  emptyTitle: { color: colors.ink, fontSize: fontSize.lg, fontWeight: fontWeight.bold },
-  emptyBody: { color: colors.inkSecondary, fontSize: fontSize.sm, textAlign: 'center', lineHeight: 19 },
-  pressed: { opacity: 0.7 },
-});
