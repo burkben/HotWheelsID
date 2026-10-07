@@ -12,14 +12,13 @@ import { useGarageStore } from '@/store/garageStore';
 import type { CarRecord } from '@/store/persistence/carRepository';
 import { usePortalStore } from '@/store/portalStore';
 import { useSettingsStore } from '@/store/settingsStore';
-import { catalogIdForUid, useIdentityStore } from '@/store/identityStore';
-import { findCatalogCar, type CatalogCar } from '@/catalog/catalog';
 import { carArtwork } from '@/catalog/artwork';
 import { speedUnitLabel } from '@/speed/format';
 import { formatMph } from '@/garage/format';
 import { garageCardModel } from '@/garage/cardModel';
 import { filterBySeries, recordHolders, seriesFilters } from '@/garage/series';
 import { GarageBoard } from '@/garage/components/GarageBoard';
+import { useGarageIdentities } from '@/garage/useGarageIdentities';
 import { useLayout } from '@/layout/useLayout';
 
 export default function GarageScreen() {
@@ -30,18 +29,7 @@ export default function GarageScreen() {
   const speedUnit = useSettingsStore((s) => s.speedUnit);
   const speedCalibration = useSettingsStore((s) => s.speedCalibration);
 
-  // Resolve every car off a single identity snapshot (uid → casting → catalog).
-  const links = useIdentityStore((s) => s.links);
-  const identifications = useIdentityStore((s) => s.identifications);
-  const seed = useIdentityStore((s) => s.seed);
-  const identities = useMemo(() => {
-    const map = new Map<string, CatalogCar>();
-    for (const car of cars) {
-      const identity = findCatalogCar(catalogIdForUid({ links, identifications, seed }, car.uid));
-      if (identity) map.set(car.uid, identity);
-    }
-    return map;
-  }, [cars, links, identifications, seed]);
+  const identities = useGarageIdentities(cars);
 
   const [selected, setSelected] = useState<string | null>(null);
   const seriesOf = (car: CarRecord) => identities.get(car.uid)?.series;

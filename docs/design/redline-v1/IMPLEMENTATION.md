@@ -15,8 +15,9 @@ is the source of truth for merge status. Each issue has its own branch and PR.
 | RL-07 / #74 | [PR #94](https://github.com/burkben/HotWheelsID/pull/94), CI and Seed passed |
 | RL-08 / #75 | [PR #95](https://github.com/burkben/HotWheelsID/pull/95) |
 | RL-09 / #76 | [PR #96](https://github.com/burkben/HotWheelsID/pull/96) |
-| RL-10 / #77 | Implemented; review evidence below |
-| RL-11–RL-18 / #78–#85 | Pending, in order |
+| RL-10 / #77 | [PR #97](https://github.com/burkben/HotWheelsID/pull/97) |
+| RL-11 / #78 | Implemented; review evidence below |
+| RL-12–RL-18 / #79–#85 | Pending, in order |
 | RL-19 / #86 | Out of scope; not started |
 
 ## RL-01 — tokens and bundled fonts
@@ -476,4 +477,47 @@ Branch: `redline/rl-10-garage`, stacked on RL-09.
   one tap from the Garage. After identifying, the card routes to detail.
 
 Next: RL-11 car detail. RL-19 remains excluded.
+
+## RL-11 — Car detail
+
+Branch: `redline/rl-11-car-detail`, stacked on RL-10.
+
+- Back link "‹ Garage" (falls back to the Garage when there is no history) and a
+  static ON PORTAL tag in the on-portal status palette. It describes the car, not the
+  portal connection, so it is not the tappable `StatusChip`.
+- Full-bleed 218 pt hero bay: the bundled photo when artwork exists; otherwise rake
+  lines, the 56 pt road with a flame edge and dashed lane, speed streaks and a 290 pt
+  silhouette in the car's Garage series colour (dashed outline when unidentified).
+  `RacePlate` (62×50) from `plateNumber` and a −14° toy-number ribbon. The CC BY-SA
+  photo credit stays directly under the bay.
+- Name (display 36), series swatch · wave, and an electric Change / Identify link to
+  the existing picker. Unidentified cars keep the serial line and the casting-coverage
+  hint.
+- Best-speed panel with a caution top bar, the source's 240° mini arc filled to
+  `bestMph / speedGauge.maxMph`, HUD 40 value and a caution GARAGE #n tag for the top
+  three. The pure, tested `garage/rank.ts` uses shared places for ties and leaves cars
+  without a speed unranked.
+- Four stats (BEST LAP in electric, RACES, SCANS = detections, SEEN with "Now" on the
+  portal), the nickname field (same save-on-blur/submit; a Save link shows while
+  edited), and Catalog rows (toy number, wave, year) with the Source ↗ link.
+- The missing-car state is restyled with a ghost "Back to Garage" button.
+- Shared: `useGarageIdentities` (now used by the Garage too) and an optional `right`
+  slot on `SectionHeader`.
+
+### Checks and visual evidence
+
+- Typecheck, zero-warning lint, web export and all tests pass.
+- [Captures and browser checks](review/rl-11/README.md) cover the real demo flow:
+  unidentified detail, identify as the '70 Charger (photo, FXB03, GARAGE #1),
+  nickname saved and still there after leaving and returning, re-identify as a
+  car without artwork (silhouette), and the missing-car state. No console errors.
+
+### Decisions and deviations
+
+- Photos fill the hero bay (`cover`). Road, streaks and silhouette draw only when
+  there is no artwork, so they never sit on top of a photo.
+- The bay is no longer the tap target for Change; the explicit Change link is.
+- The old "Save name" button became a Save link that appears only while the field is
+  edited. Saving on blur and submit is unchanged.
+- The road uses `trackGrey` (#161C27) instead of the source's one-off #141A25.
 
