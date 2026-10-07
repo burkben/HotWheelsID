@@ -6,13 +6,14 @@ import { colorsR, fontR } from '@/theme/tokens';
 import { decorative } from './decorative';
 import { RText } from './RText';
 
-export function SectionHeader({ title, index, count }: { title: string; index?: string | number; count?: string | number }) {
+export function SectionHeader({ title, index, count, right }: { title: string; index?: string | number; count?: string | number; right?: ReactNode }) {
   return (
     <View style={styles.section}>
       {index != null && <RText variant="eyebrow" style={{ color: colorsR.flame }}>{String(index).padStart(2, '0')}</RText>}
       <RText variant="sectionTitle" accessibilityRole="header" style={{ flexShrink: 1 }}>{title}</RText>
       <View {...decorative} style={styles.rule} />
       {count != null && <RText variant="eyebrow" style={{ color: colorsR.inkMuted }}>{count}</RText>}
+      {right}
     </View>
   );
 }
