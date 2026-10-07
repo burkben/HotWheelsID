@@ -1,13 +1,10 @@
-import { Pressable, Text, View } from "react-native";
-
-import {
-  carForCurrentRacer,
-  type RaceNightLineup as Lineup,
-  type RaceNightRacer,
-} from "../raceNight";
-import type { RaceCarPresentation } from "../presentation";
-import { RaceCar } from "./RaceCar";
-import { raceStyles as styles } from "./styles";
+import { Pressable, StyleSheet, View } from 'react-native';
+import { RaceButton, RText } from '@/components/redline';
+import { decorative } from '@/components/redline/decorative';
+import { colorsR } from '@/theme/tokens';
+import { carForCurrentRacer, type RaceNightLineup as Lineup } from '../raceNight';
+import type { RaceCarPresentation } from '../presentation';
+import { RaceCar } from './RaceCar';
 
 type ResolveCar = (
   uid: string | null,
@@ -19,6 +16,7 @@ interface RaceNightLineupProps {
   readonly liveCarUid: string | null;
   readonly resolveCar: ResolveCar;
   readonly canStart: boolean;
+  readonly hideStartAction?: boolean;
   readonly onStart: () => void;
   /** Overrides the default `Start {racer}` label (tournament mode uses this). */
   readonly startLabel?: string;
@@ -27,192 +25,31 @@ interface RaceNightLineupProps {
   readonly onAssignCar: (racerId: string) => void;
 }
 
-function AssignmentActions({
-  racer,
-  liveCarUid,
-  liveCarName,
-  showMakeNext,
-  onChooseNext,
-  onRemove,
-  onAssignCar,
-}: {
-  readonly racer: RaceNightRacer;
-  readonly liveCarUid: string | null;
-  readonly liveCarName: string;
-  readonly showMakeNext: boolean;
-  readonly onChooseNext: (racerId: string) => void;
-  readonly onRemove: (racerId: string) => void;
-  readonly onAssignCar: (racerId: string) => void;
-}) {
-  const canAssign = liveCarUid != null && liveCarUid !== racer.carUid;
-  return (
-    <View style={styles.queueActions}>
-      {showMakeNext ? (
-        <Pressable
-          onPress={() => onChooseNext(racer.id)}
-          accessibilityRole="button"
-          accessibilityLabel={`Make ${racer.name} the next racer`}
-          style={({ pressed }) => [styles.smallBtn, pressed && styles.pressed]}
-        >
-          <Text style={styles.smallBtnText}>Make next</Text>
-        </Pressable>
-      ) : null}
-      {canAssign ? (
-        <Pressable
-          onPress={() => onAssignCar(racer.id)}
-          accessibilityRole="button"
-          accessibilityLabel={`Assign ${liveCarName} to ${racer.name}`}
-          style={({ pressed }) => [styles.smallBtn, pressed && styles.pressed]}
-        >
-          <Text style={styles.smallBtnText}>Assign portal car</Text>
-        </Pressable>
-      ) : null}
-      <Pressable
-        onPress={() => onRemove(racer.id)}
-        accessibilityRole="button"
-        accessibilityLabel={`Remove ${racer.name} from the lineup`}
-        style={({ pressed }) => [styles.smallBtn, pressed && styles.pressed]}
-      >
-        <Text style={styles.removeBtnText}>Remove</Text>
-      </Pressable>
-    </View>
-  );
-}
-
-export function RaceNightLineup({
-  lineup,
-  liveCarUid,
-  resolveCar,
-  canStart,
-  onStart,
-  startLabel,
-  onChooseNext,
-  onRemove,
-  onAssignCar,
-}: RaceNightLineupProps) {
-  if (lineup.length === 0) {
-    return (
-      <View style={styles.card}>
-        <Text style={styles.cardHeading}>Race-night lineup</Text>
-        <Text style={styles.empty}>
-          Add the first racer above. Their current portal car will be saved with their turn.
-        </Text>
+export function RaceNightLineup({ lineup, liveCarUid, resolveCar, canStart, onStart, startLabel, hideStartAction = false, onChooseNext, onRemove, onAssignCar }: RaceNightLineupProps) {
+  if (!lineup.length) return <View style={styles.card}><RText variant="sectionTitle">Race-night lineup</RText><RText variant="bodySmall" style={styles.muted}>Add the first racer above. Their current portal car will be saved with their turn.</RText></View>;
+  const liveCar = resolveCar(liveCarUid, 'No car on portal');
+  return <View style={{ gap: 14 }}>
+    {lineup.map((racer, index) => <View key={racer.id} style={styles.card}>
+      {index < 2 && <View {...decorative} style={[styles.accent, { backgroundColor: index === 0 ? colorsR.flame : colorsR.electric }]} />}
+      <RText variant="eyebrow" style={{ color: index === 0 ? colorsR.flame : colorsR.inkSecondary }}>{index === 0 ? 'Current racer' : index === 1 ? 'Up next' : `Position ${index + 1}`}</RText>
+      <RText variant="carName">{racer.name}</RText>
+      <RaceCar car={resolveCar(index === 0 ? carForCurrentRacer(lineup, liveCarUid) : racer.carUid, 'Car on portal at start')} size={48} context={racer.carUid ? 'Assigned to this racer' : 'Uses the portal car at start'} />
+      <View style={styles.actions}>
+        {index > 1 && <Pressable onPress={() => onChooseNext(racer.id)} accessibilityRole="button" accessibilityLabel={`Make ${racer.name} the next racer`} style={({ pressed }) => [styles.small, pressed && styles.pressed]}><RText variant="bodySmall" style={styles.link}>Make next</RText></Pressable>}
+        {liveCarUid != null && liveCarUid !== racer.carUid && <Pressable onPress={() => onAssignCar(racer.id)} accessibilityRole="button" accessibilityLabel={`Assign ${liveCar.name} to ${racer.name}`} style={({ pressed }) => [styles.small, pressed && styles.pressed]}><RText variant="bodySmall" style={styles.link}>Assign portal car</RText></Pressable>}
+        <Pressable onPress={() => onRemove(racer.id)} accessibilityRole="button" accessibilityLabel={`Remove ${racer.name} from lineup`} style={({ pressed }) => [styles.small, pressed && styles.pressed]}><RText variant="bodySmall" style={{ color: colorsR.destructiveInk }}>Remove</RText></Pressable>
       </View>
-    );
-  }
-
-  const current = lineup[0];
-  const next = lineup[1] ?? null;
-  const queued = lineup.slice(2);
-  const liveCar = resolveCar(liveCarUid, "No car on portal");
-  const currentCar = resolveCar(
-    carForCurrentRacer(lineup, liveCarUid),
-    "Car on portal at start",
-  );
-
-  return (
-    <>
-      <View style={[styles.card, styles.cardRaised]}>
-        <View>
-          <Text style={styles.lineupLabel}>Current racer</Text>
-          <Text style={styles.lineupName} numberOfLines={1}>
-            {current.name}
-          </Text>
-        </View>
-        <RaceCar
-          car={currentCar}
-          context={current.carUid ? "Assigned to this racer" : "Uses the portal car at start"}
-        />
-        <AssignmentActions
-          racer={current}
-          liveCarUid={liveCarUid}
-          liveCarName={liveCar.name}
-          showMakeNext={false}
-          onChooseNext={onChooseNext}
-          onRemove={onRemove}
-          onAssignCar={onAssignCar}
-        />
-        <Pressable
-          onPress={onStart}
-          disabled={!canStart}
-          accessibilityRole="button"
-          accessibilityLabel={startLabel ?? `Start race for ${current.name}`}
-          accessibilityHint={
-            canStart ? "Begins the race countdown" : "Connect the portal before starting"
-          }
-          accessibilityState={{ disabled: !canStart }}
-          style={({ pressed }) => [
-            styles.primaryBtn,
-            !canStart && styles.btnDisabled,
-            pressed && canStart && styles.pressed,
-          ]}
-        >
-          <Text style={[styles.primaryBtnText, !canStart && styles.btnDisabledText]}>
-            {startLabel ?? `Start ${current.name}`}
-          </Text>
-        </Pressable>
-      </View>
-
-      {next ? (
-        <View style={[styles.card, styles.cardNext]}>
-          <View>
-            <Text style={styles.lineupLabel}>Up next</Text>
-            <Text style={styles.lineupNameNext} numberOfLines={1}>
-              {next.name}
-            </Text>
-          </View>
-          <RaceCar
-            car={resolveCar(next.carUid)}
-            size={48}
-            context={next.carUid ? "Assigned to this racer" : "Uses the portal car at start"}
-          />
-          <AssignmentActions
-            racer={next}
-            liveCarUid={liveCarUid}
-            liveCarName={liveCar.name}
-            showMakeNext={false}
-            onChooseNext={onChooseNext}
-            onRemove={onRemove}
-            onAssignCar={onAssignCar}
-          />
-        </View>
-      ) : (
-        <View style={styles.card}>
-          <Text style={styles.cardHeading}>Up next</Text>
-          <Text style={styles.empty}>No one else is queued. Add another racer for a rotation.</Text>
-        </View>
-      )}
-
-      {queued.length > 0 ? (
-        <View style={styles.card}>
-          <Text style={styles.cardHeading}>Later in the lineup</Text>
-          {queued.map((racer, index) => {
-            const car = resolveCar(racer.carUid);
-            return (
-              <View key={racer.id} style={styles.queueRow}>
-                <View style={styles.queueBody}>
-                  <Text style={styles.lineupLabel}>Position {index + 3}</Text>
-                  <Text style={styles.queueName} numberOfLines={1}>
-                    {racer.name}
-                  </Text>
-                  <Text style={styles.queueMeta} numberOfLines={1}>
-                    {car.name}
-                  </Text>
-                </View>
-                <AssignmentActions
-                  racer={racer}
-                  liveCarUid={liveCarUid}
-                  liveCarName={liveCar.name}
-                  showMakeNext
-                  onChooseNext={onChooseNext}
-                  onRemove={onRemove}
-                  onAssignCar={onAssignCar}
-                />
-              </View>
-            );
-          })}
-        </View>
-      ) : null}
-    </>
-  );
+      {index === 0 && !hideStartAction && <RaceButton label={startLabel ?? 'START RACE'} accessibilityLabel={startLabel ?? `Start race for ${racer.name}`} accessibilityHint={canStart ? 'Begins the race countdown' : 'Connect the portal before starting'} disabled={!canStart} onPress={onStart} fullWidth chevron />}
+    </View>)}
+    {lineup.length === 1 && <View style={styles.card}><RText variant="sectionTitle">Up next</RText><RText variant="bodySmall" style={styles.muted}>No one else is queued. Add another racer for a rotation.</RText></View>}
+  </View>;
 }
+const styles = StyleSheet.create({
+  card: { backgroundColor: colorsR.pitLane, padding: 14, gap: 12 },
+  accent: { position: 'absolute', top: 0, left: 0, right: 0, height: 3 },
+  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'flex-end' },
+  small: { minHeight: 44, minWidth: 44, backgroundColor: colorsR.inset, paddingHorizontal: 12, paddingVertical: 10, justifyContent: 'center' },
+  pressed: { opacity: 0.7 },
+  muted: { color: colorsR.inkSecondary },
+  link: { color: colorsR.electric },
+});
