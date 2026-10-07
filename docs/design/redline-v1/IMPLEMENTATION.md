@@ -22,8 +22,8 @@ is the source of truth for merge status. Each issue has its own branch and PR.
 | RL-14 / #81 | [PR #101](https://github.com/burkben/HotWheelsID/pull/101) |
 | RL-15 / #82 | [PR #102](https://github.com/burkben/HotWheelsID/pull/102) |
 | RL-16 / #83 | [PR #103](https://github.com/burkben/HotWheelsID/pull/103) |
-| RL-17 / #84 | Implemented; review evidence below |
-| RL-18 / #85 | Pending |
+| RL-17 / #84 | [PR #104](https://github.com/burkben/HotWheelsID/pull/104) |
+| RL-18 / #85 | This branch; see below |
 | RL-19 / #86 | Out of scope; not started |
 
 ## RL-01 — tokens and bundled fonts
@@ -791,4 +791,40 @@ Branch: `redline/rl-17-store-screenshots`, stacked on RL-16.
   clip under the island. Real simulator captures include the status bar.
 - Follow-up: capture the real set on the iPhone 17 Pro and iPad Pro 13" simulators
   against the release build, then render.
+
+## RL-18 — Design docs
+
+Branch: `redline/rl-18-design-docs`, stacked on RL-17.
+
+- `docs/architecture/design-language.md` now describes the Redline system: principles,
+  colour, type, shape and skew, depth, the trackside kit, the icon vocabulary (including
+  the achievement icon map), navigation, components, motion, haptics, connection UX,
+  accessibility and voice. It marks the Trackside tokens **legacy (TV only)**.
+- New [ADR-0016](../../adr/0016-redline-v1-visual-identity.md): bundled fonts, additive
+  tokens, square panels and the skew language, the gauge variant, TV on legacy, honest
+  data, icons over emoji, reproducible brand assets. ADR index rows added for 0015
+  (missing before) and 0016.
+- `docs/design/ui-overhaul/README.md` points at `docs/design/redline-v1/` as the current
+  direction. The redline-v1 README status is updated.
+
+## Summary
+
+| Issue | State | Notes |
+| --- | --- | --- |
+| RL-01 – RL-16 | Done | Each in its own stacked PR with checks and review evidence above. |
+| RL-17 | Done (pipeline) | Template, render script and doc are complete and verified on stand-in captures. The real simulator capture pass is a release-time follow-up. |
+| RL-18 | Done | This section. |
+| RL-19 | Not started | Needs a native module and owner approval. |
+
+**Open follow-ups across the epic** (device or release-time, not code gaps):
+
+- On-device checks: VoiceOver, haptic and sound feel, keyboard avoidance (car-detail
+  nickname, Settings player name), frame rate during races, physical BLE car swapping and
+  share sheets.
+- Native rebuild to see the splash glyph and new icons; confirm them in App Store Connect.
+- Capture the six store frames on iPhone 17 Pro and iPad Pro 13" simulators against the
+  release build, then run `docs/release/screenshots/render.cjs`. Re-check App Store
+  Connect's required sizes first.
+- PRs are stacked (#88 → #105). Merge in order, retargeting each PR to `main` once its base
+  merges.
 

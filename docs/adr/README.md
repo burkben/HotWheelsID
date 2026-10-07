@@ -26,6 +26,8 @@ that **supersedes** the old one (and update the status header) rather than editi
 | [0012](0012-modern-mpid-protocol-and-transport.md) | Modern-firmware MPID protocol: TS port + BLE transport | Accepted |
 | [0013](0013-car-identity-catalog.md) | Car identity: bundled wiki catalog + manual casting picker | Accepted |
 | [0014](0014-crowd-sourced-car-identity-seed.md) | Automatic car identity via a crowd-sourced community seed | Accepted |
+| [0015](0015-external-display-tv-mode.md) | AirPlay screen-mirroring TV mode and responsive iPad layout | Accepted (amended) |
+| [0016](0016-redline-v1-visual-identity.md) | Redline V1 visual identity: bundled fonts, skew language, gauge variant, TV on legacy | Accepted |
 
 ## Statuses
 
