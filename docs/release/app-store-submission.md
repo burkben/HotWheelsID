@@ -14,7 +14,7 @@ Copy-ready metadata and review answers for version 1.0.0.
 | Privacy Policy URL | https://burkben.github.io/HotWheelsID/privacy/ |
 | Support URL | https://burkben.github.io/HotWheelsID/support/ |
 | Marketing URL | https://burkben.github.io/HotWheelsID/ |
-| Copyright | 2026 Hyperion Studio |
+| Copyright | 2026 Hyperion Studios LLC |
 
 ### Promotional text
 
