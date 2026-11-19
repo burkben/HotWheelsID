@@ -1,10 +1,11 @@
 # Privacy Policy — Redline ID
 
-_Last updated: 2026-07-25_
+_Last updated: 2026-11-19_
 
 Redline ID ("the app") is a free, open-source utility that connects over Bluetooth
 Low Energy (BLE) to a discontinued toy car race portal and shows live speed and lap
-times. This policy explains what the app does — and does not do — with your data.
+times. Redline ID is published by Hyperion Studios LLC ("we", "us"). This policy
+explains what the app does — and does not do — with your data.
 
 ## Summary
 
@@ -62,8 +63,8 @@ car names, race/lap/speed results, or casting-to-catalog mappings. Nothing is se
 you tap a share action and select a destination.
 
 The destination you select receives the exported content under its own privacy terms.
-The Redline ID developer receives nothing unless you deliberately select or separately
-send the export to the developer. We do not sell, rent, or disclose app data.
+We receive nothing unless you deliberately select or separately send the export to
+us. We do not sell, rent, or disclose app data.
 
 ## Children's privacy
 
@@ -77,7 +78,8 @@ If this policy changes, the updated version will be published at this URL with a
 
 ## Contact
 
-Questions about this policy can be filed as an issue at
+Questions about this policy can be emailed to Hyperion Studios LLC at
+<info@hyperionstudios.org>. You can also file an issue at
 <https://github.com/burkben/HotWheelsID/issues>.
 
 ---

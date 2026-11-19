@@ -23,7 +23,7 @@ persistent garage, achievements, and race-night tournament tools.
 
 ### Keywords
 
-race portal,speedometer,lap timer,hot wheels id,bluetooth,garage,toy cars,racing
+race portal,speedometer,lap timer,hot wheels id,hotwheelsid,bluetooth,garage,toy cars,racing
 
 ### Description
 
@@ -186,7 +186,9 @@ Run this on the **current release-candidate build** before selecting it for App
 Review. Build 9 rewrote TV mode as AirPlay mirroring (#63) and build 10 changes
 the splash background, forces the dark interface style, and makes Settings,
 Achievements, and Credits pop back to their caller — so re-run the TV-mode and
-back-navigation checks against whichever build you actually submit.
+back-navigation checks against whichever build you actually submit. Build 13
+upgrades to Expo SDK 57 and React Native 0.86 and adopts the UIScene lifecycle,
+which touches launch, rotation and the AirPlay path, so run the whole list on it.
 
 ### iPhone and Race Portal
 

@@ -1,0 +1,65 @@
+{
+  "configVersion": 0,
+  "apple": {
+    "version": "1.0",
+    "copyright": "2026 Hyperion Studios LLC",
+    "release": {
+      "automaticRelease": true
+    },
+    "info": {
+      "en-US": {
+        "description": "Redline ID brings the discontinued Hot Wheels id Race Portal back to life.\n\nConnect an iPhone or iPad to the portal over Bluetooth and see every pass on a live speedometer. Run lap races, organize a race-night lineup, assign cars, and play a single-elimination tournament. Redline ID also keeps a local garage, session history, personal bests, achievements, and app settings.\n\nFeatures:\n\n- Live speed and car telemetry from the Race Portal\n- Timed lap races with results and personal bests\n- Race-night lineups, car assignments, and tournament brackets\n- Persistent garage, history, achievements, and settings\n- mph and km/h with optional speed calibration\n- Sound, haptics, and reduced-motion controls\n- Demo mode for exploring the app without portal hardware\n\nPrivacy is simple: there is no account, advertising, analytics, crash reporting, or application server. App data stays on the device unless you deliberately export something through the iOS share sheet.\n\nRedline ID is a free, open-source community project. It is not affiliated with, endorsed by, or sponsored by Mattel, Inc. \"Hot Wheels\" and \"Hot Wheels id\" are trademarks of Mattel, Inc. and are used only to identify compatible discontinued hardware.",
+        "keywords": [
+          "race portal",
+          "speedometer",
+          "lap timer",
+          "hot wheels id",
+          "hotwheelsid",
+          "bluetooth",
+          "garage",
+          "toy cars",
+          "racing"
+        ],
+        "marketingUrl": "https://burkben.github.io/HotWheelsID/",
+        "promoText": "Bring a discontinued Race Portal back to life with live speed, lap timing, a persistent garage, achievements, and race-night tournament tools.",
+        "supportUrl": "https://burkben.github.io/HotWheelsID/support/",
+        "title": "Redline ID",
+        "subtitle": "Race Portal speed and timing",
+        "privacyPolicyUrl": "https://burkben.github.io/HotWheelsID/privacy/"
+      }
+    },
+    "categories": [
+      "ENTERTAINMENT",
+      "UTILITIES"
+    ],
+    "advisory": {
+      "ageRatingOverride": "NONE",
+      "alcoholTobaccoOrDrugUseOrReferences": "NONE",
+      "contests": "NONE",
+      "gambling": false,
+      "gamblingSimulated": "NONE",
+      "horrorOrFearThemes": "NONE",
+      "kidsAgeBand": null,
+      "koreaAgeRatingOverride": "NONE",
+      "lootBox": false,
+      "matureOrSuggestiveThemes": "NONE",
+      "medicalOrTreatmentInformation": "NONE",
+      "profanityOrCrudeHumor": "NONE",
+      "sexualContentGraphicAndNudity": "NONE",
+      "sexualContentOrNudity": "NONE",
+      "unrestrictedWebAccess": false,
+      "violenceCartoonOrFantasy": "NONE",
+      "violenceRealistic": "NONE",
+      "violenceRealisticProlongedGraphicOrSadistic": "NONE",
+      "advertising": false,
+      "ageAssurance": false,
+      "ageRatingOverrideV2": "NONE",
+      "developerAgeRatingInfoUrl": null,
+      "gunsOrOtherWeapons": "NONE",
+      "healthOrWellnessTopics": false,
+      "messagingAndChat": false,
+      "parentalControls": false,
+      "userGeneratedContent": false
+    }
+  }
+}
