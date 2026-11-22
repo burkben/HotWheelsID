@@ -174,7 +174,8 @@ Trackside visual design.
 - Publish `site/` so the privacy, support, and marketing URLs contain this
   release's copy.
 - Build with Xcode 26 or later and an iOS 26 SDK.
-- Upload the fresh iPhone and iPad screenshots.
+- Upload the fresh iPhone and iPad screenshots with `eas metadata:push` (see
+  `docs/release/screenshots/README.md`).
 - Confirm App Privacy, age rating, category, availability, pricing, copyright,
   and export-compliance answers.
 - Add the review notes above and verify all links from App Store Connect.
