@@ -1,268 +1,90 @@
-# Redline ID 🏎️
+<img src="site/assets/icon.png" alt="Redline ID app icon" width="96" align="right">
 
-[![Platform: iOS](https://img.shields.io/badge/platform-iOS-000000?logo=apple&logoColor=white)](apps/mobile/)
-[![TypeScript: React Native + Expo](https://img.shields.io/badge/TypeScript-React_Native_%2B_Expo-3178C6?logo=typescript&logoColor=white)](apps/mobile/)
-[![Python 3.10+ (terminal tools)](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](python/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+# Redline ID
 
-**Bring your Hot Wheels id Race Portal back to life!**
+**Bring your Hot Wheels id Race Portal back to life.**
 
-An open-source tool to connect to the Hot Wheels id Race Portal after Mattel discontinued the official app on January 1, 2024. We reverse-engineered the Bluetooth protocol so you can track speeds, lap times, and build your car collection again.
+Mattel shut down the Hot Wheels id app on January 1, 2024, and the Race Portal went quiet with it. Redline ID talks to the portal again over Bluetooth. You get live speed for every pass, lap races, race-night tournaments and a garage that remembers every car.
 
-> _**Redline ID** is an independent, community project and is **not affiliated with,
-> endorsed by, or sponsored by Mattel, Inc.** "Hot Wheels" and "Hot Wheels id" are
-> trademarks of Mattel, Inc., used here only to describe the discontinued hardware this
-> tool works with._
+> **Redline ID 1.0 is out now on the App Store** for iPhone and iPad. It's free, with no account, ads or analytics.
 
-> **Redline ID** is a fork of [`mtxmiller/hotwheels-portal`](https://github.com/mtxmiller/hotwheels-portal)
-> that has grown into **two ways to bring your portal back to life**:
->
-> - 📱 **A native iOS app** (React Native + Expo) — a polished speedometer, a lap-timing
->   **Race Mode**, and a live BLE event log, running on a real iPhone. **[Jump to the iOS app ↓](#ios-app)**
-> - 🖥️ **The original Python terminal tools** (the reference implementation) — live dashboard,
->   lap race game, and the reverse-engineering toolkit. **[Jump to the terminal tools ↓](#what-it-does)**
->
-> 📐 **Building on it?** See the
-> [Architecture Overview](docs/architecture/README.md) ·
-> [Decision Records (ADRs)](docs/adr/) ·
-> [Roadmap](docs/ROADMAP.md) ·
-> [BLE & Protocol port](docs/architecture/ble-and-protocol.md).
-> The reverse-engineered BLE protocol is in [PROTOCOL.md](PROTOCOL.md).
+<a href="https://apps.apple.com/us/app/redline-id/id6782271830"><img src="https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-app-store/black/en-us?releaseDate=1795420800" alt="Download on the App Store" height="54"></a>
 
-<a id="ios-app"></a>
+<p align="center">
+  <img src="apps/mobile/store/apple/screenshot/en-US/APP_IPHONE_61/01-the-portal-is-back.png" alt="Speed tab: a live gauge showing a new best of 288 scale mph" width="250">
+  <img src="apps/mobile/store/apple/screenshot/en-US/APP_IPHONE_61/02-lights-out.png" alt="Race mode: the start lights counting down to a five-lap sprint" width="250">
+  <img src="apps/mobile/store/apple/screenshot/en-US/APP_IPHONE_61/05-every-car.png" alt="Garage: identified cars with their best speeds and race counts" width="250">
+</p>
 
-## 📱 iOS App
+## What it does
 
-The Hot Wheels id portal, reborn as a native iPhone and iPad app. The current build ships a full
-tabbed experience (Speed, Race, Garage, History, More), plus car-identify and detail flows, iPad
-two-pane layouts, and an AirPlay screen-mirroring TV mode on top.
+- **Live speed.** Every car through the gate shows up on an animated gauge, in mph or km/h, with optional calibration.
+- **Lap races.** Lights-out starts, a lap clock, per-lap splits, results and personal bests.
+- **Race night.** Line up players, assign cars and run a single-elimination tournament.
+- **Garage and history.** Each car is recognized by its id chip and keeps its own records. Sessions, and 13 trophies to hunt, are saved too.
+- **TV mode.** Mirror the race clock and standings to a TV with AirPlay.
+- **Both portal firmwares.** Works with the original open protocol and the newer encrypted one.
 
-<table>
-  <tr>
-    <td align="center" width="50%">
-      <img src="docs/screenshots/ios-home.png" alt="Current Speed tab UI with live gauge, pass stats, and tab navigation" width="280"><br>
-      <strong>Speed tab</strong><br>
-      Live gauge, best speed, recent passes, and quick portal controls.
-    </td>
-    <td align="center" width="50%">
-      <img src="docs/screenshots/ios-race.png" alt="Current Race tab setup with race-night lineup queue controls" width="280"><br>
-      <strong>🏁 Race Mode</strong><br>
-      Race setup, lap targets, and the new race-night lineup queue controls.
-    </td>
-  </tr>
-</table>
+Everything stays on your device. There's no account, analytics, ads or server, and Bluetooth is only used to talk to the portal. Requires iOS 16.4 or later.
 
-<sub>Current UI captured from the iOS Simulator (iPhone 17 Pro, July 2026).</sub>
+[Website](https://burkben.github.io/HotWheelsID/) · [Support](https://burkben.github.io/HotWheelsID/support/) · [Privacy policy](https://burkben.github.io/HotWheelsID/privacy/) · [Kids' iPad setup with Guided Access](docs/guides/ios-guided-access.md)
 
-**Current app surfaces:**
+## How it works
 
-- **Speed tab** — Connect to a portal and track live passes with the animated gauge, best speed,
-  pass log, and demo-mode fallback.
-- **🏁 Race tab** — Run timed lap races (5 / 10 / 15 / 20), get per-lap/live stats + results, and
-  use the new race-night lineup queue for turn rotation.
-- **Garage tab** — Persistent car collection with best speed/lap/race stats and per-car detail.
-- **History tab** — Durable session history with race/pass rollups and drill-in details.
-- **More tab** — Achievements, TV mode, raw Live portal event log, and Settings (units,
-  calibration, player profile, haptics, reduce motion, demo defaults).
-- **📺 TV mode** — Open TV mode, then use AirPlay Screen Mirroring to put the landscape stage
-  (lap clock, live speed, laps, standings) on the big screen. V1 mirrors the same stage on the
-  device and TV; independent device controls are deferred — see
-  [ADR-0015](docs/adr/0015-external-display-tv-mode.md).
-- **iPad layouts** — iPad rotates freely and lays out in two panes on a roomy window: the
-  speedometer or live race on the left, passes / lap times / leaderboard on the right, with
-  multi-column Garage and History grids.
-- **Identify flow** — Offline catalog-backed manual identify picker with casting metadata,
-  local placeholder art, source attribution, and coverage messaging ("identify once, label
-  matching copies").
+The portal advertises as `HWiD` over Bluetooth Low Energy and reports each car's NFC id and speed. There are two firmware generations in the wild:
 
-Under the hood it speaks **both portal firmwares** — the legacy open control service and the
-modern, encrypted **MPID** protocol (ECDH key exchange) — through the shared
-[`@redlineid/protocol`](packages/protocol/) TypeScript port.
+- **Legacy firmware** exposes speed and car data openly. See [PROTOCOL.md](PROTOCOL.md).
+- **Modern (MPID) firmware** sends the same data as an encrypted protobuf stream after an ECDH key exchange. The portal authenticates itself but not the app, so no Mattel secret is needed. See [PROTOCOL_NEW.md](python/PROTOCOL_NEW.md).
 
-### Run it on your iPhone
+The modern-protocol reverse engineering ([`PROTOCOL_NEW.md`](python/PROTOCOL_NEW.md), [`HWiD.proto`](python/HWiD.proto), [`hwportal/mpid.py`](python/hwportal/mpid.py) and the `python/tools/` scripts) is the work of [Mitch Capper (@mitchcapper)](https://github.com/mitchcapper), from his [modern_protocol_support branch](https://github.com/mitchcapper/hotwheels-portal/tree/modern_protocol_support) (MIT). It's vendored here with attribution.
 
-Expo Go can't load this app (it ships a native BLE module), so you need a **development build**.
-On a Mac with Xcode the fastest, no-cost path is:
+## Build it yourself
+
+| Path | What's there |
+| --- | --- |
+| [`apps/mobile`](apps/mobile/) | The iOS app (Expo and React Native) |
+| [`packages/protocol`](packages/protocol/) | `@redlineid/protocol`, the shared TypeScript BLE protocol port, with tests |
+| [`python`](python/) | The original Python terminal tools and reverse-engineering kit |
+| [`community`](community/) | The crowd-sourced car identity seed |
+| [`site`](site/) | The app's website |
+| [`docs`](docs/) | [Architecture](docs/architecture/README.md), [decision records](docs/adr/) and the [roadmap](docs/ROADMAP.md) |
+
+The TypeScript side uses npm workspaces and Node 20 or later:
 
 ```bash
-cd apps/mobile
-npx expo run:ios --device     # local dev build on a free Apple ID, installs on the phone
+npm install
+npm run typecheck
+npm test
+npm run web --workspace mobile -- --port 8081   # browser preview with simulated passes
 ```
 
-Then tap **Connect portal**, power on the portal, and roll a car through the gate. No hardware?
-Flip the home screen to **Demo**, or run `npx expo start --web`, to explore the UI with simulated
-passes. The full runbook — EAS cloud builds, the Simulator profile, and signing notes — is in
-**[docs/guides/ios-dev-build.md](docs/guides/ios-dev-build.md)**.
+Expo Go can't load the app because it ships a native Bluetooth module, so a real portal needs a development build on a physical iPhone. On a Mac with Xcode, run `npx expo run:ios --device` from `apps/mobile`. The [development build guide](docs/guides/ios-dev-build.md) covers EAS builds, the Simulator and signing.
 
-> 👨‍👩‍👧 **Handing the iPad to kids?** Lock it to just this app with iOS **Guided Access**. There's
-> one Bluetooth quirk to set up first (otherwise the speedometer can go dead and iOS may refuse to
-> start Guided Access) — the one-minute fix is in the
-> **[Guided Access / kiosk guide](docs/guides/ios-guided-access.md)**.
-
-## Protocol Documentation
-
-We've fully reverse-engineered the BLE protocol! See [PROTOCOL.md](PROTOCOL.md) for details.
-
-**Key discoveries:**
-- Device advertises as `HWiD`
-- 3 BLE services for auth, data transfer, and control
-- Car detection via NFC UID (6 bytes)
-- Speed data as IEEE 754 float32
-- Full NDEF records with Mattel car IDs
-
-### Two firmware protocols
-
-There are **two** transports in the wild, and which one your portal speaks
-depends on its firmware:
-
-- **Legacy** (`PROTOCOL.md`, fw ~1.2.5): the `…-000c` "Portal Control" service
-  exposes the car/speed/serial characteristics **openly**, no authentication.
-  The classic tools (`monitor.py`, `dashboard.py`) read these directly.
-- **Modern / MPID** (`PROTOCOL_NEW.md`, e.g. fw 1.0.9): there is **no `…-000c`
-  service**. The same telemetry is delivered as an **encrypted Protocol Buffers
-  stream** after an **ECDH (P-256) key exchange** on the auth service. Crucially,
-  the portal authenticates *itself* to the app but **does not authenticate the
-  client**, so **no Mattel secret is needed** — everything required is in the
-  136-byte factory token the portal hands out. Implemented in
-  [`hwportal/mpid.py`](python/hwportal/mpid.py); run it with `mpid_monitor.py`.
-
-> The modern-protocol reverse-engineering, [`PROTOCOL_NEW.md`](python/PROTOCOL_NEW.md),
-> [`HWiD.proto`](python/HWiD.proto), `hwportal/mpid.py`, and the `tools/` RE scripts
-> are the work of **Mitch Capper ([@mitchcapper](https://github.com/mitchcapper))**
-> ([modern_protocol_support branch](https://github.com/mitchcapper/hotwheels-portal/tree/modern_protocol_support),
-> MIT), vendored here with attribution. Offline correctness is re-verified in this
-> repo via `python/tools/test_mpid.py`.
-
-## Project Structure
-
-```
-HotWheelsID/
-├── apps/
-│   └── mobile/             # iOS app (Expo/React Native): speedometer, Race Mode, live BLE log
-├── packages/
-│   └── protocol/           # @redlineid/protocol — shared TS BLE protocol port (+ tests)
-├── python/                 # Original Python reference tools (documented above)
-│   ├── hwportal/           #   Library: constants.py (BLE UUIDs), portal.py (client)
-│   │   └── mpid.py         #   Modern-firmware MPID transport (ECDH + AES-CTR + protobuf)
-│   ├── dashboard.py        #   Live terminal dashboard
-│   ├── race_mode.py        #   Lap race game
-│   ├── portal_app.py       #   Event monitor
-│   ├── scanner.py          #   BLE scanner
-│   ├── monitor.py          #   Raw event monitor (legacy …-000c firmware)
-│   ├── mpid_monitor.py     #   Live monitor for modern (MPID) firmware
-│   ├── diag_portal.py      #   GATT diagnostic (control-service / auth-gate verdict)
-│   ├── HWiD.proto          #   Protobuf schema for the modern application layer
-│   ├── PROTOCOL_NEW.md     #   Modern (MPID) protocol spec
-│   ├── tools/              #   RE tooling + offline test suite (test_mpid.py)
-│   └── requirements.txt
-├── docs/                   # Architecture notes, ADRs, and the roadmap
-├── PROTOCOL.md             # Canonical reverse-engineered BLE protocol (legacy firmware)
-├── package.json            # npm workspaces root
-└── tsconfig.base.json      # Shared TypeScript config
-```
-
-## Monorepo & app development
-
-The TypeScript side uses **npm workspaces** (Node 20+). From the repo root:
+The Python tools need Python 3.10 or later:
 
 ```bash
-npm install              # install every workspace (apps/* and packages/*)
-npm run typecheck        # typecheck all workspaces (protocol + mobile)
-npm test                 # run all workspace tests
-npm run test:protocol    # just the @redlineid/protocol unit tests
-npm run lint --workspace mobile
-npm run web:export --workspace mobile
+cd python
+python3 -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+python dashboard.py      # live terminal speedometer
+python race_mode.py      # lap race game
+python mpid_monitor.py   # monitor for modern-firmware portals
 ```
-
-### Shared protocol package
-
-[`packages/protocol`](packages/protocol/) (`@redlineid/protocol`) is a pure
-TypeScript port of the BLE protocol — UUIDs, typed events, and byte decoders —
-with no React Native or UI dependencies. It is unit-tested against the sample
-vectors in [PROTOCOL.md](PROTOCOL.md).
-
-### Mobile app
-
-[`apps/mobile`](apps/mobile/) is the Expo (Expo Router) app — see **[📱 iOS App](#ios-app)**
-above for the current surface tour and how to run it on a device. It now has a five-tab shell
-(`index` speed, `race`, `garage`, `history`, `more`) plus pushed detail screens (`live`,
-`settings`, `achievements`, `identify`, and per-car/session details), and it decodes both portal
-firmwares through [`@redlineid/protocol`](packages/protocol/).
-
-**Preview in a browser** (no device or Xcode needed — fastest way to see the UI):
-
-```bash
-npm run web --workspace mobile -- --port 8081
-```
-
-The home screen auto-runs simulated passes in demo mode, so the gauge animates with zero
-hardware. Real Bluetooth needs a development build on a **physical iPhone** (`npx expo run:ios
---device`); the **Live portal** screen shows a clear notice on web/the Simulator (no BLE radio
-there). The full runbook — EAS cloud builds, the Simulator profile, and signing notes — is in
-**[docs/guides/ios-dev-build.md](docs/guides/ios-dev-build.md)** (EAS profiles live in
-[`apps/mobile/eas.json`](apps/mobile/eas.json)). See also
-[ADR-0011](docs/adr/0011-phase-1-ble-transport.md). To put the app in family/friends' hands
-over **TestFlight**, follow the
-**[iOS TestFlight & distribution runbook](docs/guides/ios-testflight.md)**.
-
-## Roadmap
-
-The full, phased plan toward the attractive UI and the installable iOS app lives in
-**[docs/ROADMAP.md](docs/ROADMAP.md)**. Status of the original Python tooling:
-
-- [x] BLE connection and event monitoring
-- [x] Car detection (NFC UID, serial)
-- [x] Speed tracking
-- [x] Live dashboard with speedometer
-- [x] Lap race game mode with leaderboard
-- [x] Persistent car database
-- [x] Car collection/garage view
-- [x] Achievement system
-- [ ] Full automatic car identity enrichment from Mattel ID / catalog data (in progress; manual catalog identify flow is shipped)
-
-The iOS app is **already running on-device** — a live BLE speedometer, **Race Mode**, and a raw
-event log (see [📱 iOS App](#ios-app)). It is also **installed through TestFlight** and has been
-used to run a full race end-to-end. The remaining work is tracked in the
-[Roadmap](docs/ROADMAP.md) and [ADRs](docs/adr/), with current focus on richer car identity and
-other Phase 5 depth work; Android parity is explicitly backlogged until test hardware exists.
 
 ## Contributing
 
-We'd love your help! Here's how:
+Issues and pull requests are welcome. If your portal behaves differently, or you can help decode what's left of the protocol, please open an issue. You can also help name cars through the [community seed](community/README.md).
 
-1. **Got a Portal?** Run the tools and share interesting findings
-2. **Know BLE/NFC?** Help decode remaining protocol mysteries
-3. **Want features?** Check the issues and submit PRs
+## Why this exists
 
-## Why This Exists
+Mattel's shutdown left thousands of Race Portals as paperweights. This project restores them through reverse engineering, so Hot Wheels fans can keep enjoying their hardware. It's a fork of [mtxmiller/hotwheels-portal](https://github.com/mtxmiller/hotwheels-portal), because my children wanted an iPad app. The portal firmware on our device was also different, and decrypting it took significant work beyond the original project.
 
-Mattel discontinued the Hot Wheels id app on January 1, 2024, leaving thousands of Race Portals as paperweights. This project aims to restore functionality through reverse engineering, letting Hot Wheels fans continue to enjoy their hardware.  This fork is because my children wanted an ipad app.  Also the Portal firmware is different on our device and required significant work to decrypt beyond the original project.
+## Support the project
 
-## Support the Project
-
-If this project helped bring your Hot Wheels Portal back to life, consider supporting development:
-
-- ⭐ **Star this repository**
-- 🐛 **Report issues** and suggest features
-
-### PayPal Donations
-
-[Donate with Paypal!](https://www.paypal.com/donate/?business=DAABJ7R4P22CC&no_recurring=0&currency_code=USD)
+If Redline ID brought your portal back to life, star the repository, report issues, or [donate with PayPal](https://www.paypal.com/donate/?business=DAABJ7R4P22CC&no_recurring=0&currency_code=USD).
 
 ## License
 
-Project code is available under the [MIT License](LICENSE). The bundled car catalog contains
-third-party factual metadata with separate source terms and attribution, and the app bundles 135
-Hot Wheels Wiki car photographs reused under CC BY-SA with per-image credit. Nothing is fetched at
-runtime. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and the in-app
-**Credits & licenses** screen.
+The code is under the [MIT License](LICENSE). The bundled car catalog contains third-party factual metadata with its own source terms, and the app bundles 135 Hot Wheels Wiki car photographs reused under CC BY-SA with per-image credit. Nothing is fetched at runtime. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and the in-app **Credits & licenses** screen.
 
-## Disclaimer
-
-This project is not affiliated with Mattel or Hot Wheels. It's a community effort to restore functionality to discontinued hardware. Hot Wheels is a trademark of Mattel, Inc.
-
-## Resources
-
-- [Hot Wheels id Wiki](https://hotwheels.fandom.com/wiki/Hot_Wheels_id)
-- [Bleak BLE Library](https://github.com/hbldh/bleak)
-- [Rich Terminal Library](https://github.com/Textualize/rich)
+Redline ID is published by Hyperion Studios LLC. It's an independent project, and is not affiliated with, endorsed by, or sponsored by Mattel, Inc. "Hot Wheels" and "Hot Wheels id" are trademarks of Mattel, Inc., used here only to describe the discontinued hardware this app works with.
