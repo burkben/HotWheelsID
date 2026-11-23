@@ -11,9 +11,9 @@ Copy-ready metadata and review answers for version 1.0.0.
 | Primary category | Entertainment |
 | Secondary category | Utilities |
 | Price | Free |
-| Privacy Policy URL | https://burkben.github.io/HotWheelsID/privacy/ |
-| Support URL | https://burkben.github.io/HotWheelsID/support/ |
-| Marketing URL | https://burkben.github.io/HotWheelsID/ |
+| Privacy Policy URL | https://hyperionstudios.org/redline-id/privacy/ |
+| Support URL | https://hyperionstudios.org/redline-id/support/ |
+| Marketing URL | https://hyperionstudios.org/redline-id/ |
 | Copyright | 2026 Hyperion Studios LLC |
 
 ### Promotional text
@@ -171,8 +171,8 @@ Trackside visual design.
 
 ## Final submission checklist
 
-- Publish `site/` so the privacy, support, and marketing URLs contain this
-  release's copy.
+- Update the Redline ID pages on hyperionstudios.org so the privacy, support and
+  marketing URLs contain this release's copy.
 - Build with Xcode 26 or later and an iOS 26 SDK.
 - Upload the fresh iPhone and iPad screenshots with `eas metadata:push` (see
   `docs/release/screenshots/README.md`).

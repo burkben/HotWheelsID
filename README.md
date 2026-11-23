@@ -27,7 +27,7 @@ Mattel shut down the Hot Wheels id app on January 1, 2024, and the Race Portal w
 
 Everything stays on your device. There's no account, analytics, ads or server, and Bluetooth is only used to talk to the portal. Requires iOS 16.4 or later.
 
-[Website](https://burkben.github.io/HotWheelsID/) · [Support](https://burkben.github.io/HotWheelsID/support/) · [Privacy policy](https://burkben.github.io/HotWheelsID/privacy/) · [Kids' iPad setup with Guided Access](docs/guides/ios-guided-access.md)
+[Website](https://hyperionstudios.org/redline-id/) · [Support](https://hyperionstudios.org/redline-id/support/) · [Privacy policy](https://hyperionstudios.org/redline-id/privacy/) · [Kids' iPad setup with Guided Access](docs/guides/ios-guided-access.md)
 
 ## How it works
 

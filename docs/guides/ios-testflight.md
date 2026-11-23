@@ -166,18 +166,19 @@ without a portal they'll see the demo/mock mode.
 
 ### App metadata URLs
 
-For the TestFlight **Test Information** page (and a future App Store listing), the project
-ships a small public site (source in [`site/`](../../site)), served by GitHub Pages from the
-`gh-pages` branch:
+The app's public pages live on the Hyperion Studios website (WordPress), alongside the
+studio's other apps:
 
-- **Privacy Policy URL:** <https://burkben.github.io/HotWheelsID/privacy/>
-- **Support URL:** <https://burkben.github.io/HotWheelsID/support/>
-- **Marketing URL:** <https://burkben.github.io/HotWheelsID/>
+- **Privacy Policy URL:** <https://hyperionstudios.org/redline-id/privacy/>
+- **Support URL:** <https://hyperionstudios.org/redline-id/support/>
+- **Marketing URL:** <https://hyperionstudios.org/redline-id/>
 
-These pages provide the public metadata for App Store Connect. Edit the page
-content under `site/` (the canonical policy text lives in
-[`docs/legal/privacy-policy.md`](../legal/privacy-policy.md)); publish changes by pushing the
-`site/` subtree to the `gh-pages` branch root:
+Edit those pages in WordPress. The canonical policy text still lives in
+[`docs/legal/privacy-policy.md`](../legal/privacy-policy.md); keep the two in step.
+
+Version 1.0.0 shipped with the old GitHub Pages URLs (`burkben.github.io/HotWheelsID/…`).
+The `gh-pages` branch now serves forwarding pages at those addresses, built from
+[`site/`](../../site), so existing links keep working. If they ever need republishing:
 
 ```bash
 git push origin "$(git subtree split --prefix site main):refs/heads/gh-pages" --force
