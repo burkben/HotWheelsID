@@ -54,3 +54,19 @@ Each output is written as `<size>/<NN>-<slug>.png`. The script fails on a missin
 transparent pixel, a wrong output size, or any "Hot Wheels" or "Mattel" text in a frame.
 To try the pipeline without a simulator, start Expo web on port 8082 and run
 `node docs/release/screenshots/sample-captures.cjs captures` first.
+
+## Upload
+
+The shipped set lives in `apps/mobile/store/apple/screenshot/en-US/`, one folder per App Store
+Connect display type, and `apps/mobile/store.config.json` lists it under `screenshots`:
+
+| Folder | Rendered size |
+| --- | --- |
+| `APP_IPHONE_61` | `iphone-1206x2622` |
+| `APP_IPHONE_67` | `iphone-1320x2868` |
+| `APP_IPAD_PRO_3GEN_129` | `ipad-2752x2064` |
+
+Copy new renders over those files, keeping the file names, then run
+`npx eas-cli@27.4.1 metadata:push` from `apps/mobile`. EAS uploads changed files, deletes
+screenshots that are no longer listed and keeps the listed order. Earlier eas-cli versions
+can't upload screenshots.

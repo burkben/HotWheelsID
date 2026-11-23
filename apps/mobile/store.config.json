@@ -1,7 +1,7 @@
 {
   "configVersion": 0,
   "apple": {
-    "version": "1.0",
+    "version": "1.0.0",
     "copyright": "2026 Hyperion Studios LLC",
     "release": {
       "automaticRelease": true
@@ -25,7 +25,33 @@
         "supportUrl": "https://burkben.github.io/HotWheelsID/support/",
         "title": "Redline ID",
         "subtitle": "Race Portal speed and timing",
-        "privacyPolicyUrl": "https://burkben.github.io/HotWheelsID/privacy/"
+        "privacyPolicyUrl": "https://burkben.github.io/HotWheelsID/privacy/",
+        "screenshots": {
+          "APP_IPHONE_61": [
+            "store/apple/screenshot/en-US/APP_IPHONE_61/01-the-portal-is-back.png",
+            "store/apple/screenshot/en-US/APP_IPHONE_61/02-lights-out.png",
+            "store/apple/screenshot/en-US/APP_IPHONE_61/03-every-lap.png",
+            "store/apple/screenshot/en-US/APP_IPHONE_61/04-beat-your-best.png",
+            "store/apple/screenshot/en-US/APP_IPHONE_61/05-every-car.png",
+            "store/apple/screenshot/en-US/APP_IPHONE_61/06-trophies.png"
+          ],
+          "APP_IPHONE_67": [
+            "store/apple/screenshot/en-US/APP_IPHONE_67/01-the-portal-is-back.png",
+            "store/apple/screenshot/en-US/APP_IPHONE_67/02-lights-out.png",
+            "store/apple/screenshot/en-US/APP_IPHONE_67/03-every-lap.png",
+            "store/apple/screenshot/en-US/APP_IPHONE_67/04-beat-your-best.png",
+            "store/apple/screenshot/en-US/APP_IPHONE_67/05-every-car.png",
+            "store/apple/screenshot/en-US/APP_IPHONE_67/06-trophies.png"
+          ],
+          "APP_IPAD_PRO_3GEN_129": [
+            "store/apple/screenshot/en-US/APP_IPAD_PRO_3GEN_129/01-the-portal-is-back.png",
+            "store/apple/screenshot/en-US/APP_IPAD_PRO_3GEN_129/02-lights-out.png",
+            "store/apple/screenshot/en-US/APP_IPAD_PRO_3GEN_129/03-every-lap.png",
+            "store/apple/screenshot/en-US/APP_IPAD_PRO_3GEN_129/04-beat-your-best.png",
+            "store/apple/screenshot/en-US/APP_IPAD_PRO_3GEN_129/05-every-car.png",
+            "store/apple/screenshot/en-US/APP_IPAD_PRO_3GEN_129/06-trophies.png"
+          ]
+        }
       }
     },
     "categories": [
